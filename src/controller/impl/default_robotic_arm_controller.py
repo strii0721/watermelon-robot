@@ -29,7 +29,7 @@ class DefaultRoboticArmController(RoboticArmController):
                  user_numero: int = 0, 
                  ideal_working_orientation: list = [90, 0, -90]):
         
-        # self._robotic_arm = Robot.RPC(ip)
+        self._robotic_arm = Robot.RPC(ip)
         self._tool_numero = tool_numero
         self._user_numero = user_numero
         self._ideal_working_orientation = ideal_working_orientation
@@ -58,14 +58,14 @@ class DefaultRoboticArmController(RoboticArmController):
                      target_pose: list) -> int:
         
         safe_target_pose = self._be_safe(target = target_pose)
-        # state_code = self._robotic_arm.MoveCart(desc_pos = safe_target_pose, 
-        #                                         tool = self._tool_numero, 
-        #                                         user = self._user_numero)
+        state_code = self._robotic_arm.MoveCart(desc_pos = safe_target_pose, 
+                                                tool = self._tool_numero, 
+                                                user = self._user_numero)
 
         # 记得把上面取消注释然后注释掉下面三行！
-        print(f"目标位姿： {safe_target_pose}")
-        time.sleep(2)
-        state_code = 0
+        # print(f"目标位姿： {safe_target_pose}")
+        # time.sleep(2)
+        # state_code = 0
 
 
         return state_code

@@ -30,6 +30,8 @@ class RoboticArm(Node):
     TOPIC_NAME_LOGGER = "LOGGER_ROBOTIC_ARM"
     TOPIC_NAME_TARGET_QUEUE = "TARGET_QUEUE"
 
+    STANDBY_POSITION = [0, 0, 0]
+
     def __init__(self):
 
         self.robotic_arm = DefaultRoboticArmController()
@@ -41,16 +43,24 @@ class RoboticArm(Node):
         while True:
             if (not TopicUtils.is_empty(topic_name = self.TOPIC_NAME_TARGET_QUEUE)): 
                 target_position = TopicUtils.listen(topic_name = self.TOPIC_NAME_TARGET_QUEUE)
-                log_message = f"目标位置：{target_position}\n"
+                log_message = f"目标位置：{target_position}"
                 TopicUtils.publish(topic_name = self.TOPIC_NAME_LOGGER, 
                               message = log_message)
                 state_code = self.robotic_arm.move_to_position(target_position = target_position)
-                log_message = f"移动结束状态码：{state_code}\n"
+                log_message = f"移动结束状态码：{state_code}"
                 TopicUtils.publish(topic_name = self.TOPIC_NAME_LOGGER, 
                               message = log_message)
-                time.sleep(2)
+                
+                # 切割的业务代码待补充
+                if state_code == 0:
+                    # TODO
+                    log_message = f"切割完成，正在归位"
+                    # 归位的代码需要由视觉模块和目标位置成对生成
+                    TopicUtils.publish(topic_name = self.TOPIC_NAME_LOGGER, 
+                                       message = log_message)
+                
             else:
-                log_message = f"目标列表空\n"
+                log_message = f"目标列表空"
                 TopicUtils.publish(topic_name = self.TOPIC_NAME_LOGGER, 
                               message = log_message)
 

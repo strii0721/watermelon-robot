@@ -23,30 +23,27 @@ from nodes.impl.logger import Logger
 from nodes.impl.simulation_targets import SimulationTargets
 import time
 from utils.topic_utils import TopicUtils
+from nodes.impl.camera import Camera
 
 if __name__ == "__main__":
-
-    LOGGER_TOPIC = "LOGGER_MAIN_PROCESS"
-    TopicUtils.create_topic(topic_name = LOGGER_TOPIC)
 
     robotic_arm_0 = RoboticArm()
     logger_0 = Logger()
     simulation_targets_0 = SimulationTargets()
+    camera_0 = Camera()
     
     handler_robotic_arm_0 = ThreadUtils.register(entity = robotic_arm_0)
     handler_logger_0 = ThreadUtils.register(entity = logger_0)
     handler_simulation_targets_0 = ThreadUtils.register(entity = simulation_targets_0)
+    handler_camera_0 = ThreadUtils.register(entity = camera_0)
 
     handler_robotic_arm_0.start()
     handler_logger_0.start()
     handler_simulation_targets_0.start()
+    handler_camera_0.start()
 
     try:
         while True:
-            # message = f"主程序持续运行..."
-            # TopicUtils.publish(topic_name = LOGGER_TOPIC, 
-            #                    message = message)
-            # time.sleep(3)
             pass
     except KeyboardInterrupt:
         print("主程序结束。")
