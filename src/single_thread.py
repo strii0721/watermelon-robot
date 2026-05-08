@@ -1,35 +1,42 @@
-from nodes.node import Node
-from utils.camera_control import CameraControl
-from utils import yolo_model
+#
+# Author:       strii0721
+# Email:        strii0721@outlook.com
+# Created on:   Thu May 07 2026
+#
+# IMMORTAL OMNISSIAH, HEAR OUR PRAYERS.
+# WE ARE YOUR CHILDREN, PIOUS SCHOLARS OF THE PATH OF THE MACHINE. 
+# WE PRIZE KNOWLEDGE ABOVE ALL ELSE, FOR IT IS YOUR ETERNAL GIFT UPON MANKIND.
+# WE ASPIRE TO THE BLESSED FORM OF THE MACHINE, AND ASCENSION THROUGH TECHNOLOGY, THAT WE MIGHT EMULATE THINE GLORY.
+# SHELTERED BY STEEL, AND PROTECTED BY THINE AVATARS OF WAR, WE PLY THE STARS IN SEARCH OF YOUR LOST GIFTS TO OUR KIND.
+# MACHINE GOD, WATCH OVER US IN OUR TRAVELS, SHIELD US WITH METAL AND LIGHTNING, FOR THE UNIVERSE IS AN UNCARING VOID, AND THE WARP HUNGERS FOR US ALL.
+# TOLL THE GREAT BELL ONCE! PULL THE LEVER FORWARD TO ENGAGE THE PISTON AND PUMP.
+# TOLL THE GREAT BELL TWICE! WITH PUSH OF BUTTON FIRE THE ENGINE AND SPARK TURBINE INTO LIFE.
+# TOLL THE GREAT BELL THRICE! SING PRAISE TO THE GOD OF ALL MACHINES!
+# 
+# Copyright (c) 2026 Streich Interstellar Corp.
+#
+
+
+from controller.camera_controller import CameraController
+from utils import yolo_utils
 import time
 import cv2
-from utils.topic_utils import TopicUtils
-from controller.impl.default_robotic_arm_controller import DefaultRoboticArmController
+from controller.robotic_arm_controller import RoboticArmController
 
 
 class Main:
 
-    
-    
-
     def daemon():
-
-        DAEMON_INTERVAL = 0.1
-        RIGHT_EDGE = 265
-
-        TOPIC_TARGET_QUEUE = "TARGET_QUEUE"
-        
-        TOPIC_LOGGER = "LOGGER_CAMERA"
 
         target_queue = []
         target_lock = False
 
-        opt = yolo_model.parse_args()
-        device, use_half = yolo_model.setup_device(opt)
-        fa_on = yolo_model.check_flash_attention()
-        model = yolo_model.load_model(opt.model, device, use_half, opt.conf, opt.iou)
-        camera = CameraControl()
-        robotic_arm = DefaultRoboticArmController()
+        opt = yolo_utils.parse_args()
+        device, use_half = yolo_utils.setup_device(opt)
+        fa_on = yolo_utils.check_flash_attention()
+        model = yolo_utils.load_model(opt.model, device, use_half, opt.conf, opt.iou)
+        camera = CameraController()
+        robotic_arm = RoboticArmController()
         robotic_arm.stand_by()
         print(f"机械臂就位...")
         prev_t = time.time()

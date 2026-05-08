@@ -3,12 +3,12 @@ import numpy as np
 import time
 
 
-class CameraControl:
+class CameraController:
+
     def __init__(self):
         self.pipeline = rs.pipeline()
         self.config = rs.config()
 
-        # 这里由于 wsl2 的原因帧率只能搞到 15 fps，太高会崩。放到其他环境中可以恢复到30 fps
         self.config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
         self.config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
         self.pipeline.start(self.config)
@@ -18,7 +18,6 @@ class CameraControl:
     def get_frames(self):
         """Capture a pair of aligned color and depth frames."""
         frames = self.pipeline.wait_for_frames()
-        time.sleep(0.001)
         aligned_frames = self.align.process(frames)
         aligned_depth_frame = aligned_frames.get_depth_frame()
         aligned_color_frame = aligned_frames.get_color_frame()
@@ -59,12 +58,12 @@ class CameraControl:
         print("Camera streaming stopped.")
 
 
-def get_3d_camera_coordinate(depth_pixel, aligned_depth_frame, depth_intrin):
-    x = depth_pixel[0]
-    y = depth_pixel[1]
-    dis = aligned_depth_frame.get_distance(x, y)  # 获取该像素点对应的深度
-    # print ('depth: ',dis)       # 深度单位是m
-    camera_coordinate = rs.rs2_deproject_pixel_to_point(depth_intrin, depth_pixel, dis)
-    print("camera_coordinate: ", camera_coordinate)
+    def get_3d_camera_coordinate(depth_pixel, aligned_depth_frame, depth_intrin):
+        x = depth_pixel[0]
+        y = depth_pixel[1]
+        dis = aligned_depth_frame.get_distance(x, y)  # 获取该像素点对应的深度
+        # print ('depth: ',dis)       # 深度单位是m
+        camera_coordinate = rs.rs2_deproject_pixel_to_point(depth_intrin, depth_pixel, dis)
+        print("camera_coordinate: ", camera_coordinate)
 
-    return dis, camera_coordinate
+        return dis, camera_coordinate

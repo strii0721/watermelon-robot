@@ -17,7 +17,7 @@
 #
 
 
-from utils.thread_tuils import ThreadUtils
+from utils.thread_utils import ThreadUtils
 from nodes.impl.robotic_arm import RoboticArm
 from nodes.impl.logger import Logger
 from nodes.impl.simulation_targets import SimulationTargets
@@ -27,6 +27,8 @@ from nodes.impl.camera import Camera
 
 if __name__ == "__main__":
 
+    DAEMON_INTERVAL = 0.001
+
     robotic_arm_0 = RoboticArm()
     logger_0 = Logger()
     simulation_targets_0 = SimulationTargets()
@@ -34,16 +36,15 @@ if __name__ == "__main__":
     
     handler_robotic_arm_0 = ThreadUtils.register(entity = robotic_arm_0)
     handler_logger_0 = ThreadUtils.register(entity = logger_0)
-    # handler_simulation_targets_0 = ThreadUtils.register(entity = simulation_targets_0)
     handler_camera_0 = ThreadUtils.register(entity = camera_0)
 
-    # handler_robotic_arm_0.start()
-    # handler_logger_0.start()
-    # handler_simulation_targets_0.start()
+    handler_robotic_arm_0.start()
+    handler_logger_0.start()
     handler_camera_0.start()
-
+    
     try:
         while True:
-            pass
+            time.sleep(DAEMON_INTERVAL)
+
     except KeyboardInterrupt:
         print("主程序结束。")

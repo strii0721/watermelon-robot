@@ -1,4 +1,4 @@
-from controller.impl.default_robotic_arm_controller import DefaultRoboticArmController
+from controller.robotic_arm_controller import RoboticArmController
 from fairino import Robot
 INITIAL_POSITION = [-820,-202,50]
 IDEAL_POSITION = [-495,-102,475]
@@ -10,7 +10,7 @@ STANDBY_POSITION = [-300, -102, 450]
 
 # print(version)
 
-controller = DefaultRoboticArmController()
+controller = RoboticArmController()
 
 controller.move_to_position(IDEAL_POSITION)
 

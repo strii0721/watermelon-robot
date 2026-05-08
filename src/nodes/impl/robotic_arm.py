@@ -18,24 +18,21 @@
 
 
 from nodes.node import Node
-from controller.impl.default_robotic_arm_controller import DefaultRoboticArmController
+from controller.robotic_arm_controller import RoboticArmController
 from utils.topic_utils import TopicUtils
 import time
 from nodes.impl.camera import Camera
 
 class RoboticArm(Node):
 
-    DAEMON_INTERVAL = 0.1
-    OPERATION_INTERVAL = 2
-
-    TOPIC_LOGGER = "LOGGER_ROBOTIC_ARM"
-    TOPIC_TARGET_QUEUE = "TARGET_QUEUE"
-
-    STANDBY_POSITION = [0, 0, 0]
-
     def __init__(self):
 
-        self.robotic_arm = DefaultRoboticArmController()
+        self.DAEMON_INTERVAL = 0.001
+        self.OPERATION_INTERVAL = 2
+        self.TOPIC_LOGGER = "LOGGER_ROBOTIC_ARM"
+        self.TOPIC_TARGET_QUEUE = "TARGET_QUEUE"
+
+        self.robotic_arm = RoboticArmController()
         TopicUtils.create_topic(self.TOPIC_LOGGER)
         TopicUtils.create_topic(self.TOPIC_TARGET_QUEUE)
 
@@ -55,13 +52,15 @@ class RoboticArm(Node):
                 # 切割的业务代码待补充
                 if state_code == 0:
                     # TODO
-                    pass
+                    time.sleep(self.OPERATION_INTERVAL)
+
+                self.robotic_arm.stand_by()
                 
             else:
-                if Camera.target_lock:
+                if Camera.get_target_lock():
                     log_message = f"目标列表空，继续前进"
                     TopicUtils.publish(topic_name = self.TOPIC_LOGGER, 
                                   message = log_message)
-                    Camera.target_lock = False
+                    Camera.set_target_lock(False)
 
             time.sleep(self.DAEMON_INTERVAL)

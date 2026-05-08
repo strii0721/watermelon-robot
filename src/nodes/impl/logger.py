@@ -23,14 +23,17 @@ import time
 
 class Logger(Node):
 
-    DAEMON_INTERVAL = 0.1
-    LISTEN_LIST = [
-        "LOGGER_ROBOTIC_ARM", 
-        "LOGGER_MAIN_PROCESS"
-    ]
+    
 
 
     def __init__(self):
+
+        self.DAEMON_INTERVAL = 0.001
+        
+        self.LISTEN_LIST = [
+            "LOGGER_ROBOTIC_ARM", 
+            "LOGGER_MAIN_PROCESS"
+        ]
 
         for topic_name in self.LISTEN_LIST:
             TopicUtils.create_topic(topic_name = topic_name)

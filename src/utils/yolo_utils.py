@@ -1,10 +1,6 @@
 import argparse
 from contextlib import suppress
-import numpy as np
 import torch
-import sys
-
-# sys.path.append("/home/wheeltec/fr_ws/fr_python/yolov13")
 from ultralytics import YOLO
 
 

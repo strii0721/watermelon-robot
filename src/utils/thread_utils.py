@@ -24,6 +24,5 @@ class ThreadUtils:
     @classmethod
     def register(cls, 
                  entity):
-        handler = threading.Thread(target = entity.daemon, 
-                                   daemon = True)
+        handler = threading.Thread(target = entity.daemon)
         return handler
