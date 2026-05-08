@@ -63,3 +63,14 @@ class TopicUtils:
             return True
         else: 
             return False
+        
+    @classmethod
+    def listen_ro(cls, 
+               topic_name, 
+               message_numero = 0): 
+        if (topic_name in TopicUtils._topic_dictionary):
+            message = TopicUtils._topic_dictionary[topic_name][message_numero]
+        else: 
+            raise Exception(f"话题不存在")
+        
+        return message

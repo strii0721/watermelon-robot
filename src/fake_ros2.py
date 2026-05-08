@@ -34,12 +34,12 @@ if __name__ == "__main__":
     
     handler_robotic_arm_0 = ThreadUtils.register(entity = robotic_arm_0)
     handler_logger_0 = ThreadUtils.register(entity = logger_0)
-    handler_simulation_targets_0 = ThreadUtils.register(entity = simulation_targets_0)
+    # handler_simulation_targets_0 = ThreadUtils.register(entity = simulation_targets_0)
     handler_camera_0 = ThreadUtils.register(entity = camera_0)
 
-    handler_robotic_arm_0.start()
-    handler_logger_0.start()
-    handler_simulation_targets_0.start()
+    # handler_robotic_arm_0.start()
+    # handler_logger_0.start()
+    # handler_simulation_targets_0.start()
     handler_camera_0.start()
 
     try:

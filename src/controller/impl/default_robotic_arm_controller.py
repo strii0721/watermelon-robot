@@ -23,8 +23,10 @@ import time
 
 class DefaultRoboticArmController(RoboticArmController):
 
+    _STANDBY_POSITION = [-300, -102, 450]
+
     def __init__(self, 
-                 ip: str = "192.168.52.2", 
+                 ip: str = "192.168.58.2", 
                  tool_numero: int = 0,
                  user_numero: int = 0, 
                  ideal_working_orientation: list = [90, 0, -90]):
@@ -62,11 +64,6 @@ class DefaultRoboticArmController(RoboticArmController):
                                                 tool = self._tool_numero, 
                                                 user = self._user_numero)
 
-        # 记得把上面取消注释然后注释掉下面三行！
-        # print(f"目标位姿： {safe_target_pose}")
-        # time.sleep(2)
-        # state_code = 0
-
 
         return state_code
     
@@ -77,3 +74,13 @@ class DefaultRoboticArmController(RoboticArmController):
         state_code = self.move_to_pose(target_pose = target_pose)
         
         return state_code
+    
+    def stand_by(self) -> int:
+
+        state_code = self.move_to_position(target_position = self._STANDBY_POSITION)
+
+        return state_code
+    
+    def get_stand_by_position(self) -> list:
+
+        return self._STANDBY_POSITION

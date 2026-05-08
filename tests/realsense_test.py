@@ -48,7 +48,7 @@ def test_realsense():
 
             # 检测键盘输入，如果按下 'q' 键则退出循环
             key = cv2.waitKey(1)
-            if key & 0xFF == ord('q') or key == 27: # 27 是 ESC 键
+            if key & 0xFF == ord('q'): # 27 是 ESC 键
                 break
 
     except Exception as e:

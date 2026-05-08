@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import sys
 
-sys.path.append("/home/wheeltec/fr_ws/fr_python/yolov13")
+# sys.path.append("/home/wheeltec/fr_ws/fr_python/yolov13")
 from ultralytics import YOLO
 
 
@@ -19,7 +19,7 @@ def parse_args():
         choices=["n", "s", "l", "x"],
         help="yolov13 model scale: n/s/l/x",
     )
-    p.add_argument("--conf", type=float, default=0.25, help="confidence threshold")
+    p.add_argument("--conf", type=float, default=0.80, help="confidence threshold")
     p.add_argument("--iou", type=float, default=0.45, help="NMS IoU threshold")
     p.add_argument(
         "--device",
@@ -56,9 +56,9 @@ def check_flash_attention():
 
 
 def load_model(scale: str, device, use_half: bool, conf: float, iou: float):
-    # weights = f'model_weights/yolov13{scale}.pt'
-    weights = f"model_weights/best.pt"
-    # weights = f"model_weights/yolo26/best.pt"
+    # weights = f'resource/model_weights/yolov13{scale}.pt'
+    weights = f"resource/model_weights/yolo26/best.pt"
+    # weights = f"resource/model_weights/best.pt"
     model = YOLO(weights)
     model.overrides["imgsz"] = 640
     model.overrides["conf"] = conf

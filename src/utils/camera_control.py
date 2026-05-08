@@ -7,6 +7,8 @@ class CameraControl:
     def __init__(self):
         self.pipeline = rs.pipeline()
         self.config = rs.config()
+
+        # 这里由于 wsl2 的原因帧率只能搞到 15 fps，太高会崩。放到其他环境中可以恢复到30 fps
         self.config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
         self.config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
         self.pipeline.start(self.config)
@@ -16,6 +18,7 @@ class CameraControl:
     def get_frames(self):
         """Capture a pair of aligned color and depth frames."""
         frames = self.pipeline.wait_for_frames()
+        time.sleep(0.001)
         aligned_frames = self.align.process(frames)
         aligned_depth_frame = aligned_frames.get_depth_frame()
         aligned_color_frame = aligned_frames.get_color_frame()
