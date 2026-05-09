@@ -18,21 +18,22 @@
 
 
 from fairino import Robot
-import time
 
 class RoboticArmController:
-
-    _STANDBY_POSITION = [-300, -102, 450]
 
     def __init__(self, 
                  ip: str = "192.168.58.2", 
                  tool_numero: int = 0,
                  user_numero: int = 0, 
+                 speed_rate: int = 30, 
+                 stand_by_position: list = [-300, -102, 450], 
                  ideal_working_orientation: list = [90, 0, -90]):
         
-        # self._robotic_arm = Robot.RPC(ip)
+        self._robotic_arm = Robot.RPC(ip)
         self._tool_numero = tool_numero
         self._user_numero = user_numero
+        self._robotic_arm.SetSpeed(speed_rate)
+        self._stand_by_position = stand_by_position
         self._ideal_working_orientation = ideal_working_orientation
 
 
@@ -55,34 +56,113 @@ class RoboticArmController:
         return safe_target
 
 
-    def move_to_pose(self, 
+    def _move_to_pose(self, 
                      target_pose: list) -> int:
         
+    
+        
         safe_target_pose = self._be_safe(target = target_pose)
-        # state_code = self._robotic_arm.MoveCart(desc_pos = safe_target_pose, 
-        #                                         tool = self._tool_numero, 
-        #                                         user = self._user_numero)
-
-        state_code = 0
-        time.sleep(2)
+        state_code = self._robotic_arm.MoveCart(desc_pos = safe_target_pose, 
+                                                tool = self._tool_numero, 
+                                                user = self._user_numero)
         
         return state_code
+    
+    def calculate_real_position(self, 
+                                target_position: list) -> list: 
+        
+        real_position = target_position
+        real_position[0] += 50
+        real_position[0] += 30
+
+        return real_position
+    
+    def calculate_pose(self, 
+                       target_position: list) -> list:
+        
+        return target_position + self.get_ideal_working_orientation()
+    
+    def calculate_midway_position(self, 
+                                  target_position: list) -> list: 
+        
+        midway_position = self.get_stand_by_position()
+        midway_position[2] = target_position[2]
+        return midway_position
     
     def move_to_position(self, 
-                         target_position: list) -> int:
+                         target_position: list, 
+                         safe: bool = True) -> int:
+
+        # self._robotic_arm.NewSplineStart(type = 1)
+        target_pose = self.calculate_pose(target_position = self.calculate_real_position(target_position = target_position))
+
+        if safe: 
+            midway_pose = self.calculate_pose(target_position = self.calculate_midway_position(target_position = self.calculate_real_position(target_position = target_position)))
+            print(f"中间安全位姿 {midway_pose}")
+            self._move_to_pose(target_pose = midway_pose)
+            # self._robotic_arm.NewSplinePoint(desc_pos = midway_pose, 
+            #                                  tool = self._tool_numero, 
+            #                                  user = self._user_numero, 
+            #                                  lastFlag = 0)
+
+
+        print(f"真实目标位姿 {target_pose}")
+        self._move_to_pose(target_pose = target_pose)
+        # self._robotic_arm.NewSplinePoint(desc_pos = target_pose, 
+        #                                      tool = self._tool_numero, 
+        #                                      user = self._user_numero, 
+        #                                      lastFlag = 1)
+        self._robotic_arm.NewSplineEnd()
         
-        target_pose = target_position + self._ideal_working_orientation
-        state_code = self.move_to_pose(target_pose = target_pose)
+        return 0
+    
+    def stand_by(self, 
+                 safe: bool = True) -> list:
+
+        _, current_position = self.get_tcp_pose()[:3]
+
+        midway_position = self.calculate_midway_position(target_position = current_position)
+
+        if safe: 
+            midway_pose = self.calculate_pose(target_position = midway_position)
+            print(f"中间安全位姿 {midway_pose}")
+            self._move_to_pose(target_pose = midway_pose)
+
+        target_pose = self.get_stand_by_pose()
+        print(f"就位位姿 {target_pose}")
+        self._move_to_pose(target_pose = target_pose)
+
+        return 0
+    
+    def get_stand_by_position(self) -> list:
+
+        return self._stand_by_position.copy()
+    
+    def get_ideal_working_orientation(self) -> list:
+
+        return self._ideal_working_orientation.copy()
+    
+    def get_stand_by_pose(self) -> list:
+
+        return self.calculate_pose(target_position = self.get_stand_by_position())
+    
+    def get_tcp_pose(self, 
+                     block = False) -> list:
         
-        return state_code
+        flag = 0 if block else 1
+        tcp_pose = self._robotic_arm.GetActualTCPPose(flag = flag)
+
+        return tcp_pose
     
-    def stand_by(self) -> int:
+    def valid_position(self, 
+                       target_position: list) -> bool:
+        
 
-        state_code = self.move_to_position(target_position = self._STANDBY_POSITION)
-
-        return state_code
-    
-    @classmethod
-    def get_stand_by_position(cls) -> list:
-
-        return RoboticArmController._STANDBY_POSITION
+        target_pose = target_position + self.get_ideal_working_orientation()
+        print(f"desc_pos{target_pose}")
+        print(f"joint_pos_ref{self.get_stand_by_pose()}")
+        _, is_valid = self._robotic_arm.GetInverseKinHasSolution(type = 2, 
+                                                                 desc_pos = target_pose, 
+                                                                 joint_pos_ref = self.get_stand_by_pose())
+        
+        return is_valid

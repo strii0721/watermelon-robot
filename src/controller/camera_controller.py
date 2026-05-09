@@ -57,7 +57,6 @@ class CameraController:
         self.pipeline.stop()
         print("Camera streaming stopped.")
 
-
     def get_3d_camera_coordinate(depth_pixel, aligned_depth_frame, depth_intrin):
         x = depth_pixel[0]
         y = depth_pixel[1]

@@ -12,6 +12,7 @@ STANDBY_POSITION = [-300, -102, 450]
 
 controller = RoboticArmController()
 
-controller.move_to_position(IDEAL_POSITION)
+state_code = controller.stand_by()
+print(state_code)
 
 controller.close()

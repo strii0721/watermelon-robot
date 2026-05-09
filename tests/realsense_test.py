@@ -10,8 +10,8 @@ def test_realsense():
     config = rs.config()
 
     # 告诉管道我们要获取哪些流。这里配置获取 640x480 分辨率，30帧/秒的深度流和彩色流
-    config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 15)
+    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 15)
 
     print("正在启动 RealSense 相机...")
     try:

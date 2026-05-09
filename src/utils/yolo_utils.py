@@ -1,6 +1,8 @@
 import argparse
 from contextlib import suppress
 import torch
+# import sys
+# sys.path.append("/home/wheeltec/fr_ws/fr_python/yolov13")
 from ultralytics import YOLO
 
 
@@ -15,7 +17,7 @@ def parse_args():
         choices=["n", "s", "l", "x"],
         help="yolov13 model scale: n/s/l/x",
     )
-    p.add_argument("--conf", type=float, default=0.80, help="confidence threshold")
+    p.add_argument("--conf", type=float, default=0.90, help="confidence threshold")
     p.add_argument("--iou", type=float, default=0.45, help="NMS IoU threshold")
     p.add_argument(
         "--device",
