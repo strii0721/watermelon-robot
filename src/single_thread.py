@@ -29,7 +29,8 @@ class Main:
 
     _target_lock = False
 
-    def daemon():
+    @classmethod
+    def daemon(cls):
 
         opt = yolo_utils.parse_args()
         device, use_half = yolo_utils.setup_device(opt)
