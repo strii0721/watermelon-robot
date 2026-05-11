@@ -36,7 +36,8 @@ setup(
         'console_scripts': [
             "robotic_arm_controller = controller.robotic_arm_controller:main", 
             "camera_controller = controller.camera_controller:main",
-            "monitor = tools.monitor:main"
+            "monitor = tools.monitor:main",
+            "web_monitor = tools.web_monitor:main"
         ],
     },
 )

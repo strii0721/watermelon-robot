@@ -21,8 +21,7 @@ import rclpy
 from rclpy.node import Node
 from service.robotic_arm_service import RoboticArmService
 from watermelon_robot_interface.srv import IRoboticArmAction
-import numpy as np
-from std_srvs.srv import Empty
+import time
 
 class RoboticArmController(Node):
 
@@ -35,6 +34,8 @@ class RoboticArmController(Node):
         state_code = self._robotic_arm_service.stand_by()
         if state_code == 0 :
             self.get_logger().info("机械臂已复位...")
+        else:
+            self.get_logger().warn(f"机械臂复位失败，状态码{state_code}")
 
         self.srv_robotic_arm_action_once = self.create_service(srv_type = IRoboticArmAction, 
                                                           srv_name = "s/robotic_arm/action_once", 
@@ -49,16 +50,17 @@ class RoboticArmController(Node):
         state_code = self._robotic_arm_service.move_to_position(position = position, 
                                                                 is_world_position = False)
         
-        # if state_code != 0 : 
-        #     response.state_code = state_code
-        #     return response
+        if state_code != 0 : 
+            response.state_code = state_code
+            self._robotic_arm_service.stand_by()
+            return response
         
         # 剩余机械臂业务代码
         # TODO
-        
-        state_code = self._robotic_arm_service.stand_by()
+        time.sleep(2)
 
-        # 暂时都返回 0状态码，异常处理之后再说
+        
+        self._robotic_arm_service.stand_by()
         response.state_code = state_code
 
         return response

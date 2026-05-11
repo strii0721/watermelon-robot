@@ -26,7 +26,8 @@ import cv2
 
 class Monitor(Node):
 
-    def __init__(self): 
+    def __init__(self, 
+                 render_fps = 30): 
         
         super().__init__('monitor')
         
@@ -35,14 +36,20 @@ class Monitor(Node):
         self.sub_camera_current_frame = self.create_subscription(msg_type = Image, 
                                                                  topic = "t/camera/current_frame", 
                                                                  qos_profile = qos_profile_sensor_data, 
-                                                                 callback = self.video_from_topic)
+                                                                 callback = self.render)
+        self._render_fps = render_fps
+
+    def get_render_fps(self) -> int: 
+
+        return self._render_fps
         
-    def video_from_topic(self, 
-                         message):
+    def render(self, 
+               message):
         
         cv_image = self.cv_bridge.imgmsg_to_cv2(message, desired_encoding='bgr8')
         cv2.imshow('Cut Watermelon Task - Camera View', cv_image)
-        cv2.waitKey(1)
+        interval = int((1/self.get_render_fps()) * 1000)
+        cv2.waitKey(interval)
 
 
 def main():

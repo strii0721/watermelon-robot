@@ -71,34 +71,19 @@ class CameraService:
         
         return float(np.median(vals))
 
-    # def deproject_pixel_to_point(self, 
-    #                              intrinsics, 
-    #                              px, 
-    #                              py, 
-    #                              depth):
-
-    #     pt = rs.rs2_deproject_pixel_to_point(
-    #         intrinsics, [float(px), float(py)], float(depth)
-    #     )
-
-    #     return float(pt[0]), float(pt[1]), float(pt[2])
     
     def calculate_3d_camera_coordinate(self, 
                                        depth_frame, 
                                        center_x, 
                                        center_y,
-                                       depth_intrin) -> tuple:
+                                       depth_intrin, 
+                                       center_depth = None) -> tuple:
 
-        # x = center_x
-        # y = center_y
-        # dis = depth_frame.get_distance(x, y)  # 获取该像素点对应的深度
-        # print ('depth: ',dis)       # 深度单位是m
-
-        # 前有中值滤波
-        depth = self.calculate_median_depth(depth_frame = depth_frame, 
-                                  center_x = center_x, 
-                                  center_y = center_y)
-        camera_coordinate = rs.rs2_deproject_pixel_to_point(depth_intrin, [float(center_x), float(center_y)], depth) # type: ignore
+        if center_depth is None:
+            center_depth = self.calculate_median_depth(depth_frame = depth_frame, 
+                                                       center_x = center_x, 
+                                                       center_y = center_y)
+        camera_coordinate = rs.rs2_deproject_pixel_to_point(depth_intrin, [float(center_x), float(center_y)], center_depth) # type: ignore
         camera_coordinate = tuple(camera_coordinate)
         camera_coordinate_mm = tuple(x * 1000 for x in camera_coordinate)
 

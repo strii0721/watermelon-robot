@@ -1,0 +1,1 @@
+rsync -avz --exclude 'build' --exclude 'install' --exclude 'log' --exclude '__pycache__' --exclude '.git' ~/repos/watermelon-robot wheeltec@192.168.2.13:~/fr_ws

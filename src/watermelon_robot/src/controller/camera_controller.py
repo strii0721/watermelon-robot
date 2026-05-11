@@ -32,30 +32,41 @@ import time
 class CameraController(Node):
 
     def __init__(self, 
-                 camera_fps: int = 30):
+                 camera_fps: int = 15):
 
         super().__init__('camera_controller')
 
         self._camera_service = CameraService()
         self.cv_bridge = CvBridge()
+        self._last_frame_time = time.time()
 
         self.cli_robotic_arm_action_once = self.create_client(srv_type = IRoboticArmAction, 
                                                               srv_name = "s/robotic_arm/action_once")
         
-        # while not self.cli_robotic_arm_action_once.wait_for_service(timeout_sec=1.0):
-        #     if not rclpy.ok():
-        #         self.get_logger().error('节点被中断，停止等待。')
-        #         return
-        #     self.get_logger().warn('服务端不可用，继续等待...')
-            
-        # self.get_logger().info('服务端连接正常！')
         
         self.pub_camera_current_frame = self.create_publisher(msg_type = Image, 
                                                               topic = "t/camera/current_frame", 
                                                               qos_profile = qos_profile_sensor_data)
         
         self.tmr_camera_frame = self.create_timer(timer_period_sec = 1/camera_fps, 
-                                                    callback = self.camera_frame_capture)
+                                                  callback = self.camera_frame_capture)
+        
+        self._configure = ModelUtils.parse_args()
+        self._device, self._use_half = ModelUtils.setup_device(self._configure)
+        self._fa_on = ModelUtils.check_flash_attention()
+        self._model = ModelUtils.load_model(self._configure.model, self._device, self._use_half, self._configure.conf, self._configure.iou)
+
+    def get_model(self): 
+
+        return self._model
+    
+    def get_device(self):
+
+        return self._device
+    
+    def get_configure(self):
+
+        return self._configure
 
 
     def robotic_arm_action_once(self, 
@@ -67,19 +78,23 @@ class CameraController(Node):
         return self.cli_robotic_arm_action_once.call_async(request)
     
     
-    def robotic_arm_action_once_done_callback(self, 
-                                              future):
+    def robotic_arm_action_once_done(self, 
+                                     future):
         
         response = cast(IRoboticArmAction.Response, future.result())
-        
-        # if response.state_code == 0: 
-        #     self._camera_service.set_target_lock(status = False)
         self._camera_service.set_target_lock(status = False)
+        
+        state_code = response.state_code
+        if state_code == 0: 
+            self.get_logger().info(f"机械臂执行完成")
+        
+        else:
+            self.get_logger().warn(f"机械臂执行异常，异常状态码{state_code}")
 
     
     def camera_frame_capture(self):
         
-        prev = time.time()
+        
         rtn = self._camera_service.get_raw_frame()
 
         if not rtn: 
@@ -91,36 +106,44 @@ class CameraController(Node):
             return
         
         # 有获取目标列表并且原地修改彩色摄像头图像的预感
-        target_list = self.analysis_frame(source_image = image_color, 
-                                          aligned_depth_frame = aligned_depth_frame, 
-                                          camera_intrinsics = camera_intrinsics)
+        target_list = self._analysis_frame(source_image = image_color, 
+                                           aligned_depth_frame = aligned_depth_frame, 
+                                           camera_intrinsics = camera_intrinsics)
         
         # 以移窗锁定目标
         if not self._camera_service.get_target_lock() and target_list: 
+            self._camera_service.set_target_lock(status = True)
             target_list.sort(key=lambda target: target[0])
-            if target_list[-1][0] > 0 : 
-                self._camera_service.set_target_lock(status = True)
-                self.get_logger().info(f"目标位置：{target_list[-1]}")
-                future = self.robotic_arm_action_once(camera_coordinate = target_list[-1])
-                future.add_done_callback(callback = self.robotic_arm_action_once_done_callback)
+            target = target_list[-1]
+            self.get_logger().info(f"目标相机参考系坐标：{target}")
+            future = self.robotic_arm_action_once(camera_coordinate = target)
+            future.add_done_callback(callback = self.robotic_arm_action_once_done)
         
         # 正因如此，以计算帧率并发布当前帧为目标吧
         now = time.time()
-        fps = 1.0 / (now - prev) if now > prev else 0.0
+        fps = 1.0 / (now - self.refresh_last_frame_time(now_time = now))
         cv2.putText(image_color, f'FPS: {fps:.2f}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
         image_message = self.cv_bridge.cv2_to_imgmsg(image_color, encoding="bgr8")
+
         self.pub_camera_current_frame.publish(msg = image_message)
 
-
-    def analysis_frame(self, 
-                       source_image, 
-                       aligned_depth_frame, 
-                       camera_intrinsics):
+    def refresh_last_frame_time(self, 
+                                now_time: float) -> float:
         
-        configure = ModelUtils.parse_args()
-        device, use_half = ModelUtils.setup_device(configure)
-        fa_on = ModelUtils.check_flash_attention()
-        model = ModelUtils.load_model(configure.model, device, use_half, configure.conf, configure.iou)
+        tmp = self._last_frame_time
+        self._last_frame_time = now_time
+
+        return tmp
+
+
+    def _analysis_frame(self, 
+                        source_image, 
+                        aligned_depth_frame, 
+                        camera_intrinsics) -> list:
+
+        model = self.get_model()
+        device = self.get_device()
+        configure = self.get_configure()
         rtn = model.predict(source = source_image, 
                             verbose = False, 
                             device=device, 
@@ -140,34 +163,42 @@ class CameraController(Node):
 
                     center_x = int((x1 + x2) / 2)
                     center_y = int((y1 + y2) / 2)
-                    center_z = self._camera_service.calculate_median_depth(depth_frame = aligned_depth_frame, 
-                                                                           center_x = center_x, 
-                                                                           center_y = center_y, 
-                                                                           window_size = 5)
                     crosshair_x = center_x
                     crosshair_y = int(y1) - int((y1 - y2) / 8)
                     crosshair_z = self._camera_service.calculate_median_depth(depth_frame = aligned_depth_frame, 
-                                                                    center_x = center_x, 
-                                                                    center_y = int(y1), 
-                                                                    window_size = 5)
+                                                                              center_x = crosshair_x, 
+                                                                              center_y = crosshair_y, 
+                                                                              window_size = 5)
+                    
+                    target = self._camera_service.calculate_3d_camera_coordinate(depth_frame = aligned_depth_frame, 
+                                                                                 center_x = crosshair_x, 
+                                                                                 center_y = crosshair_y, 
+                                                                                 depth_intrin = camera_intrinsics, 
+                                                                                 center_depth = crosshair_z)
                     label = f'{name} {conf:.2f}'
                     dot_size = 5
                     cv2.rectangle(source_image, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
                     cv2.circle(source_image, (center_x, center_y), dot_size, (0, 0, 255), -1)
-                    cv2.line(source_image, (crosshair_x - dot_size, crosshair_y), (crosshair_x + dot_size, crosshair_y), (0, 0, 255), 2)
-                    cv2.line(source_image, (crosshair_x, crosshair_y - dot_size), (crosshair_x, crosshair_y + dot_size), (0, 0, 255), 2)
+                    cv2.line(source_image, (crosshair_x - dot_size, crosshair_y), (crosshair_x + dot_size, crosshair_y), (0, 0,255), 2)
+                    cv2.line(source_image, (crosshair_x, crosshair_y - dot_size), (crosshair_x, crosshair_y + dot_size), (0, 0,255), 2)
                     cv2.putText(source_image, label, (int(x1), int(y1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                    target = self._camera_service.calculate_3d_camera_coordinate(depth_frame = aligned_depth_frame, 
-                                                                                 center_x = crosshair_x, 
-                                                                                 center_y = crosshair_y, 
-                                                                                 depth_intrin = camera_intrinsics)
-                    cv2.putText(source_image, f'Xc:{target[0]:.2f} Yc:{target[1]:.2f} Zc:{target[2]:.2f}', (int(x1), int(y1) + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-                    
-                    if ((-100 < target[0] and target[0] < 100) and (-50 < target[1] and target[1] < 50) and (0 < target[2] and target[2] < 1000)):
-                        
+                    cv2.putText(source_image, f'Xc:{target[0]:.2f} Yc:{target[1]:.2f} Zc:{target[2]:.2f}', (int(x1), int(y1) + 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+
+                    if self.valid_target(target):
                         target_list.append(target)
 
         return target_list
+    
+    def valid_target(self, 
+                     camera_coordinate: tuple) -> bool: 
+
+        if not ((-100 < camera_coordinate[0] and camera_coordinate[0] < 100) and (-50 < camera_coordinate[1] and camera_coordinate[1] < 50) and (0 < camera_coordinate[2] and camera_coordinate[2] < 1000)):
+            return False
+        
+        if camera_coordinate[0] < 0:
+            return False
+        
+        return True
 
 
 def main():

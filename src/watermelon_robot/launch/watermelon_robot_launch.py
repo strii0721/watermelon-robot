@@ -3,29 +3,33 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     
-    monitor_node = Node(
+    monitor = Node(
         package='watermelon_robot',
         executable='monitor',
-        # name='monitor_node',
         output='screen'
     )
 
-    camera_node = Node(
+    camera_controller = Node(
         package='watermelon_robot',
         executable='camera_controller',
-        # name='camera_controller',
         output='screen'
     )
 
-    arm_node = Node(
+    robotic_arm_controller = Node(
         package='watermelon_robot',
         executable='robotic_arm_controller',
-        # name='robotic_arm_controller_node',
+        output='screen'
+    )
+
+    web_monitor = Node(
+        package='watermelon_robot',
+        executable='web_monitor',
         output='screen'
     )
     
     return LaunchDescription([
-        monitor_node,
-        camera_node,
-        arm_node
+        # monitor,
+        camera_controller,
+        robotic_arm_controller,
+        web_monitor
     ])

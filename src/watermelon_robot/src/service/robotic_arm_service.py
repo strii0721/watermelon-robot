@@ -66,7 +66,7 @@ class RoboticArmService:
         
         # 处理工具偏移
         target_w[0] += 50
-        target_w[2] += 50
+        target_w[2] += 70
 
         world_coordinate = tuple(target_w[0:3, 0].tolist())
 
@@ -109,8 +109,9 @@ class RoboticArmService:
         pose = self._calculate_pose(position = stand_by_position)
         _, current_pose = self._robotic_arm_mapper.get_tcp_pose()
         midway_pose = self._calculate_midway_pose(pose = current_pose)
+        # print(midway_pose)
+        # print(pose)
         state_code = self._robotic_arm_mapper.move_to_pose(pose = midway_pose)
         state_code = self._robotic_arm_mapper.move_to_pose(pose = pose)
-        state_code = 0
         
         return state_code
