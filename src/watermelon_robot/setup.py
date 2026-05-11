@@ -17,7 +17,9 @@ setup(
             ['package.xml']),
             
         (os.path.join('share', package_name, 'model_weights'), 
-            glob("resource/model_weights/*.pt"))
+            glob("resource/model_weights/*.pt")), 
+        (os.path.join('share', package_name, 'launch'), 
+            glob('launch/*.py')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

@@ -14,6 +14,7 @@ class ModelUtils:
 
     @classmethod
     def parse_args(cls):
+
         argument_parser = argparse.ArgumentParser(
             description="YOLOv13 model with optional FlashAttention setup."
         )
@@ -38,7 +39,10 @@ class ModelUtils:
         argument_parser.add_argument(
             "--show_3d", action="store_true", help="show XYZ (camera frame) for bbox center"
         )
-        return argument_parser.parse_args()
+
+        known_args, _ = argument_parser.parse_known_args()
+
+        return known_args
 
     @classmethod
     def setup_device(cls, 
