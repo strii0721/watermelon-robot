@@ -23,11 +23,11 @@ from sensor_msgs.msg import Image
 from rclpy.qos import qos_profile_sensor_data
 from cv_bridge import CvBridge
 import cv2
+from utils import config
 
 class Monitor(Node):
 
-    def __init__(self, 
-                 render_fps = 30): 
+    def __init__(self): 
         
         super().__init__('monitor')
         
@@ -37,18 +37,13 @@ class Monitor(Node):
                                                                  topic = "t/camera/current_frame", 
                                                                  qos_profile = qos_profile_sensor_data, 
                                                                  callback = self.render)
-        self._render_fps = render_fps
-
-    def get_render_fps(self) -> int: 
-
-        return self._render_fps
         
     def render(self, 
                message):
         
         cv_image = self.cv_bridge.imgmsg_to_cv2(message, desired_encoding='bgr8')
         cv2.imshow('Cut Watermelon Task - Camera View', cv_image)
-        interval = int((1/self.get_render_fps()) * 1000)
+        interval = int((1/config.video.render_fps) * 1000)
         cv2.waitKey(interval)
 
 

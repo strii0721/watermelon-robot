@@ -28,11 +28,12 @@ from utils.model_utils import ModelUtils
 import cv2
 from cv_bridge import CvBridge
 import time
+from utils import config
+
 
 class CameraController(Node):
 
-    def __init__(self, 
-                 camera_fps: int = 15):
+    def __init__(self):
 
         super().__init__('camera_controller')
 
@@ -48,13 +49,12 @@ class CameraController(Node):
                                                               topic = "t/camera/current_frame", 
                                                               qos_profile = qos_profile_sensor_data)
         
-        self.tmr_camera_frame = self.create_timer(timer_period_sec = 1/camera_fps, 
+        self.tmr_camera_frame = self.create_timer(timer_period_sec = 1/config.video.capture_fps, 
                                                   callback = self.camera_frame_capture)
         
-        self._configure = ModelUtils.parse_args()
-        self._device, self._use_half = ModelUtils.setup_device(self._configure)
+        self._device, self._use_half = ModelUtils.setup_device(config = config)
         self._fa_on = ModelUtils.check_flash_attention()
-        self._model = ModelUtils.load_model(self._configure.model, self._device, self._use_half, self._configure.conf, self._configure.iou)
+        self._model = ModelUtils.load_model(config.model.name, self._device, self._use_half, config.model.conf, config.model.iou)
 
     def get_model(self): 
 
@@ -64,9 +64,6 @@ class CameraController(Node):
 
         return self._device
     
-    def get_configure(self):
-
-        return self._configure
 
 
     def robotic_arm_action_once(self, 
@@ -143,12 +140,11 @@ class CameraController(Node):
 
         model = self.get_model()
         device = self.get_device()
-        configure = self.get_configure()
         rtn = model.predict(source = source_image, 
                             verbose = False, 
-                            device=device, 
-                            conf=configure.conf, 
-                            iou=configure.iou)
+                            device = device, 
+                            conf = config.model.conf, 
+                            iou = config.model.iou)
         results = rtn[0]
         boxes = results.boxes
         target_list = []

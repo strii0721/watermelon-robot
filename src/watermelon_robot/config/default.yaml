@@ -1,0 +1,13 @@
+video:
+  capture_fps: 30
+  render_fps: 30
+
+model: 
+  name: "yolov26-best.pt"
+  use_half: False
+  conf: 0.25
+  iou: 0.45
+  device: "0"
+
+robotic_arm: 
+  speed_rate: 70

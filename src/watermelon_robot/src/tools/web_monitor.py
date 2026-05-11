@@ -27,11 +27,11 @@ from cv_bridge import CvBridge
 import cv2
 import time
 import threading
+from utils import config
 
 class WebMonitor(Node):
 
-    def __init__(self, 
-                 render_fps = 30): 
+    def __init__(self): 
 
         super().__init__('monitor')
 
@@ -40,7 +40,6 @@ class WebMonitor(Node):
                                                                      topic = "t/camera/current_frame", 
                                                                      qos_profile = qos_profile_sensor_data, 
                                                                      callback = self.render)
-        self._render_fps = render_fps
         self.app = Flask(__name__)
         self._lastest_frame = None
         self.app.add_url_rule('/', 'index', self.index)
@@ -51,15 +50,11 @@ class WebMonitor(Node):
         
         self.get_logger().info('Web 服务器已启动...')
 
-    def get_render_fps(self) -> int: 
-
-        return self._render_fps
-
     def render(self, message): 
 
         self.latest_frame = self.cv_bridge.imgmsg_to_cv2(message, desired_encoding='bgr8')
 
-        interval = int((1/self.get_render_fps()) * 1000)
+        interval = int((1/config.video.render_fps) * 1000)
         cv2.waitKey(interval)
 
     def flask_server_start(self):
@@ -80,7 +75,7 @@ class WebMonitor(Node):
                     yield (b'--frame\r\n'
                            b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
                     
-            time.sleep(1/self.get_render_fps())
+            time.sleep(1/config.video.render_fps)
 
     def video_feed(self):
 

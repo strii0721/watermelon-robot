@@ -22,15 +22,15 @@ from rclpy.node import Node
 from service.robotic_arm_service import RoboticArmService
 from watermelon_robot_interface.srv import IRoboticArmAction
 import time
+from utils import config
 
 class RoboticArmController(Node):
 
-    def __init__(self, 
-                 speed_rate: int = 30):
+    def __init__(self):
         
         super().__init__('robotic_arm_controller')
 
-        self._robotic_arm_service = RoboticArmService(speed_rate = speed_rate)
+        self._robotic_arm_service = RoboticArmService(speed_rate = config.robotic_arm.speed_rate)
         state_code = self._robotic_arm_service.stand_by()
         if state_code == 0 :
             self.get_logger().info("机械臂已复位...")
