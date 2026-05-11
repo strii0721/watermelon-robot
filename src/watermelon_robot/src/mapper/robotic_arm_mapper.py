@@ -73,7 +73,8 @@ class RoboticArmMapper:
                      block: bool = False) -> tuple:
         
         block_flag = 0 if block else 1
-        state_code, tcp_pose_list = self._robotic_arm.GetActualTCPPose(flag = block_flag)
+        rtn = self._robotic_arm.GetActualTCPPose(flag = block_flag)
+        state_code, tcp_pose_list = rtn
         state_code = cast(int, state_code)
         tcp_pose = tuple(tcp_pose_list)
         
@@ -85,12 +86,9 @@ class RoboticArmMapper:
         tool_numero = self.get_tool_numero()
         user_numero = self.get_user_numero()
         pose_list = list(pose)
-        # state_code = self._robotic_arm.MoveCart(desc_pos = pose_list, 
-        #                                         tool = tool_numero, 
-        #                                         user = user_numero)
-        
-        print("成功接收...")
-        state_code = 114514
+        state_code = self._robotic_arm.MoveCart(desc_pos = pose_list, 
+                                                tool = tool_numero, 
+                                                user = user_numero)
         
         state_code = cast(int, state_code)
 

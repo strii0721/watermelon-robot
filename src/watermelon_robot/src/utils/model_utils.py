@@ -6,11 +6,11 @@ from ament_index_python.packages import get_package_share_directory
 # import sys
 # sys.path.append("/home/wheeltec/fr_ws/fr_python/yolov13")
 from ultralytics import YOLO
+import os
 
+package_share_dir = get_package_share_directory('watermelon_robot')
 
 class ModelUtils:
-
-    package_share_dir = get_package_share_directory('watermelon_robot')
 
     @classmethod
     def parse_args(cls):
@@ -69,7 +69,7 @@ class ModelUtils:
                    iou: float):
         # weights = f'resource/model_weights/yolov13{scale}.pt'
         # weights = f"resource/model_weights/best.pt"
-        weights = os.path.join(package_share_dir, "model_weights", "yolo26-best.pt")
+        weights = os.path.join(package_share_dir, "model_weights", "yolov26-best.pt")
         model = YOLO(weights)
         model.overrides["imgsz"] = 640
         model.overrides["conf"] = conf

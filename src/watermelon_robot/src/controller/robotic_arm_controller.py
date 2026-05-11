@@ -32,6 +32,9 @@ class RoboticArmController(Node):
         super().__init__('robotic_arm_controller')
 
         self._robotic_arm_service = RoboticArmService(speed_rate = speed_rate)
+        state_code = self._robotic_arm_service.stand_by()
+        if state_code == 0 :
+            self.get_logger().info("机械臂已复位...")
 
         self.srv_robotic_arm_action_once = self.create_service(srv_type = IRoboticArmAction, 
                                                           srv_name = "s/robotic_arm/action_once", 
@@ -46,11 +49,17 @@ class RoboticArmController(Node):
         state_code = self._robotic_arm_service.move_to_position(position = position, 
                                                                 is_world_position = False)
         
+        # if state_code != 0 : 
+        #     response.state_code = state_code
+        #     return response
+        
         # 剩余机械臂业务代码
         # TODO
         
+        state_code = self._robotic_arm_service.stand_by()
+
         # 暂时都返回 0状态码，异常处理之后再说
-        response.state_code = 0
+        response.state_code = state_code
 
         return response
     

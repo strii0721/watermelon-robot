@@ -17,9 +17,8 @@
 #
 
 
-from fairino import Robot
 import numpy as np
-from watermelon_robot.src.mapper.robotic_arm_mapper import RoboticArmMapper
+from mapper.robotic_arm_mapper import RoboticArmMapper
 
 class RoboticArmService:
 
@@ -64,6 +63,11 @@ class RoboticArmService:
         tcp_T_c = self._robotic_arm_mapper.get_tcpTc_matrix() 
         target_c = np.append(camera_position, 1.0).reshape(4, 1)
         target_w = (w_T_tcp @ tcp_T_c) @ target_c
+        
+        # 处理工具偏移
+        target_w[0] += 50
+        target_w[2] += 50
+
         world_coordinate = tuple(target_w[0:3, 0].tolist())
 
         return world_coordinate
@@ -75,6 +79,7 @@ class RoboticArmService:
         stand_by_position = self._robotic_arm_mapper.get_tool_stand_by_position()
         midway_pose[0] = stand_by_position[0]
         midway_pose[1] = stand_by_position[1]
+        midway_pose[2] = pose[2]
         midway_pose = tuple(midway_pose)
 
         return midway_pose
@@ -102,13 +107,10 @@ class RoboticArmService:
         
         stand_by_position = self._robotic_arm_mapper.get_tool_stand_by_position()
         pose = self._calculate_pose(position = stand_by_position)
-        current_pose = self._robotic_arm_mapper.get_tcp_pose()
+        _, current_pose = self._robotic_arm_mapper.get_tcp_pose()
         midway_pose = self._calculate_midway_pose(pose = current_pose)
-
-        safe_pose = self._calculate_safe_pose(pose = pose)
-        safe_midway_pose = self._calculate_safe_pose(pose = midway_pose)
-
-        state_code = self._robotic_arm_mapper.move_to_pose(pose = safe_midway_pose)
-        state_code = self._robotic_arm_mapper.move_to_pose(pose = safe_pose)
+        state_code = self._robotic_arm_mapper.move_to_pose(pose = midway_pose)
+        state_code = self._robotic_arm_mapper.move_to_pose(pose = pose)
+        state_code = 0
         
         return state_code

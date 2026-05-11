@@ -100,5 +100,6 @@ class CameraService:
                                   center_y = center_y)
         camera_coordinate = rs.rs2_deproject_pixel_to_point(depth_intrin, [float(center_x), float(center_y)], depth) # type: ignore
         camera_coordinate = tuple(camera_coordinate)
+        camera_coordinate_mm = tuple(x * 1000 for x in camera_coordinate)
 
-        return camera_coordinate
+        return camera_coordinate_mm

@@ -42,12 +42,21 @@ class CameraController(Node):
         self.cli_robotic_arm_action_once = self.create_client(srv_type = IRoboticArmAction, 
                                                               srv_name = "s/robotic_arm/action_once")
         
+        # while not self.cli_robotic_arm_action_once.wait_for_service(timeout_sec=1.0):
+        #     if not rclpy.ok():
+        #         self.get_logger().error('节点被中断，停止等待。')
+        #         return
+        #     self.get_logger().warn('服务端不可用，继续等待...')
+            
+        # self.get_logger().info('服务端连接正常！')
+        
         self.pub_camera_current_frame = self.create_publisher(msg_type = Image, 
                                                               topic = "t/camera/current_frame", 
                                                               qos_profile = qos_profile_sensor_data)
         
         self.tmr_camera_frame = self.create_timer(timer_period_sec = 1/camera_fps, 
                                                     callback = self.camera_frame_capture)
+
 
     def robotic_arm_action_once(self, 
                                 camera_coordinate: tuple):
@@ -63,8 +72,10 @@ class CameraController(Node):
         
         response = cast(IRoboticArmAction.Response, future.result())
         
-        if response.state_code == 0: 
-            self._camera_service.set_target_lock(status = False)
+        # if response.state_code == 0: 
+        #     self._camera_service.set_target_lock(status = False)
+        self._camera_service.set_target_lock(status = False)
+
     
     def camera_frame_capture(self):
         
@@ -89,6 +100,7 @@ class CameraController(Node):
             target_list.sort(key=lambda target: target[0])
             if target_list[-1][0] > 0 : 
                 self._camera_service.set_target_lock(status = True)
+                self.get_logger().info(f"目标位置：{target_list[-1]}")
                 future = self.robotic_arm_action_once(camera_coordinate = target_list[-1])
                 future.add_done_callback(callback = self.robotic_arm_action_once_done_callback)
         
@@ -129,34 +141,31 @@ class CameraController(Node):
                     center_x = int((x1 + x2) / 2)
                     center_y = int((y1 + y2) / 2)
                     center_z = self._camera_service.calculate_median_depth(depth_frame = aligned_depth_frame, 
-                                                                 center_x = center_x, 
-                                                                 center_y = center_y, 
-                                                                 window_size = 5)
+                                                                           center_x = center_x, 
+                                                                           center_y = center_y, 
+                                                                           window_size = 5)
                     crosshair_x = center_x
-                    crosshair_y = int(y1)
+                    crosshair_y = int(y1) - int((y1 - y2) / 8)
                     crosshair_z = self._camera_service.calculate_median_depth(depth_frame = aligned_depth_frame, 
                                                                     center_x = center_x, 
                                                                     center_y = int(y1), 
                                                                     window_size = 5)
                     label = f'{name} {conf:.2f}'
-                    size = 5
-                    thickness = 2
+                    dot_size = 5
                     cv2.rectangle(source_image, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
-                    cv2.circle(source_image, (center_x, center_y), size, (0, 0, 255), -1)
-                    # cv2.circle(source_image, (crosshair_x, crosshair_y), size, (0, 0, 255), -1)
-                    cv2.line(source_image, (crosshair_x - size, crosshair_y), (crosshair_x + size, crosshair_y), (0, 0, 255), thickness)
-                    cv2.line(source_image, (crosshair_x, crosshair_y - size), (crosshair_x, crosshair_y + size), (0, 0, 255), thickness)
+                    cv2.circle(source_image, (center_x, center_y), dot_size, (0, 0, 255), -1)
+                    cv2.line(source_image, (crosshair_x - dot_size, crosshair_y), (crosshair_x + dot_size, crosshair_y), (0, 0, 255), 2)
+                    cv2.line(source_image, (crosshair_x, crosshair_y - dot_size), (crosshair_x, crosshair_y + dot_size), (0, 0, 255), 2)
                     cv2.putText(source_image, label, (int(x1), int(y1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-                    if crosshair_z > 0:
-                        target = self._camera_service.calculate_3d_camera_coordinate(depth_frame = aligned_depth_frame, 
-                                                                               center_x = crosshair_x, 
-                                                                               center_y = crosshair_y, 
-                                                                               depth_intrin = camera_intrinsics)
-
-
-                    cv2.putText(source_image, f'Xc:{target[0]:.2f} Yc:{target[1]:.2f} Zc:{target[2]:.2f}', (int(x1), int(y1) + 20), cv2.FONT_HERSHEY_SIMPLEX, 5, (255, 0, 0), 2)
-                    target_list.append(target)
+                    target = self._camera_service.calculate_3d_camera_coordinate(depth_frame = aligned_depth_frame, 
+                                                                                 center_x = crosshair_x, 
+                                                                                 center_y = crosshair_y, 
+                                                                                 depth_intrin = camera_intrinsics)
+                    cv2.putText(source_image, f'Xc:{target[0]:.2f} Yc:{target[1]:.2f} Zc:{target[2]:.2f}', (int(x1), int(y1) + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                    
+                    if ((-100 < target[0] and target[0] < 100) and (-50 < target[1] and target[1] < 50) and (0 < target[2] and target[2] < 1000)):
+                        
+                        target_list.append(target)
 
         return target_list
 

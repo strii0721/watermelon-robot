@@ -21,7 +21,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from rclpy.qos import qos_profile_sensor_data
-from cv_bridge import CvBridge, CvBridgeError
+from cv_bridge import CvBridge
 import cv2
 
 class Monitor(Node):
@@ -38,9 +38,9 @@ class Monitor(Node):
                                                                  callback = self.video_from_topic)
         
     def video_from_topic(self, 
-                         msg):
+                         message):
         
-        cv_image = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        cv_image = self.cv_bridge.imgmsg_to_cv2(message, desired_encoding='bgr8')
         cv2.imshow('Cut Watermelon Task - Camera View', cv_image)
         cv2.waitKey(1)
 
