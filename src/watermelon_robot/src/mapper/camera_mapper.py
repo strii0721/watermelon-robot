@@ -25,24 +25,24 @@ class CameraMapper:
     def __init__(self):
 
         self._pipeline = rs.pipeline()  # type: ignore
-        self._rs_config = rs.config() # type: ignore
-        self._rs_config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30) # type: ignore
-        self._rs_config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30) # type: ignore
-        self._pipeline.start(self._rs_config)
-        self._align = rs.align(rs.stream.color) # type: ignore
+        self._pipeline_config = rs.config() # type: ignore
+        self._pipeline_config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30) # type: ignore
+        self._pipeline_config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30) # type: ignore
+        self._pipeline.start(self._pipeline_config)
+        self._align_method = rs.align(rs.stream.color) # type: ignore
 
-    def get_frames(self) -> tuple:
+    def retrieve_frames(self) -> tuple:
 
         frames = self._pipeline.wait_for_frames()
-        aligned_frames = self._align.process(frames)
-        aligned_depth_frame = aligned_frames.get_depth_frame()
+        aligned_frames = self._align_method.process(frames)
         aligned_color_frame = aligned_frames.get_color_frame()
-        image_color = np.asanyarray(aligned_color_frame.get_data())
-        image_depth = np.asanyarray(aligned_depth_frame.get_data())
+        aligned_depth_frame = aligned_frames.get_depth_frame()
+        aligned_color_frame_array = np.asanyarray(aligned_color_frame.get_data())
+        aligned_depth_frame_array = np.asanyarray(aligned_depth_frame.get_data())
         camera_intrinsics = aligned_depth_frame.profile.as_video_stream_profile().intrinsics
 
-        return (image_color, image_depth, aligned_depth_frame, aligned_color_frame, camera_intrinsics)
+        return (aligned_color_frame_array, aligned_depth_frame_array, aligned_depth_frame, aligned_color_frame, camera_intrinsics)
     
     def stop(self):
 
-        self.pipeline.stop() # type: ignore
+        self._pipeline.stop() # type: ignore

@@ -1,5 +1,7 @@
+float64 timestamp
 float64[3] camera_position
 
 ---
 
+float64 timestamp
 int64 state_code

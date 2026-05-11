@@ -5,8 +5,8 @@ video:
 model: 
   name: "yolov26-best.pt"
   use_half: False
-  conf: 0.25
-  iou: 0.45
+  confidence: 0.25
+  intersection_over_unio: 0.45
   device: "0"
 
 robotic_arm: 

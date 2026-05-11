@@ -28,10 +28,10 @@ class CommonUtils:
 
     @classmethod
     def get_config(cls, 
-                   config_name: str = "default"): 
+                   config_profile: str = "default"): 
         
         package_share_dir = get_package_share_directory('watermelon_robot')
-        config_dir = os.path.join(package_share_dir, "config", f"{config_name}.yaml")
+        config_dir = os.path.join(package_share_dir, "config", f"{config_profile}.yaml")
         with open(config_dir, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
         config = json.loads(json.dumps(config), object_hook=lambda d: SimpleNamespace(**d))
