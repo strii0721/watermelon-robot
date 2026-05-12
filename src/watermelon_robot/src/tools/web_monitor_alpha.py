@@ -29,11 +29,12 @@ import time
 import threading
 from utils import config
 
-class WebMonitor(Node):
+class WebMonitorAlpha(Node):
 
     def __init__(self): 
 
-        super().__init__('monitor')
+        super().__init__("web_monitor_alpha")
+        self.get_logger().info(f"网络监视器（目标检测摄像机）已上线，正在初始化...")
 
         self.cv_bridge = CvBridge()
         self.sub_camera_current_frame = self.create_subscription(msg_type = Image, 
@@ -48,7 +49,7 @@ class WebMonitor(Node):
         self.flask_thread = threading.Thread(target=self.flask_server_start, daemon=True)
         self.flask_thread.start()
         
-        self.get_logger().info('Web 服务器已启动...')
+        self.get_logger().info(f"网络监视器（目标检测摄像机）初始化完成...")
 
     def render(self, message): 
 
@@ -99,7 +100,7 @@ class WebMonitor(Node):
 def main():
 
     rclpy.init()
-    web_monitor = WebMonitor()
+    web_monitor = WebMonitorAlpha()
     rclpy.spin(web_monitor)
     web_monitor.destroy_node()
     rclpy.shutdown()

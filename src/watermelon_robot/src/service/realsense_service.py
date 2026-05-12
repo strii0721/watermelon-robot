@@ -17,17 +17,17 @@
 #
 
 
-from mapper.camera_mapper import CameraMapper
+from mapper import RealsenseMapper
 import numpy as np
 import pyrealsense2 as rs
 import cv2
 from utils import config
 
-class CameraService: 
+class RealsenseService: 
 
     def __init__(self) -> None:
         
-        self._camera_mapper = CameraMapper()
+        self._camera_mapper = RealsenseMapper()
 
 
     def read_current_frame(self) -> tuple | None: 

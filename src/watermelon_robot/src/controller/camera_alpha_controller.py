@@ -23,7 +23,7 @@ from watermelon_robot_interface.srv import IRoboticArmAction
 from typing import cast
 from sensor_msgs.msg import Image
 from rclpy.qos import qos_profile_sensor_data
-from service.camera_service import CameraService
+from service import RealsenseService
 from utils.model_utils import ModelUtils
 import cv2
 from cv_bridge import CvBridge
@@ -31,13 +31,14 @@ import time
 from utils import config
 
 
-class CameraController(Node):
+class CameraAlphaController(Node):
 
     def __init__(self):
 
-        super().__init__('camera_controller')
+        super().__init__("camera_alpha_controller")
+        self.get_logger().info(f"目标检测摄像机已上线，正在初始化...")
 
-        self._camera_service = CameraService()
+        self._camera_service = RealsenseService()
         self.cv_bridge = CvBridge()
         self._last_frame_time = time.time()
         self._target_lock = False
@@ -57,17 +58,9 @@ class CameraController(Node):
         self._fa_on = ModelUtils.check_flash_attention()
         self._model = ModelUtils.load_model(device = self._device, 
                                             use_half = self._use_half)
-
-
-    def get_model(self): 
-
-        return self._model
+        
+        self.get_logger().info(f"目标检测摄像机初始化完成...")
     
-    def get_device(self):
-
-        return self._device
-    
-
 
     def robotic_arm_action_once(self, 
                                 camera_coordinate: tuple):
@@ -102,11 +95,11 @@ class CameraController(Node):
         
         color_frame_array, depth_frame_array,color_frame, depth_frame, camera_intrinsics = rtn
 
-        if not (color_frame and depth_frame_array and color_frame and depth_frame): 
+        if not (color_frame and depth_frame): 
             return
         
-        target_list = self._camera_service.analysis_frame(model = self.get_model, 
-                                                          device = self.get_device, 
+        target_list = self._camera_service.analysis_frame(model = self._model, 
+                                                          device = self._device, 
                                                           color_frame_array = color_frame_array, 
                                                           depth_frame = depth_frame, 
                                                           camera_intrinsics = camera_intrinsics)
@@ -140,7 +133,7 @@ class CameraController(Node):
 def main():
 
     rclpy.init()
-    camera_controller = CameraController()
+    camera_controller = CameraAlphaController()
     rclpy.spin(camera_controller)
     camera_controller.destroy_node()
     rclpy.shutdown()

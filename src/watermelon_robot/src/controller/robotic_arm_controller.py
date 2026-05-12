@@ -19,7 +19,7 @@
 
 import rclpy
 from rclpy.node import Node
-from service.robotic_arm_service import RoboticArmService
+from service import RoboticArmService
 from watermelon_robot_interface.srv import IRoboticArmAction
 import time
 from utils import config
@@ -29,6 +29,7 @@ class RoboticArmController(Node):
     def __init__(self):
         
         super().__init__('robotic_arm_controller')
+        self.get_logger().info(f"机械臂已上线，正在初始化...")
 
         self._robotic_arm_service = RoboticArmService(speed_rate = config.robotic_arm.speed_rate)
         state_code = self._robotic_arm_service.stand_by()
@@ -40,6 +41,7 @@ class RoboticArmController(Node):
         self.srv_robotic_arm_action_once = self.create_service(srv_type = IRoboticArmAction, 
                                                           srv_name = "s/robotic_arm/action_once", 
                                                           callback = self.robotic_arm_action_once)
+        self.get_logger().info(f"机械臂初始化完成...")
         
         
     def robotic_arm_action_once(self, 

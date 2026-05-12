@@ -25,11 +25,12 @@ from cv_bridge import CvBridge
 import cv2
 from utils import config
 
-class Monitor(Node):
+class MonitorAlpha(Node):
 
     def __init__(self): 
         
-        super().__init__('monitor')
+        super().__init__("monitor_alpha")
+        self.get_logger().info(f"终端监视器（目标检测摄像机）已上线，正在初始化...")
         
         self.cv_bridge = CvBridge()
 
@@ -38,11 +39,13 @@ class Monitor(Node):
                                                                  qos_profile = qos_profile_sensor_data, 
                                                                  callback = self.render)
         
+        self.get_logger().info(f"终端监视器（目标检测摄像机）初始化完成...")
+        
     def render(self, 
                message):
         
         cv_image = self.cv_bridge.imgmsg_to_cv2(message, desired_encoding='bgr8')
-        cv2.imshow('Cut Watermelon Task - Camera View', cv_image)
+        cv2.imshow("目标检测摄像机实时画面", cv_image)
         interval = int((1/config.video.render_fps) * 1000)
         cv2.waitKey(interval)
 
@@ -50,7 +53,7 @@ class Monitor(Node):
 def main():
 
     rclpy.init()
-    monitor = Monitor()
+    monitor = MonitorAlpha()
     rclpy.spin(monitor)
     monitor.destroy_node()
     rclpy.shutdown()

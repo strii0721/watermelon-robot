@@ -20,7 +20,7 @@
 import pyrealsense2 as rs
 import numpy as np
 
-class CameraMapper: 
+class RealsenseMapper: 
 
     def __init__(self):
 

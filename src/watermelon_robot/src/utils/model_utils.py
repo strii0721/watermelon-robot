@@ -1,5 +1,4 @@
 #type: ignore
-import argparse
 from contextlib import suppress
 import torch
 from ament_index_python.packages import get_package_share_directory
@@ -7,8 +6,7 @@ from ament_index_python.packages import get_package_share_directory
 # sys.path.append("/home/wheeltec/fr_ws/fr_python/yolov13")
 from ultralytics import YOLO
 import os
-import config.default as config
-import yaml
+from utils import config
 
 package_share_dir = get_package_share_directory('watermelon_robot')
 
@@ -40,7 +38,7 @@ class ModelUtils:
                    device: torch.device, 
                    use_half: bool):
         
-        weights = os.path.join(package_share_dir, "model_weights", name)
+        weights = os.path.join(package_share_dir, "model_weights", config.model.name)
         model = YOLO(weights)
         model.overrides["imgsz"] = 640
         model.overrides["conf"] = config.model.confidence

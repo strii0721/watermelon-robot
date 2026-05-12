@@ -5,7 +5,7 @@ video:
 model: 
   name: "yolov26-best.pt"
   use_half: False
-  confidence: 0.25
+  confidence: 0.90
   intersection_over_unio: 0.45
   device: "0"
 

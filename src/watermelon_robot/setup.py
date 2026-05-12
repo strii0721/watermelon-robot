@@ -37,9 +37,9 @@ setup(
     entry_points={
         'console_scripts': [
             "robotic_arm_controller = controller.robotic_arm_controller:main", 
-            "camera_controller = controller.camera_controller:main",
-            "monitor = tools.monitor:main",
-            "web_monitor = tools.web_monitor:main"
+            "camera_alpha_controller = controller.camera_alpha_controller:main",
+            "monitor_alpha = tools.monitor_alpha:main",
+            "web_monitor_alpha = tools.web_monitor_alpha:main"
         ],
     },
 )
