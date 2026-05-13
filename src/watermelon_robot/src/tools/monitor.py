@@ -35,10 +35,13 @@ class Monitor(Node):
 
         super().__init__("Monitor")
         CommonUtils.node_initializer(self)
-        self._render_interval = int((1/self.fps) * 1000)
-        self._cv_bridge = CvBridge()
-        self._sub_camera_current_frame = self.create_subscription(msg_type = Image, 
-                                                                  topic = self.input_stream_topic,
+
+        self.render_interval = int((1/self.fps) * 1000)
+        self.cv_bridge = CvBridge()
+        self.latest_frame = None
+        
+        self.sub_camera_current_frame = self.create_subscription(msg_type = Image, 
+                                                                  topic = self.input_0,
                                                                   qos_profile = qos_profile_sensor_data, 
                                                                   callback = self.render)
         flag = False
@@ -52,27 +55,31 @@ class Monitor(Node):
             self.app.add_url_rule('/video_feed', 'video_feed', self.video_feed)
             self.flask_thread = threading.Thread(target=self.flask_server_start, daemon=True)
             self.flask_thread.start()
-            self.get_logger().info(f"监视器 {self.get_name()} 初始化完成 | 运行模式：网络推流 | 访问链接：http://{self.livestream_host}:{self.livestream_port}")
+            CommonUtils.node_initialized(self)
+            self.get_logger().info(f"{self.get_name()} 运行模式：网络推流 | 访问链接：http://{self.livestream_host}:{self.livestream_port}")
         else: 
-            self.get_logger().info(f"监视器 {self.get_name()} 初始化完成 | 运行模式：终端")
+            CommonUtils.node_initialized(self)
+            self.get_logger().info(f"{self.get_name()} 运行模式：终端")
+
 
     def render(self, message): 
         
+        self.latest_frame = self.cv_bridge.imgmsg_to_cv2(message, desired_encoding='bgr8')
         flag = False
         if hasattr(self, "is_livestream"):
             if self.is_livestream:
                 flag = True
         if flag:
-            self.latest_frame = self._cv_bridge.imgmsg_to_cv2(message, desired_encoding='bgr8')
-            cv2.waitKey(self._render_interval)
+            cv2.waitKey(self.render_interval)
         else:
-            cv_image = self._cv_bridge.imgmsg_to_cv2(message, desired_encoding='bgr8')
-            cv2.imshow(f"{self.get_name()}", cv_image)
-            cv2.waitKey(self._render_interval)
+            cv2.imshow(f"{self.get_name()}", self.latest_frame)
+            cv2.waitKey(self.render_interval)
+
 
     def flask_server_start(self):
 
         self.app.run(host=self.livestream_host, port=self.livestream_port, threaded=True, use_reloader=False)
+
 
     def generate_frames(self):
 
@@ -88,10 +95,10 @@ class Monitor(Node):
                     
             time.sleep(1/self.fps)
 
+
     def video_feed(self):
 
         return Response(self.generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
 
 
     def index(self):
@@ -109,9 +116,9 @@ class Monitor(Node):
 def main():
 
     rclpy.init()
-    web_monitor = Monitor()
-    rclpy.spin(web_monitor)
-    web_monitor.destroy_node()
+    monitor = Monitor()
+    rclpy.spin(monitor)
+    monitor.destroy_node()
     rclpy.shutdown()
     
 

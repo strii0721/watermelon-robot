@@ -21,6 +21,7 @@ import cv2
 from mapper import RealsenseMapper
 import time
 import os
+import numpy as np
 
 def main():
 
@@ -31,7 +32,8 @@ def main():
 
     while True:
 
-        color_frame_array, depth_frame_array, color_frame, depth_frame, camera_intrinsics = camera_mapper.retrieve_frames()
+        color_frame, depth_frame, intrinsics = camera_mapper.retrieve_frames()
+        color_frame_array = np.asanyarray(color_frame.get_data())
         cv2.imshow("RealSense", color_frame_array)
         cv2.waitKey(int(INTERVAL * 1000))
 

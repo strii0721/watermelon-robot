@@ -46,6 +46,7 @@ class CommonUtils:
     @classmethod
     def node_initializer(cls, 
                          node_entity: Node) -> None:
+        
         node_name = node_entity.get_name()
         node_entity.get_logger().info(f"{node_name} 已上线，正在初始化...")
         from utils import config
@@ -53,3 +54,10 @@ class CommonUtils:
         attribute_dictionary = vars(node_config)
         for attribute_name in attribute_dictionary.keys():
             setattr(node_entity, attribute_name, getattr(node_config, attribute_name))
+
+    @classmethod
+    def node_initialized(cls, 
+                         node_entity: Node) -> None:
+        
+        node_name = node_entity.get_name()
+        node_entity.get_logger().info(f"{node_name} 初始化完成...")

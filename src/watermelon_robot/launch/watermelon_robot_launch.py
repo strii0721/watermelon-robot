@@ -3,28 +3,36 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     
-    priestess_eys_0 = Node(
+    MONITOR_0 = Node(
         package='watermelon_robot',
-        name = "PRIESTESS_EYES_0",
         executable='monitor',
+        name = "MONITOR_0",
         output='screen',
     )
 
-    camera_alpha_controller = Node(
+    PRIESTESS_EYES_0 = Node(
         package='watermelon_robot',
-        executable='camera_alpha_controller',
+        executable='realsense_controller',
+        name = "PRIESTESS_EYES_0",
         output='screen'
     )
 
     robotic_arm_controller = Node(
         package='watermelon_robot',
         executable='robotic_arm_controller',
+        name = "watermelon_robot",
         output='screen'
+    )
+
+    PRTS = Node(
+        package = "watermelon_robot", 
+        executable = "centre_controller", 
+        name = "PRTS", 
+        output = "screen"
     )
     
     return LaunchDescription([
-        # monitor_alpha,
-        camera_alpha_controller,
-        # robotic_arm_controller,
-        priestess_eys_0
+        PRIESTESS_EYES_0,
+        MONITOR_0, 
+        PRTS
     ])
