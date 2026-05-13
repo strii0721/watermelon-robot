@@ -15,3 +15,11 @@ lane_detection:
   roi: 
     y_min: 0.5
     y_max: 0.7
+
+_node_initializer:
+  PRIESTESS_EYES_0:
+    input_stream_topic: "t/camera/current_frame"
+    fps: 30
+    is_livestream: True
+    livestream_host: "localhost"
+    livestream_port: 8080

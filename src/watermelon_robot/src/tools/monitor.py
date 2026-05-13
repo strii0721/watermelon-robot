@@ -27,44 +27,43 @@ from cv_bridge import CvBridge
 import cv2
 import time
 import threading
-from utils import config
 from utils import CommonUtils
 
 class Monitor(Node):
 
     def __init__(self): 
 
-        _launch_arguments = CommonUtils.get_launch_arguments()
-        self._stream_topic = _launch_arguments.stream_topic # type: ignore
-        self._fps = _launch_arguments.fps # type: ignore
-        self._is_livestream = True if hasattr(_launch_arguments, "is_livestream") else False
-        self._livestream_host = _launch_arguments.livestream_host # type: ignore
-        self._livestream_port =_launch_arguments.livestream_port # type: ignore
-
         super().__init__("Monitor")
-        self.get_logger().info(f"监视器 {self.get_name()} 已上线，正在初始化...")
-        self._render_interval = int((1/self._fps) * 1000)
+        CommonUtils.node_initializer(self)
+        self._render_interval = int((1/self.fps) * 1000)
         self._cv_bridge = CvBridge()
         self._sub_camera_current_frame = self.create_subscription(msg_type = Image, 
-                                                                  topic = self._stream_topic,
+                                                                  topic = self.input_stream_topic,
                                                                   qos_profile = qos_profile_sensor_data, 
                                                                   callback = self.render)
-        if self._is_livestream:
+        flag = False
+        if hasattr(self, "is_livestream"):
+            if self.is_livestream:
+                flag = True
+        if flag:
             self.app = Flask(__name__)
-            self._lastest_frame = None
+            self.lastest_frame = None
             self.app.add_url_rule('/', 'index', self.index)
             self.app.add_url_rule('/video_feed', 'video_feed', self.video_feed)
-            self._latest_frame = None
             self.flask_thread = threading.Thread(target=self.flask_server_start, daemon=True)
             self.flask_thread.start()
-            self.get_logger().info(f"监视器 {self.get_name()} 初始化完成 | 运行模式：网络推流 | 访问链接：http://{self._livestream_host}:{self._livestream_port}")
+            self.get_logger().info(f"监视器 {self.get_name()} 初始化完成 | 运行模式：网络推流 | 访问链接：http://{self.livestream_host}:{self.livestream_port}")
         else: 
             self.get_logger().info(f"监视器 {self.get_name()} 初始化完成 | 运行模式：终端")
 
     def render(self, message): 
-
-        if self._is_livestream:
-            self._latest_frame = self._cv_bridge.imgmsg_to_cv2(message, desired_encoding='bgr8')
+        
+        flag = False
+        if hasattr(self, "is_livestream"):
+            if self.is_livestream:
+                flag = True
+        if flag:
+            self.latest_frame = self._cv_bridge.imgmsg_to_cv2(message, desired_encoding='bgr8')
             cv2.waitKey(self._render_interval)
         else:
             cv_image = self._cv_bridge.imgmsg_to_cv2(message, desired_encoding='bgr8')
@@ -73,21 +72,21 @@ class Monitor(Node):
 
     def flask_server_start(self):
 
-        self.app.run(host=self._livestream_host, port=self._livestream_port, threaded=True, use_reloader=False)
+        self.app.run(host=self.livestream_host, port=self.livestream_port, threaded=True, use_reloader=False)
 
     def generate_frames(self):
 
         while True:
 
-            if self._latest_frame is not None:
+            if self.latest_frame is not None:
     
-                rtn, buffer = cv2.imencode('.jpg', self._latest_frame)
+                rtn, buffer = cv2.imencode('.jpg', self.latest_frame)
                 if rtn:
                     frame_bytes = buffer.tobytes()
                     yield (b'--frame\r\n'
                            b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
                     
-            time.sleep(1/self._fps)
+            time.sleep(1/self.fps)
 
     def video_feed(self):
 
@@ -96,10 +95,10 @@ class Monitor(Node):
 
 
     def index(self):
-        html = """
+        html = f"""
         <html>
             <body style="text-align: center;">
-                <h1>ROS 2 Robot Camera Stream</h1>
+                <h2>监视器 {self.get_name()} 实时画面</h2>
                 <img src="/video_feed" style="border: 2px solid black; max-width: 100%;">
             </body>
         </html>

@@ -31,7 +31,7 @@ import time
 from utils import config
 
 
-class CameraAlphaController(Node):
+class RealsenseController(Node):
 
     def __init__(self):
 
@@ -133,7 +133,7 @@ class CameraAlphaController(Node):
 def main():
 
     rclpy.init()
-    camera_controller = CameraAlphaController()
+    camera_controller = RealsenseController()
     rclpy.spin(camera_controller)
     camera_controller.destroy_node()
     rclpy.shutdown()

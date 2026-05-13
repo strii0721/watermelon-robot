@@ -3,18 +3,11 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     
-    priestess_eys = Node(
+    priestess_eys_0 = Node(
         package='watermelon_robot',
-        name = "PRIESTESS_EYES",
+        name = "PRIESTESS_EYES_0",
         executable='monitor',
         output='screen',
-        arguments= [
-            "--stream_topic", "t/camera/current_frame",
-            "--fps", "30",
-            "--is_livestream",
-            "--livestream_host", "localhost",
-            "--livestream_port", "8080"
-        ]
     )
 
     camera_alpha_controller = Node(
@@ -33,5 +26,5 @@ def generate_launch_description():
         # monitor_alpha,
         camera_alpha_controller,
         # robotic_arm_controller,
-        priestess_eys
+        priestess_eys_0
     ])

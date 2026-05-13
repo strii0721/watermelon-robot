@@ -37,7 +37,7 @@ setup(
     entry_points={
         'console_scripts': [
             "robotic_arm_controller = controller.robotic_arm_controller:main", 
-            "camera_alpha_controller = controller.camera_alpha_controller:main",
+            "realsense_controller = controller.realsense_controller:main",
             "monitor = tools.monitor:main",
         ],
     },
