@@ -36,14 +36,14 @@ class CentreController(Node):
 
     def __init__(self):
 
-        super().__init__("CenterController")
+        super().__init__("center_controller")
         CommonUtils.node_initializer(self)
 
         self.target_lock = False
         self._device, self._use_half = ModelUtils.setup_device()
         self._fa_on = ModelUtils.check_flash_attention()
         self.cv_bridge = CvBridge()
-        self.last_frame_time = time.time()
+        self.gpr_0 = time.time()        # 用于 self.detect_target() 的帧率统计
 
         self._model = ModelUtils.load_model(device = self._device, 
                                             use_half = self._use_half)
@@ -108,19 +108,12 @@ class CentreController(Node):
         
 
         now = time.time()
-        fps = 1.0 / (now - self.refresh_last_frame_time(now_time = now))
+        fps = 1.0 / (now - self.gpr_0)
+        self.gpr_0 = now
         cv2.putText(color_image, f'FPS: {fps:.2f}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
 
         image_message = self.cv_bridge.cv2_to_imgmsg(color_image, encoding="bgr8")
         self.eye_on_hand_boxed.publish(msg = image_message)
-
-    def refresh_last_frame_time(self, 
-                                now_time: float) -> float:
-        
-        tmp = self.last_frame_time
-        self.last_frame_time = now_time
-
-        return tmp
     
     def robotic_arm_action_once(self, 
                                 camera_coordinate: tuple):

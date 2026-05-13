@@ -23,25 +23,35 @@ from service import RoboticArmService
 from watermelon_robot_interface.srv import IRoboticArmAction
 import time
 from utils import config
+from utils import CommonUtils
+import numpy as np
+
 
 class RoboticArmController(Node):
 
     def __init__(self):
         
         super().__init__('robotic_arm_controller')
-        self.get_logger().info(f"机械臂已上线，正在初始化...")
+        CommonUtils.node_initializer(self)
 
-        self._robotic_arm_service = RoboticArmService(speed_rate = config.robotic_arm.speed_rate)
-        state_code = self._robotic_arm_service.stand_by()
+        # 此处可快速更换机械臂构型（当然是在配置文件里）
+        robotic_arm = config.robotic_arm
+
+        self.robotic_arm_service = RoboticArmService(ip = robotic_arm.ip, 
+                                                     tool_standby_sextuplet = tuple(robotic_arm.tool_standby_sextuple), 
+                                                     camera_pose_matix = np.array(robotic_arm.camera_pose_matix),
+                                                     speed_rate = robotic_arm.speed_rate)
+        
+        state_code = self.robotic_arm_service.stand_by()
         if state_code == 0 :
             self.get_logger().info("机械臂已复位...")
         else:
             self.get_logger().warn(f"机械臂复位失败，状态码{state_code}")
 
         self.srv_robotic_arm_action_once = self.create_service(srv_type = IRoboticArmAction, 
-                                                          srv_name = "s/robotic_arm/action_once", 
-                                                          callback = self.robotic_arm_action_once)
-        self.get_logger().info(f"机械臂初始化完成...")
+                                                               srv_name = self.duplex_0, 
+                                                               callback = self.robotic_arm_action_once)
+        CommonUtils.node_initialized(self)
         
         
     def robotic_arm_action_once(self, 
@@ -49,12 +59,12 @@ class RoboticArmController(Node):
                                 response: IRoboticArmAction.Response) -> IRoboticArmAction.Response:
         
         position = tuple(request.camera_position)
-        state_code = self._robotic_arm_service.move_to_position(position = position, 
+        state_code = self.robotic_arm_service.move_to_position(position = position, 
                                                                 is_world_position = False)
         
         if state_code != 0 : 
             response.state_code = state_code
-            self._robotic_arm_service.stand_by()
+            self.robotic_arm_service.stand_by()
             return response
         
         # 剩余机械臂业务代码
@@ -62,11 +72,10 @@ class RoboticArmController(Node):
         time.sleep(2)
 
         
-        self._robotic_arm_service.stand_by()
+        self.robotic_arm_service.stand_by()
         response.state_code = state_code
 
         return response
-    
     
         
 def main():
@@ -76,6 +85,7 @@ def main():
     rclpy.spin(robotic_arm_controller)
     robotic_arm_controller.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()        

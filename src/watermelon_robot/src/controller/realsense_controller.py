@@ -30,7 +30,7 @@ class RealsenseController(Node):
 
     def __init__(self):
 
-        super().__init__("RealsenseController")
+        super().__init__("realsense_controller")
         CommonUtils.node_initializer(self)
 
         self.realsense_service = RealsenseService()
@@ -65,7 +65,6 @@ class RealsenseController(Node):
 
         color_msg = self.cv_bridge.cv2_to_imgmsg(color_frame, encoding = "bgr8")
         depth_msg = self.cv_bridge.cv2_to_imgmsg(depth_frame, encoding = "16UC1")
-        # intrinsics_msg = self.realsense_service.convert_intrinsics2camera_info(rs_intrinsics = camera_intrinsics)
         intrinsics_msg = camera_intrinsics
 
         timestamp = self.get_clock().now().to_msg()

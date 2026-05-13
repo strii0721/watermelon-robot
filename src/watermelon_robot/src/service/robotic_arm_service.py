@@ -23,20 +23,16 @@ from mapper import RoboticArmMapper
 class RoboticArmService:
 
     def __init__(self, 
-                 ip: str = "192.168.58.2", 
-                 tool_numero: int = 0,
-                 user_numero: int = 0, 
-                 speed_rate: int = 30, 
-                 tool_stand_by_position: tuple = (-300, -102, 450), 
-                 tool_working_orientation: tuple = (90, 0, -90), 
-                 camera_pose_matix: np.ndarray = np.array([[-1, 0, 0, 25], 
-                                                           [0, -1, 0, 60], 
-                                                           [0, 0, 1, 10], 
-                                                           [0, 0, 0, 1]])):
+                 ip: str,
+                 tool_standby_sextuplet: tuple,
+                 camera_pose_matix: np.ndarray, 
+                 speed_rate):
         
+        tool_stand_by_position = tool_standby_sextuplet[:3]
+        tool_working_orientation = tool_standby_sextuplet[3:]
         self._robotic_arm_mapper = RoboticArmMapper(ip = ip, 
-                                                    tool_numero = tool_numero, 
-                                                    user_numero = user_numero, 
+                                                    tool_numero = 0, 
+                                                    user_numero = 0, 
                                                     speed_rate = speed_rate, 
                                                     tool_stand_by_position = tool_stand_by_position, 
                                                     tool_working_orientation = tool_working_orientation, 

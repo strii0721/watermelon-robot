@@ -33,7 +33,7 @@ class Monitor(Node):
 
     def __init__(self): 
 
-        super().__init__("Monitor")
+        super().__init__("monitor")
         CommonUtils.node_initializer(self)
 
         self.render_interval = int((1/self.fps) * 1000)

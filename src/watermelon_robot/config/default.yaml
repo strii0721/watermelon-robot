@@ -1,3 +1,5 @@
+########################################### 以下是通用配置 ##########################################
+# 目标检测模型相关
 model: 
   name: "yolov26-best.pt"
   use_half: False
@@ -5,16 +7,25 @@ model:
   iou: 0.45
   device: "0"
 
+# -------------------------------------------------------
 
+# 机械臂配置相关
 robotic_arm: 
+  ip: "192.168.58.2"
   speed_rate: 70
+  standby_sextuplet: [-300, -102, 450, 90, 0, -90]
+  camera_pose_matix: [[-1, 0, 0, 25],
+                      [0, -1, 0, 60],
+                      [0, 0, 1, 10],
+                      [0, 0, 0, 1]]
 
+# -------------------------------------------------------
 
+# 导航线检测相关
 lane_detection: 
   roi: 
     y_min: 0.5
     y_max: 0.7
-
 
 ######################################## 以下是节点初始化器配置 ########################################
 _node_initializer:
@@ -30,10 +41,10 @@ _node_initializer:
 
     # 通用配置块 ###################
     ###########
-    fps: 30
-    is_livestream: True
-    livestream_host: "localhost"
-    livestream_port: 8080
+    fps: 30                           # 监视器显示帧率
+    is_livestream: True               # 开启网页推流
+    livestream_host: "localhost"      # 推流主机名
+    livestream_port: 8080             # 推流端口号
 
 # -------------------------------------------------------
 
@@ -44,13 +55,13 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/videostream/eye_on_hand/color_raw"          # 输入：手眼相机彩色原始画面
-    input_1: "t/videostream/eye_on_hand/depth_raw"          # 输入：手眼相机深度原始画面
-    input_2: "t/universal/eye_on_hand/camera_intrinsics"    # 输入：手眼相机内参
-    input_3: "t/videostream/eye_on_wheel_raw"               # 输入：底盘相机原始画面
-    output_0: "t/videostream/eye_on_hand_boxed"             # 输出：手眼相机加框画面
-    output_1: "t/videostream/eye_on_wheel_predicted"        # 输出：底盘相机预测画面
-    duplex_0: "s/signal/action_once"                        # 输出：机械臂控制
+    input_0: "t/videostream/eye_on_hand/color_raw"            # 输入：手眼相机彩色原始画面
+    input_1: "t/videostream/eye_on_hand/depth_raw"            # 输入：手眼相机深度原始画面
+    input_2: "t/universal/eye_on_hand/camera_intrinsics"      # 输入：手眼相机内参
+    input_3: "t/videostream/eye_on_wheel/color_raw"           # 输入：底盘相机原始画面
+    output_0: "t/videostream/eye_on_hand_boxed"               # 输出：手眼相机加框画面
+    output_1: "t/videostream/eye_on_wheel/color_predicted"    # 输出：底盘相机预测画面
+    duplex_0: "s/signal/robotic_arm/action_once"              # 双工：机械臂控制
 
     # 通用配置块 ###################
     ###########
@@ -73,7 +84,7 @@ _node_initializer:
 
     # 通用配置块 ###################
     ###########
-    fps: 30
+    fps: 30           # 画面采集帧率
 
 # -------------------------------------------------------
   
@@ -84,7 +95,23 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    output_0: "t/videostream/eye_on_wheel_raw"          # 输出：底盘相机原始画面
+    output_0: "t/videostream/eye_on_wheel/color_raw"            # 输出：底盘相机原始画面
 
     # 通用配置块 ###################
     ###########
+
+# -------------------------------------------------------
+  
+  ##########
+  # 机械臂 #
+  ##########
+  ARM_0:
+
+    # 标准通信接口配置块 ###################
+    ##################
+    duplex_0: "s/signal/robotic_arm/action_once"               # 双工：机械臂控制
+
+    # 通用配置块 ###################
+    ###########
+
+# -------------------------------------------------------
