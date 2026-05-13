@@ -18,7 +18,7 @@
 
 
 from fairino import Robot
-from utils.kinematics import Kinematics
+from utils.kinematics_utils import KinematicsUtils
 import numpy as np
 from typing import cast
 
@@ -42,7 +42,7 @@ class RoboticArmMapper:
         self._tool_working_orientation = tool_working_orientation
 
         tool_pose = tool_stand_by_position + tool_working_orientation
-        self._w_T_tcp = Kinematics.calculate_pose_matrix_from_tuple(pose_tuple = tool_pose)
+        self._w_T_tcp = KinematicsUtils.calculate_pose_matrix_from_tuple(pose_tuple = tool_pose)
         self._tcp_T_c = camera_pose_matix
     
     def get_tool_numero(self) -> int:

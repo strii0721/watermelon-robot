@@ -81,12 +81,12 @@ class RealsenseService:
 
         return camera_coordinate_mm
     
-    def analysis_frame(self, 
-                       model, 
-                       device,
-                       color_frame_array, 
-                       depth_frame, 
-                       camera_intrinsics) -> list:
+    def predsict_targets(self, 
+                         model, 
+                         device,
+                         color_frame_array, 
+                         depth_frame, 
+                         camera_intrinsics) -> list:
 
         model = model
         device = device
@@ -94,7 +94,7 @@ class RealsenseService:
                             verbose = False, 
                             device = device, 
                             conf = config.model.confidence, 
-                            iou = config.model.intersection_over_unio)
+                            iou = config.model.iou)
         results = rtn[0]
         boxes = results.boxes
         target_list = []
@@ -143,3 +143,5 @@ class RealsenseService:
             return False
         
         return True
+    
+

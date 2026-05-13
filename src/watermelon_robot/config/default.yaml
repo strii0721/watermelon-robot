@@ -6,8 +6,13 @@ model:
   name: "yolov26-best.pt"
   use_half: False
   confidence: 0.90
-  intersection_over_unio: 0.45
+  iou: 0.45
   device: "0"
 
 robotic_arm: 
   speed_rate: 70
+
+lane_detection: 
+  roi: 
+    y_min: 0.5
+    y_max: 0.7

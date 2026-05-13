@@ -20,7 +20,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-class Kinematics:
+class KinematicsUtils:
 
     @classmethod
     def calculate_pose_matrix_from_tuple(cls, 

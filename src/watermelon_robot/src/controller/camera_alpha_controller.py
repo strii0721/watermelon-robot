@@ -98,7 +98,7 @@ class CameraAlphaController(Node):
         if not (color_frame and depth_frame): 
             return
         
-        target_list = self._camera_service.analysis_frame(model = self._model, 
+        target_list = self._camera_service.predsict_targets(model = self._model, 
                                                           device = self._device, 
                                                           color_frame_array = color_frame_array, 
                                                           depth_frame = depth_frame, 
