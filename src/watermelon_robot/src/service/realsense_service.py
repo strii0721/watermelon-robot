@@ -34,8 +34,8 @@ class RealsenseService:
 
         (color_frame_array, 
          depth_frame_array, 
-         depth_frame, 
          color_frame, 
+         depth_frame, 
          camera_intrinsics) = self._camera_mapper.retrieve_frames()
 
         if not color_frame or not depth_frame:

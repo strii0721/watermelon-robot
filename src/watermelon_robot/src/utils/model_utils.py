@@ -42,7 +42,7 @@ class ModelUtils:
         model = YOLO(weights)
         model.overrides["imgsz"] = 640
         model.overrides["conf"] = config.model.confidence
-        model.overrides["iou"] = config.model.intersection_over_unio
+        model.overrides["iou"] = config.model.iou
         model.to(device)
 
         if use_half:

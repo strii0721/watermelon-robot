@@ -3,10 +3,18 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     
-    monitor_alpha = Node(
+    priestess_eys = Node(
         package='watermelon_robot',
-        executable='monitor_alpha',
-        output='screen'
+        name = "PRIESTESS_EYES",
+        executable='monitor',
+        output='screen',
+        arguments= [
+            "--stream_topic", "t/camera/current_frame",
+            "--fps", "30",
+            "--is_livestream",
+            "--livestream_host", "localhost",
+            "--livestream_port", "8080"
+        ]
     )
 
     camera_alpha_controller = Node(
@@ -20,16 +28,10 @@ def generate_launch_description():
         executable='robotic_arm_controller',
         output='screen'
     )
-
-    web_monitor_alpha = Node(
-        package='watermelon_robot',
-        executable='web_monitor_alpha',
-        output='screen'
-    )
     
     return LaunchDescription([
         # monitor_alpha,
         camera_alpha_controller,
-        robotic_arm_controller,
-        web_monitor_alpha
+        # robotic_arm_controller,
+        priestess_eys
     ])

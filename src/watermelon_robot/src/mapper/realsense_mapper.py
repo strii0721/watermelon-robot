@@ -41,7 +41,7 @@ class RealsenseMapper:
         aligned_depth_frame_array = np.asanyarray(aligned_depth_frame.get_data())
         camera_intrinsics = aligned_depth_frame.profile.as_video_stream_profile().intrinsics
 
-        return (aligned_color_frame_array, aligned_depth_frame_array, aligned_depth_frame, aligned_color_frame, camera_intrinsics)
+        return (aligned_color_frame_array, aligned_depth_frame_array, aligned_color_frame, aligned_depth_frame, camera_intrinsics)
     
     def stop(self):
 

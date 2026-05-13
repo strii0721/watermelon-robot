@@ -22,6 +22,8 @@ from ament_index_python.packages import get_package_share_directory
 import os
 import json
 from types import SimpleNamespace
+import sys
+from rclpy.utilities import remove_ros_args
 
 
 class CommonUtils: 
@@ -33,7 +35,50 @@ class CommonUtils:
         package_share_dir = get_package_share_directory('watermelon_robot')
         config_dir = os.path.join(package_share_dir, "config", f"{config_profile}.yaml")
         with open(config_dir, 'r', encoding='utf-8') as f:
-            config = yaml.safe_load(f)
-        config = json.loads(json.dumps(config), object_hook=lambda d: SimpleNamespace(**d))
+            config_dictionary = yaml.safe_load(f)
+        config = json.loads(json.dumps(config_dictionary), object_hook=lambda d: SimpleNamespace(**d))
+        config._config_dictionary = config_dictionary
 
         return config
+    
+    @classmethod
+    def get_launch_arguments(cls, 
+                              source: str = "launch") -> None:
+        
+        match source:
+
+            case "launch":
+                user_args = remove_ros_args(args=sys.argv)[1:]
+                config_dictionary = {}
+                current_key = None
+                for arg in user_args:
+                    if arg.startswith('--') and len(arg) > 2 and arg[2].isalpha():
+                        current_key = arg[2:].replace('-', '_')
+                        config_dictionary[current_key] = []
+                    elif current_key is not None:
+                        val = arg
+                        try:
+                            val = int(arg)
+                        except ValueError:
+                            try:
+                                val = float(arg)
+                            except ValueError:
+                                pass
+                        config_dictionary[current_key].append(val)
+
+                for key, values in config_dictionary.items():
+                    if len(values) == 0:
+                        config_dictionary[key] = True
+                    elif len(values) == 1:
+                        config_dictionary[key] = values[0]
+                    else:
+                        config_dictionary[key] = values 
+                
+                launch_arguments = json.loads(json.dumps(config_dictionary), object_hook=lambda d: SimpleNamespace(**d))
+
+            case "config":
+                from utils import config
+                launch_arguments = config._launch_arguments
+        
+        return launch_arguments
+

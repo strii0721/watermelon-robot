@@ -32,23 +32,8 @@ def main():
     while True:
 
         color_frame_array, depth_frame_array, color_frame, depth_frame, camera_intrinsics = camera_mapper.retrieve_frames()
-        timestamp = int(time.time() * 1000)
-        depth_map_image_array = cv2.applyColorMap(cv2.convertScaleAbs(depth_frame_array, alpha=0.03), cv2.COLORMAP_JET)
-
-        image_folder = os.path.join("resource", SAVE_FOLDER)
-        if image_folder and not os.path.exists(image_folder):
-            os.makedirs(image_folder)
-        
-        color_image_path = os.path.join(image_folder, f"color", f"{timestamp}-color.png")
-        depth_image_path = os.path.join(image_folder, f"depth", f"{timestamp}-depth.png")
-        depth_map_image_path = os.path.join(image_folder, f"depth-map", f"{timestamp}-depth-map.png")
-        cv2.imwrite(color_image_path, color_frame_array)
-        cv2.imwrite(depth_image_path, depth_frame_array)
-        cv2.imwrite(depth_map_image_path, depth_map_image_array)
-        print(f"[{time.time():.4f}][INFO] 彩色图像保存至：{color_image_path}")
-        print(f"[{time.time():.4f}][INFO] 深度图像保存至：{depth_image_path}")
-        print(f"[{time.time():.4f}][INFO] 深度映射图像保存至：{depth_map_image_path}")
-        time.sleep(INTERVAL)
+        cv2.imshow("RealSense", color_frame_array)
+        cv2.waitKey(int(INTERVAL * 1000))
 
 if __name__ == "__main__":
     main()

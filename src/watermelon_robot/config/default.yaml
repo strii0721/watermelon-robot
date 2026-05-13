@@ -1,6 +1,5 @@
 video:
   capture_fps: 30
-  render_fps: 30
 
 model: 
   name: "yolov26-best.pt"
