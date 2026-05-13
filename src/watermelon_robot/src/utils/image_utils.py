@@ -19,9 +19,6 @@
 
 import numpy as np
 import cv2
-import numpy as np
-import cv2
-from utils import config
 from sensor_msgs.msg import CameraInfo
 
 class ImageUtils: 
@@ -76,14 +73,16 @@ class ImageUtils:
     
     
     @classmethod
-    def preprocess_frame(cls, 
-                         source_image: np.ndarray) -> list:
+    def lane_detection_preprocess(cls, 
+                                  source_image: np.ndarray, 
+                                  roi_y_min_portion: float, 
+                                  roi_y_max_portion: float) -> list:
         
         height = source_image.shape[0]
         width = source_image.shape[1]
 
-        roi_y_min = int(height * config.lane_detection.roi.y_min)
-        roi_y_max = int(height * config.lane_detection.roi.y_max)
+        roi_y_min = int(height * roi_y_min_portion)
+        roi_y_max = int(height * roi_y_max_portion)
 
         hsv = cv2.cvtColor(source_image, cv2.COLOR_BGR2HSV)
 
@@ -163,18 +162,17 @@ class ImageUtils:
     def predict_targets(cls, 
                         model, 
                         device,
-                        canvas, 
+                        color_image, 
                         depth_image, 
+                        confidence,
+                        iou,
                         camera_intrinsics) -> list:
 
-        model = model
-        device = device
-        color_image = canvas
         rtn = model.predict(source = color_image, 
                             verbose = False, 
                             device = device, 
-                            conf = config.model.confidence, 
-                            iou = config.model.iou)
+                            conf = confidence, 
+                            iou = model.iou)
         results = rtn[0]
         boxes = results.boxes
         target_list = []
@@ -253,3 +251,54 @@ class ImageUtils:
                          0.0, 0.0, 1.0, 0.0]
                   
         return camera_info
+
+    @classmethod
+    def predict_lane(cls, 
+                     canvas: np.ndarray, 
+                     binary: np.ndarray, 
+                     roi_y_min_portion: float, 
+                     roi_y_max_portion: float, 
+                     detect_step: int):
+        
+        height, width = binary.shape
+        roi_y_min = int(height * roi_y_min_portion)
+        roi_y_max = int(height * roi_y_max_portion)
+        step = detect_step
+
+        # 绘制当前航向参考点
+        reference_point = (int(width/2), roi_y_max)
+        cv2.circle(canvas, reference_point, 5, (255, 0, 0), -1)
+
+        center_points = []
+
+        for y in range(roi_y_max, roi_y_min, -step):
+
+            row = binary[y, :]
+
+            reference_pixels = np.where(row == 255)[0]
+
+            if len(reference_pixels) > 0:
+                center_x = int(np.mean(reference_pixels))
+                center_points.append((center_x, y))
+
+        if len(center_points) > 2:
+
+            # 绘制预测航向点
+            points_arr = np.array(center_points)
+            x = points_arr[:, 0]
+            y = points_arr[:, 1]
+            z = np.polyfit(y, x, 1)
+            line_function = np.poly1d(z)
+            y1 = roi_y_max
+            x1 = int(line_function(y1))
+            y2 = roi_y_min
+            x2 = int(line_function(y2))
+            navigate_point = (int((x1 + x2)/2), int((y1 + y2)/2))
+            mark_size = 5
+            cv2.line(canvas, (navigate_point[0] - mark_size, navigate_point[1]), (navigate_point[0] + mark_size, navigate_point[1]), (0, 0, 255), 2)
+            cv2.line(canvas, (navigate_point[0], navigate_point[1] - mark_size), (navigate_point[0], navigate_point[1] + mark_size), (0, 0, 255), 2)
+
+            # 绘制偏航参考线
+            arow_color = (0,0,255)
+            thickness = 1
+            cv2.arrowedLine(canvas, reference_point, navigate_point, arow_color, thickness, tipLength = 0.05)

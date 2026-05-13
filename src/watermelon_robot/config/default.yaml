@@ -24,57 +24,54 @@ robotic_arm:
 # 导航线检测相关
 lane_detection: 
   roi: 
-    y_min: 0.5
-    y_max: 0.7
+    y_min_portion: 0.5
+    y_max_portion: 0.9
+  detect_step: 5
+
 
 ######################################## 以下是节点初始化器配置 ########################################
 _node_initializer:
 
-  ##################
-  # 监视器：手眼相机 #
-  ##################
-  MONITOR_0:
+  ################
+  # 上逻辑控制器 #
+  ################
+  CELESTIAL_FULCRUM:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/videostream/eye_on_hand_boxed"             # 输入：手眼相机加框画面
+    input_0: "t/videostream/eye_on_hand/color_raw"                # 输入：手眼相机彩色原始画面
+    input_1: "t/videostream/eye_on_hand/depth_raw"                # 输入：手眼相机深度原始画面
+    input_2: "t/universal/eye_on_hand/camera_intrinsics"          # 输入：手眼相机内参
+    output_0: "t/videostream/eye_on_hand/boxed"                   # 输出：手眼相机目标框叠加层
+    duplex_0: "s/signal/robotic_arm/action_once"                  # 双工：机械臂控制
+    duplex_1: "s/signal/logic_controller/brake"                   # 双工：上/下逻辑控制器
 
     # 通用配置块 ###################
     ###########
-    fps: 30                           # 监视器显示帧率
-    is_livestream: True               # 开启网页推流
-    livestream_host: "localhost"      # 推流主机名
-    livestream_port: 8080             # 推流端口号
-
-# -------------------------------------------------------
-
-  ################
-  # 中央逻辑控制器 #
-  ################
-  PRTS:
-
-    # 标准通信接口配置块 ###################
-    ##################
-    input_0: "t/videostream/eye_on_hand/color_raw"            # 输入：手眼相机彩色原始画面
-    input_1: "t/videostream/eye_on_hand/depth_raw"            # 输入：手眼相机深度原始画面
-    input_2: "t/universal/eye_on_hand/camera_intrinsics"      # 输入：手眼相机内参
-    input_3: "t/videostream/eye_on_wheel/color_raw"           # 输入：底盘相机原始画面
-    output_0: "t/videostream/eye_on_hand_boxed"               # 输出：手眼相机加框画面
-    output_1: "t/videostream/eye_on_wheel/color_predicted"    # 输出：底盘相机预测画面
-    duplex_0: "s/signal/robotic_arm/action_once"              # 双工：机械臂控制
-
-    # 通用配置块 ###################
-    ###########
-    ats:               # 近似时间同步器
+    ats:               # 近似时序同步器
       queue_size: 10    # 缓存队列大小
       slop: 0.05        # 最大时间差（秒）
 
 # -------------------------------------------------------
+  
+  ##############
+  # 机械臂控制器 #
+  ##############
+  CAERULA_ARBOR:
 
-  ######################
-  # Realsense：手眼相机 #
-  ######################
-  PRIESTESS_EYES_0:
+    # 标准通信接口配置块 ###################
+    ##################
+    duplex_0: "s/signal/robotic_arm/action_once"               # 双工：机械臂控制
+
+    # 通用配置块 ###################
+    ###########
+
+# -------------------------------------------------------
+
+  ############################
+  # Realsense 相机控制器：手眼 #
+  ############################
+  PRESERVATOR:
 
     # 标准通信接口配置块 ###################
     ##################
@@ -87,31 +84,90 @@ _node_initializer:
     fps: 30           # 画面采集帧率
 
 # -------------------------------------------------------
-  
-  ######################
-  # Realsense：底盘相机 #
-  ######################
-  PRIESTESS_EYES_1:
+
+  ##################
+  # 监视器：手眼相机 #
+  ##################
+  PRIESTESS_EYES_0:
 
     # 标准通信接口配置块 ###################
     ##################
-    output_0: "t/videostream/eye_on_wheel/color_raw"            # 输出：底盘相机原始画面
+    input_0: "t/videostream/eye_on_hand/boxed"             # 输入：手眼相机目标框叠加层
+
+    # 通用配置块 ###################
+    ###########
+    fps: 30                           # 监视器显示帧率
+    is_livestream: True               # 开启网页推流
+    livestream_host: "localhost"      # 推流主机名
+    livestream_port: 8080             # 推流端口号
+
+# -------------------------------------------------------
+  ################
+  # 下逻辑控制器 #
+  ################
+  LYNCHPIN:
+
+    # 标准通信接口配置块 ###################
+    ##################
+    input_0: "t/videostream/eye_on_chassis/color_raw"             # 输入：底盘相机彩色原始画面
+    input_1: "t/videostream/eye_on_chassis/depth_raw"             # 输入：底盘相机深度原始画面
+    input_2: "t/universal/eye_on_chassis/camera_intrinsics"       # 输入：底盘相机内参
+    output_0: "t/signal/chassis/direction"                        # 输出：底盘方向控制
+    output_1: "t/videostream/eye_on_chassis/direction"            # 输出：底盘相机预测轨迹叠加层
+    duplex_0: "s/signal/logic_controller/action"                  # 双工：上/下逻辑控制器
+
+    # 通用配置块 ###################
+    ###########
+    ats:               # 近似时序同步器
+      queue_size: 10    # 缓存队列大小
+      slop: 0.05        # 最大时间差（秒）
+
+# -------------------------------------------------------
+  
+  #############
+  # 底盘控制器 #
+  #############
+  DWDB_221E:
+
+    # 标准通信接口配置块 ###################
+    ##################
+    input_0: "t/signal/chassis/direction"                  # 底盘方向控制
 
     # 通用配置块 ###################
     ###########
 
 # -------------------------------------------------------
   
-  ##########
-  # 机械臂 #
-  ##########
-  ARM_0:
+  ############################
+  # Realsense 相机控制器：底盘 #
+  ############################
+  AMA_10:
 
     # 标准通信接口配置块 ###################
     ##################
-    duplex_0: "s/signal/robotic_arm/action_once"               # 双工：机械臂控制
+    output_0: "t/videostream/eye_on_chassis/color_raw"         # 输出：底盘相机彩色原始画面
+    output_1: "t/videostream/eye_on_chassis/depth_raw"         # 输出：底盘相机深度原始画面
+    output_2: "t/universal/eye_on_chassis/camera_intrinsics"   # 输出：底盘相机内参
 
     # 通用配置块 ###################
     ###########
+
+# -------------------------------------------------------
+
+  ##################
+  # 监视器：底盘相机 #
+  ##################
+  ZERO_ORDER_OIL_TANK_0:
+
+    # 标准通信接口配置块 ###################
+    ##################
+    input_0: "t/videostream/eye_on_chassis/direction"          # 输入：底盘相机预测轨迹叠加层
+
+    # 通用配置块 ###################
+    ###########
+    fps: 30                           # 监视器显示帧率
+    is_livestream: True               # 开启网页推流
+    livestream_host: "localhost"      # 推流主机名
+    livestream_port: 8081             # 推流端口号
 
 # -------------------------------------------------------

@@ -58,12 +58,13 @@ class RoboticArmController(Node):
                                 request: IRoboticArmAction.Request, 
                                 response: IRoboticArmAction.Response) -> IRoboticArmAction.Response:
         
-        position = tuple(request.camera_position)
+        position = tuple(request.position_on_camera)
         state_code = self.robotic_arm_service.move_to_position(position = position, 
                                                                 is_world_position = False)
         
         if state_code != 0 : 
-            response.state_code = state_code
+            response.success = False
+            response.message = str(state_code)
             self.robotic_arm_service.stand_by()
             return response
         
@@ -73,7 +74,8 @@ class RoboticArmController(Node):
 
         
         self.robotic_arm_service.stand_by()
-        response.state_code = state_code
+        response.success = False
+        response.message = str(state_code)
 
         return response
     

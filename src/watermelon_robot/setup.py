@@ -36,10 +36,11 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            "super_logic_controller = controller.super_logic_controller:main", 
+            "sub_logic_controller = controller.sub_logic_controller:main",
             "robotic_arm_controller = controller.robotic_arm_controller:main", 
             "realsense_controller = controller.realsense_controller:main",
-            "monitor = tools.monitor:main",
-            "centre_controller = controller.centre_controller:main"
+            "monitor = tools.monitor:main"
         ],
     },
 )

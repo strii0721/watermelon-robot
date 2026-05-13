@@ -1,3 +1,3 @@
 from .robotic_arm_controller import RoboticArmController
 from .realsense_controller import RealsenseController
-from .centre_controller import CentreController
+from .super_logic_controller import SuperLogicController
