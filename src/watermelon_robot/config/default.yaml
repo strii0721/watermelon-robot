@@ -34,6 +34,7 @@ chassis:
     pid_triple: [1.2, 0.1, 0.05]
     control_interval: 0.01
     maximum_output_abs: 100000
+  forward_speed: 1
 
 
 ######################################## 以下是节点初始化器配置 ########################################
@@ -51,7 +52,7 @@ _node_initializer:
     input_2: "t/universal/eye_on_hand/camera_intrinsics"          # 输入：手眼相机内参
     output_0: "t/videostream/eye_on_hand/boxed"                   # 输出：手眼相机目标框叠加层
     duplex_0: "s/signal/robotic_arm/action_once"                  # 双工：机械臂控制
-    duplex_1: "s/signal/logic_controller/brake"                   # 双工：上/下逻辑控制器
+    duplex_1: "s/signal/logic_controller/comm"                   # 双工：上/下逻辑控制器
 
     # 通用配置块 ###################
     ###########
@@ -121,7 +122,8 @@ _node_initializer:
     input_2: "t/universal/eye_on_chassis/camera_intrinsics"       # 输入：底盘相机内参
     output_0: "t/signal/chassis/direction"                        # 输出：底盘方向控制
     output_1: "t/videostream/eye_on_chassis/direction"            # 输出：底盘相机预测轨迹叠加层
-    duplex_0: "s/signal/logic_controller/action"                  # 双工：上/下逻辑控制器
+    duplex_0: "s/signal/logic_controller/comm"                  # 双工：上/下逻辑控制器
+    duplex_1: "s/signal/chassis/start_stop"                  # 双工：底盘启停控制
 
     # 通用配置块 ###################
     ###########
@@ -138,7 +140,9 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/signal/chassis/direction"                  # 底盘方向控制
+    input_0: "t/signal/chassis/direction"     # 底盘方向控制
+    output_0: "/cmd_vel"                      # 轮趣 SDK：底盘控制信号
+    duplex_0: "s/signal/chassis/start_stop"    # 双工：底盘启停控制
 
     # 通用配置块 ###################
     ###########

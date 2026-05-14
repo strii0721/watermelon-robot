@@ -1,8 +1,8 @@
 # Request
 float64 timestamp
-bool enable
+int64 comm_code
 ---
 # Response
 float64 timestamp
-bool success
+bool is_success
 string message

@@ -25,13 +25,15 @@ from sensor_msgs.msg import Image, CameraInfo
 from std_msgs.msg import Float64
 import message_filters
 from utils import CVUtils
-from watermelon_robot_interface.srv import ILogicControllerAction
+from watermelon_robot_interface.srv import ILogicControllerComm, IChassisStartStopControl
 from watermelon_robot_interface.msg import IChassisDirectionControl
 from utils import config
 import cv2
 import time
 from cv_bridge import CvBridge
 import os
+from protocal import LogicControllerCommCode
+from typing import cast
 
 
 class SubLogicController(Node):
@@ -43,8 +45,6 @@ class SubLogicController(Node):
 
         self.cv_bridge = CvBridge()
         self.gpr_0 = time.time()   # 用于用于 self.detect_lane() 的帧率统计
-        self.pid_controller = PIDController(pid_triple = config.chassis.pid_controller.pid_triple, 
-                                            maximum_output_abs = config.chassis.pid_controller.maximum_output_abs)
         
         self.sub_eye_on_chassis_color_raw = message_filters.Subscriber(node = self, 
                                                                        msg_type = Image, 
@@ -69,9 +69,12 @@ class SubLogicController(Node):
                                                                   topic = self.output_1, 
                                                                   qos_profile = qos_profile_sensor_data)
         
-        self.srv_logic_controller_action = self.create_service(srv_type = ILogicControllerAction, 
-                                                               srv_name = self.duplex_0, 
-                                                               callback = self.logic_controller_action)
+        self.srv_logic_controller_comm = self.create_service(srv_type = ILogicControllerComm, 
+                                                             srv_name = self.duplex_0, 
+                                                             callback = self.logic_controller_comm)
+        
+        self.cli_chassis_start_stop = self.create_client(srv_type = IChassisStartStopControl, 
+                                                         srv_name = self.duplex_1)
         
         self.approximate_time_synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs = [self.sub_eye_on_chassis_color_raw, 
@@ -90,20 +93,44 @@ class SubLogicController(Node):
         self.tmr_camera_frame = self.create_timer(timer_period_sec = 1/30, 
                                                   callback = self.detect_lane)
 
-    def logic_controller_action(self, 
-                                request: ILogicControllerAction.Request, 
-                                response: ILogicControllerAction.Response) -> ILogicControllerAction.Response:
+    def logic_controller_comm(self, 
+                              request: ILogicControllerComm.Request, 
+                              response: ILogicControllerComm.Response) -> ILogicControllerComm.Response:
         
-        
-        desired_status = request.enable
+        request = IChassisStartStopControl.Request()
+        comm_code = request.comm_code
 
-        # TODO 控制底盘启停的代码
+        match comm_code:
+            case LogicControllerCommCode.CHASSIS_ENABLE: 
+                self.chassis_start_stop(status = True)
 
-        response.success = True
-        response.message = "ENABLED"
+            case LogicControllerCommCode.CHASSIS_DISABLE:
+                self.chassis_start_stop(status = False)
+
+        response.is_success = True
 
         return response
+    
+    def chassis_start_stop(self, 
+                           status: bool):
+        
+        request = IChassisStartStopControl.Request()
+        request.timestamp = time.time()
+        request.status = status
+        return self.cli_chassis_start_stop.call_async(request = request)
+    
+    def chassis_start_stop_done(self, 
+                                future):
+        
+        response = cast(IChassisStartStopControl.Response, future.result())
 
+        # TODO
+        # 底盘启停异常处理
+
+        if response.is_success:
+            pass
+        else:
+            self.get_logger().warn(f"下逻辑控制器 - 底盘通信异常，异常信息：{response.message}")
 
     def detect_lane(self, 
                     # color_image_msg, 
@@ -121,7 +148,7 @@ class SubLogicController(Node):
         hsv, blurred, binary, binary_morphology = CVUtils.lane_detection_preprocess(source_image = color_image, 
                                                                                        roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
                                                                                        roi_y_max_portion = config.lane_detection.roi.y_max_portion, )
-        angle_error = CVUtils.predict_lane(canvas = color_image, 
+        angular_error = CVUtils.predict_lane(canvas = color_image, 
                                            binary = binary_morphology, 
                                            roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
                                            roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
@@ -142,53 +169,10 @@ class SubLogicController(Node):
         image_message = self.cv_bridge.cv2_to_imgmsg(color_image, encoding="bgr8")
         self.pub_eye_on_chassis_direction.publish(msg = image_message)
 
-        control_variable = self.pid_controller.update_control_variable(error = angle_error)
         control_msg = IChassisDirectionControl()
         control_msg.timestamp = time.time()
-        control_msg.angle_error = angle_error
-        control_msg.control_variable = control_variable
+        control_msg.angular_error = angular_error
         self.pub_chassis_direction.publish(msg = control_msg)
-        self.get_logger().info(f"当前偏航角度：{angle_error} | 生成控制量：{control_variable}")
-
-
-class PIDController: 
-
-    def __init__(self, 
-                 pid_triple: tuple, 
-                 maximum_output_abs):
-        
-        self.kp, self.ki, self.kd = pid_triple
-        self.maximum_output_abs = maximum_output_abs
-        self.integral = 0
-        self.previous_error = 0
-        self.previous_time = time.time()
-
-    def update_control_variable(self, 
-                                error):
-
-        now = time.time()
-        dt = now - self.previous_time
-        self.previous_time = now
-
-        p_term = self.kp * error
-        
-        self.integral += error * dt
-            
-        i_term = self.ki * self.integral
-        
-        derivative = (error - self.previous_error) / dt
-        d_term = self.kd * derivative
-        
-        output = p_term + i_term + d_term
-        
-        sign = 1 if output >= 0 else -1
-
-        if abs(output) > self.maximum_output_abs:
-            output = sign * self.maximum_output_abs
-            
-        self.previous_error = error
-        
-        return output
 
 
 def main():

@@ -1,6 +1,6 @@
 # Request
 float64 timestamp
-float64[3] position_on_camera
+bool status
 ---
 # Response
 float64 timestamp

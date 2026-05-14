@@ -63,10 +63,11 @@ class RoboticArmController(Node):
                                                                 is_world_position = False)
         
         if state_code != 0 : 
-            response.success = False
+            response.is_success = False
             response.message = str(state_code)
             self.robotic_arm_service.stand_by()
             return response
+            
         
         # 剩余机械臂业务代码
         # TODO
@@ -74,7 +75,7 @@ class RoboticArmController(Node):
 
         
         self.robotic_arm_service.stand_by()
-        response.success = True
+        response.is_success = True
         response.message = str(state_code)
 
         return response

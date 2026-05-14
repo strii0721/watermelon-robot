@@ -17,6 +17,13 @@ def generate_launch_description():
         output="screen"
     )
 
+    DWDB_221E = Node(
+        package="watermelon_robot",
+        executable="chassis_controller",
+        name = "DWDB_221E",
+        output="screen"
+    )
+
     ZERO_ORDER_OIL_TANK_0 = Node(
         package="watermelon_robot",
         executable="monitor",
@@ -26,6 +33,7 @@ def generate_launch_description():
     
     return LaunchDescription([
         LYNCHPIN,
-        # AMA_10,
+        AMA_10,
+        DWDB_221E,
         ZERO_ORDER_OIL_TANK_0
     ])

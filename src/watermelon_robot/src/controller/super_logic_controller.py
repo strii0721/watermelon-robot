@@ -20,7 +20,7 @@
 import rclpy
 from rclpy.node import Node
 from utils import CommonUtils
-from watermelon_robot_interface.srv import IRoboticArmAction, ILogicControllerAction
+from watermelon_robot_interface.srv import IRoboticArmAction, ILogicControllerComm
 from typing import cast
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image, CameraInfo
@@ -31,6 +31,7 @@ import cv2
 from cv_bridge import CvBridge
 import message_filters
 from utils import config
+from protocal import LogicControllerCommCode
 
 
 class SuperLogicController(Node):
@@ -70,8 +71,8 @@ class SuperLogicController(Node):
         self.cli_robotic_arm_action_once = self.create_client(srv_type = IRoboticArmAction, 
                                                               srv_name = self.duplex_0)
         
-        self.cli_logic_controller_action = self.create_client(srv_type = ILogicControllerAction, 
-                                                              srv_name = self.duplex_1)
+        self.cli_logic_controller_comm = self.create_client(srv_type = ILogicControllerComm, 
+                                                            srv_name = self.duplex_1)
         
         
         
@@ -103,7 +104,7 @@ class SuperLogicController(Node):
 
         if not self.target_lock and target_list: 
             self.target_lock = True
-            future_logic_controller = self.logic_controller_action(enable = False)
+            future_logic_controller = self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_DISABLE)
             future_logic_controller.add_done_callback(callback = self.logic_controller_action_done)
             target_list.sort(key=lambda target: target[0])
             target = target_list[-1]
@@ -135,37 +136,35 @@ class SuperLogicController(Node):
         response = cast(IRoboticArmAction.Response, future.result())
         self._target_lock = False
         
-        is_success = response.success
-        if is_success: 
+        if response.is_success: 
             self.get_logger().info(f"机械臂执行完成")
         
         else:
             self.get_logger().warn(f"机械臂执行异常，异常状态码{response.message}")
         
-        future_logic_controller = self.logic_controller_action(enable = True)
+        future_logic_controller = self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_ENABLE)
         future_logic_controller.add_done_callback(callback = self.logic_controller_action_done)
 
 
-    def logic_controller_action(self, 
-                                enable: bool):
+    def logic_controller_comm(self, 
+                              comm_code: int):
         
-        request = ILogicControllerAction.Request()
-        request.enable = enable
+        request = ILogicControllerComm.Request()
+        request.comm_code = comm_code
 
-        return self.cli_logic_controller_action.call_async(request)
+        return self.cli_logic_controller_comm.call_async(request)
     
 
     def logic_controller_action_done(self, 
                                      future):
         
-        response = cast(ILogicControllerAction.Response, future.result())
+        response = cast(ILogicControllerComm.Response, future.result())
         
-        is_success = response.success
-        if is_success: 
-            self.get_logger().info(f"底盘状态切换成功，当前底盘状态：{response.message}")
+        if response.is_success: 
+            self.get_logger().info(f"上下逻辑控制器通信正常")
         
         else:
-            self.get_logger().warn(f"底盘状态切换失败，当前底盘状态：{response.message}")
+            self.get_logger().warn(f"上下逻辑控制器通信异常，错误信息：{response.message}")
 
 def main():
 
