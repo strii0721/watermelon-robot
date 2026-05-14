@@ -24,8 +24,9 @@ from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image, CameraInfo
 from std_msgs.msg import Float64
 import message_filters
-from utils import ImageUtils
+from utils import CVUtils
 from watermelon_robot_interface.srv import ILogicControllerAction
+from watermelon_robot_interface.msg import IChassisDirectionControl
 from utils import config
 import cv2
 import time
@@ -42,6 +43,9 @@ class SubLogicController(Node):
 
         self.cv_bridge = CvBridge()
         self.gpr_0 = time.time()   # 用于用于 self.detect_lane() 的帧率统计
+        self.pid_controller = PIDController(pid_triple = config.chassis.pid_controller.pid_triple, 
+                                            maximum_output_abs = config.chassis.pid_controller.maximum_output_abs)
+        
         self.sub_eye_on_chassis_color_raw = message_filters.Subscriber(node = self, 
                                                                        msg_type = Image, 
                                                                        topic = self.input_0,
@@ -57,13 +61,13 @@ class SubLogicController(Node):
                                                                                topic = self.input_2,
                                                                                qos_profile = qos_profile_sensor_data)
         
-        self.pub_chassis_direction = self.create_publisher(msg_type = Float64, 
+        self.pub_chassis_direction = self.create_publisher(msg_type = IChassisDirectionControl, 
                                                            topic = self.output_0, 
                                                            qos_profile = qos_profile_sensor_data)
         
-        self.pub_eye_on_hand_boxed = self.create_publisher(msg_type = Image, 
-                                                           topic = self.output_1, 
-                                                           qos_profile = qos_profile_sensor_data)
+        self.pub_eye_on_chassis_direction = self.create_publisher(msg_type = Image, 
+                                                                  topic = self.output_1, 
+                                                                  qos_profile = qos_profile_sensor_data)
         
         self.srv_logic_controller_action = self.create_service(srv_type = ILogicControllerAction, 
                                                                srv_name = self.duplex_0, 
@@ -80,11 +84,11 @@ class SubLogicController(Node):
 
         CommonUtils.node_initialized(self)
 
-        # video_name = "video-2.mp4"
-        # video_path = os.path.join("resource", "lane_detection", video_name)
-        # self.video_capture = cv2.VideoCapture(video_path)
-        # self.tmr_camera_frame = self.create_timer(timer_period_sec = 1/30, 
-        #                                           callback = self.detect_lane)
+        video_name = "video-2.mp4"
+        video_path = os.path.join("resource", "lane_detection", video_name)
+        self.video_capture = cv2.VideoCapture(video_path)
+        self.tmr_camera_frame = self.create_timer(timer_period_sec = 1/30, 
+                                                  callback = self.detect_lane)
 
     def logic_controller_action(self, 
                                 request: ILogicControllerAction.Request, 
@@ -96,30 +100,32 @@ class SubLogicController(Node):
         # TODO 控制底盘启停的代码
 
         response.success = True
+        response.message = "ENABLED"
 
         return response
 
 
     def detect_lane(self, 
-                    color_image_msg, 
-                    depth_image_msg, 
-                    camera_info_msg):
-    # ):
-        
-        color_image = self.cv_bridge.imgmsg_to_cv2(color_image_msg, desired_encoding = "bgr8")
+                    # color_image_msg, 
+                    # depth_image_msg, 
+                    # camera_info_msg):
+    ):
+        rtn, color_image = self.video_capture.read()
+
+        # color_image = self.cv_bridge.imgmsg_to_cv2(color_image_msg, desired_encoding = "bgr8")
         # depth_image = self.cv_bridge.imgmsg_to_cv2(depth_image_msg, desired_encoding = "16UC1")
         # camera_intrinsics = camera_info_msg
 
-        rtn, color_image = self.video_capture.read()
+        
 
-        hsv, blurred, binary, binary_morphology = ImageUtils.lane_detection_preprocess(source_image = color_image, 
+        hsv, blurred, binary, binary_morphology = CVUtils.lane_detection_preprocess(source_image = color_image, 
                                                                                        roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
                                                                                        roi_y_max_portion = config.lane_detection.roi.y_max_portion, )
-        ImageUtils.predict_lane(canvas = color_image, 
-                                binary = binary_morphology, 
-                                roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
-                                roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
-                                detect_step = config.lane_detection.detect_step)
+        angle_error = CVUtils.predict_lane(canvas = color_image, 
+                                           binary = binary_morphology, 
+                                           roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                           roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
+                                           detect_step = config.lane_detection.detect_step)
 
         height, width = binary.shape
         now = time.time()
@@ -134,7 +140,55 @@ class SubLogicController(Node):
                     thickness = 2)
         
         image_message = self.cv_bridge.cv2_to_imgmsg(color_image, encoding="bgr8")
-        self.pub_eye_on_hand_boxed.publish(msg = image_message)
+        self.pub_eye_on_chassis_direction.publish(msg = image_message)
+
+        control_variable = self.pid_controller.update_control_variable(error = angle_error)
+        control_msg = IChassisDirectionControl()
+        control_msg.timestamp = time.time()
+        control_msg.angle_error = angle_error
+        control_msg.control_variable = control_variable
+        self.pub_chassis_direction.publish(msg = control_msg)
+        self.get_logger().info(f"当前偏航角度：{angle_error} | 生成控制量：{control_variable}")
+
+
+class PIDController: 
+
+    def __init__(self, 
+                 pid_triple: tuple, 
+                 maximum_output_abs):
+        
+        self.kp, self.ki, self.kd = pid_triple
+        self.maximum_output_abs = maximum_output_abs
+        self.integral = 0
+        self.previous_error = 0
+        self.previous_time = time.time()
+
+    def update_control_variable(self, 
+                                error):
+
+        now = time.time()
+        dt = now - self.previous_time
+        self.previous_time = now
+
+        p_term = self.kp * error
+        
+        self.integral += error * dt
+            
+        i_term = self.ki * self.integral
+        
+        derivative = (error - self.previous_error) / dt
+        d_term = self.kd * derivative
+        
+        output = p_term + i_term + d_term
+        
+        sign = 1 if output >= 0 else -1
+
+        if abs(output) > self.maximum_output_abs:
+            output = sign * self.maximum_output_abs
+            
+        self.previous_error = error
+        
+        return output
 
 
 def main():

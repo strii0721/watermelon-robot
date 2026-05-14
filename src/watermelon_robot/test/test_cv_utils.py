@@ -1,5 +1,5 @@
 import cv2
-from utils import ImageUtils
+from utils import CVUtils
 import os
 from utils import config
 
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     
     rtn, frame = video_capture.read()
     while rtn: 
-        hsv, blurred, binary, binary_morphology = ImageUtils.lane_detection_preprocess(source_image = frame, 
+        hsv, blurred, binary, binary_morphology = CVUtils.lane_detection_preprocess(source_image = frame, 
                                                                                        roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
                                                                                        roi_y_max_portion = config.lane_detection.roi.y_max_portion, )
         cv2.imshow(f"{video_name}", frame)

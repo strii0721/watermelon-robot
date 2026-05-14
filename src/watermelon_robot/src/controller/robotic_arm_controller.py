@@ -74,7 +74,7 @@ class RoboticArmController(Node):
 
         
         self.robotic_arm_service.stand_by()
-        response.success = False
+        response.success = True
         response.message = str(state_code)
 
         return response

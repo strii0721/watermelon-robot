@@ -19,14 +19,11 @@
 
 import cv2
 from mapper import RealsenseMapper
-import time
-import os
 import numpy as np
 
 def main():
 
     INTERVAL = 1/30
-    SAVE_FOLDER = "realsense_capture"
 
     camera_mapper = RealsenseMapper()
 

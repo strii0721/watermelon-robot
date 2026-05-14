@@ -29,6 +29,7 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/IRoboticArmAction.srv"
   "srv/ILogicControllerAction.srv"
+  "msg/IChassisDirectionControl.msg"
 )
 
 ament_package()

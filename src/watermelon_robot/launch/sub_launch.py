@@ -26,6 +26,6 @@ def generate_launch_description():
     
     return LaunchDescription([
         LYNCHPIN,
-        AMA_10,
+        # AMA_10,
         ZERO_ORDER_OIL_TANK_0
     ])

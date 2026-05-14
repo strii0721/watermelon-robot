@@ -27,7 +27,7 @@ def generate_launch_description():
     PRIESTESS_EYES_0 = Node(
         package="watermelon_robot",
         executable="monitor",
-        name = "CAERULA_ARBOR",
+        name = "PRIESTESS_EYES_0",
         output="screen"
     )
     

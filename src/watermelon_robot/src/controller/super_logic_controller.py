@@ -24,7 +24,7 @@ from watermelon_robot_interface.srv import IRoboticArmAction, ILogicControllerAc
 from typing import cast
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image, CameraInfo
-from utils import ImageUtils
+from utils import DLUtils
 from utils import ModelUtils
 import time
 import cv2
@@ -47,7 +47,7 @@ class SuperLogicController(Node):
         self.gpr_0 = time.time()        # 用于 self.detect_target() 的帧率统计
 
         self.model = ModelUtils.load_model(device = self.device, 
-                                            use_half = self._use_half)
+                                           use_half = self._use_half)
         
         self.sub_eye_on_hand_color_raw = message_filters.Subscriber(node = self, 
                                                                     msg_type = Image, 
@@ -95,13 +95,11 @@ class SuperLogicController(Node):
         color_image = self.cv_bridge.imgmsg_to_cv2(color_image_msg, desired_encoding = "bgr8")
         depth_image = self.cv_bridge.imgmsg_to_cv2(depth_image_msg, desired_encoding = "16UC1")
         camera_intrinsics = camera_info_msg
-        target_list = ImageUtils.predict_targets(model = self.model, 
-                                                 device = self.device, 
-                                                 color_image = color_image, 
-                                                 depth_image = depth_image, 
-                                                 confidence = config.model.confidence, 
-                                                 iou = config.model.iou,
-                                                 camera_intrinsics = camera_intrinsics)
+        target_list = DLUtils.predict_targets(model = self.model, 
+                                              device = self.device, 
+                                              color_image = color_image, 
+                                              depth_image = depth_image, 
+                                              camera_intrinsics = camera_intrinsics)
 
         if not self.target_lock and target_list: 
             self.target_lock = True
@@ -164,10 +162,10 @@ class SuperLogicController(Node):
         
         is_success = response.success
         if is_success: 
-            self.get_logger().info(f"底盘状态切换成功")
+            self.get_logger().info(f"底盘状态切换成功，当前底盘状态：{response.message}")
         
         else:
-            self.get_logger().warn(f"底盘状态切换失败，当前状态：{response.message}")
+            self.get_logger().warn(f"底盘状态切换失败，当前底盘状态：{response.message}")
 
 def main():
 

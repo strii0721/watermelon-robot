@@ -22,8 +22,6 @@ from ament_index_python.packages import get_package_share_directory
 import os
 import json
 from types import SimpleNamespace
-import sys
-from rclpy.utilities import remove_ros_args
 from rclpy.node import Node
 
 
@@ -37,7 +35,6 @@ class CommonUtils:
         config_dir = os.path.join(package_share_dir, "config", f"{config_profile}.yaml")
         with open(config_dir, 'r', encoding='utf-8') as f:
             config_dictionary = yaml.safe_load(f)
-        config_dictionary.pop("_node_initializer", None)
         config = json.loads(json.dumps(config_dictionary), object_hook=lambda d: SimpleNamespace(**d))
         config._config_dictionary = config_dictionary
 

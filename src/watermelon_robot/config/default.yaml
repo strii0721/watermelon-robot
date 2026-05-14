@@ -4,29 +4,36 @@ model:
   name: "yolov26-best.pt"
   use_half: False
   confidence: 0.90
-  iou: 0.45
+  iou: 0.8
   device: "0"
 
 # -------------------------------------------------------
-
 # 机械臂配置相关
 robotic_arm: 
   ip: "192.168.58.2"
   speed_rate: 70
-  standby_sextuplet: [-300, -102, 450, 90, 0, -90]
+  tool_standby_sextuple: [-300, -102, 450, 90, 0, -90]
   camera_pose_matix: [[-1, 0, 0, 25],
                       [0, -1, 0, 60],
                       [0, 0, 1, 10],
                       [0, 0, 0, 1]]
 
 # -------------------------------------------------------
-
 # 导航线检测相关
 lane_detection: 
   roi: 
     y_min_portion: 0.5
     y_max_portion: 0.9
   detect_step: 5
+
+# -------------------------------------------------------
+# 底盘控制相关
+
+chassis: 
+  pid_controller: 
+    pid_triple: [1.2, 0.1, 0.05]
+    control_interval: 0.01
+    maximum_output_abs: 100000
 
 
 ######################################## 以下是节点初始化器配置 ########################################

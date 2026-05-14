@@ -18,7 +18,7 @@
 
 
 from mapper import RealsenseMapper
-from utils import ImageUtils
+from utils import RealsenseUtils
 
 class RealsenseService: 
 
@@ -36,8 +36,8 @@ class RealsenseService:
         if color_frame is None or depth_frame is None:
             return None
         
-        color_cv2array = ImageUtils.convert_pyrealsense2cv2array(source_image = color_frame)
-        depth_cv2array = ImageUtils.convert_pyrealsense2cv2array(source_image = depth_frame)
-        intrinsics_camera_info = ImageUtils.convert_intrinsics2camera_info(rs_intrinsics = intrinsics)
+        color_cv2array = RealsenseUtils.convert_pyrealsense2cv2array(source_image = color_frame)
+        depth_cv2array = RealsenseUtils.convert_pyrealsense2cv2array(source_image = depth_frame)
+        intrinsics_camera_info = RealsenseUtils.convert_intrinsics2camera_info(rs_intrinsics = intrinsics)
         
         return [color_cv2array, depth_cv2array, intrinsics_camera_info]
