@@ -8,7 +8,7 @@ setup(
     name=package_name,
     version='0.0.0',
     package_dir = {"":"./src"},
-    packages=find_packages(where = "./src"),
+    packages=find_packages(where = "src"),
     data_files=[
         ('share/ament_index/resource_index/packages', 
             ['resource/' + package_name]),
@@ -39,9 +39,10 @@ setup(
             "super_logic_controller = controller.super_logic_controller:main", 
             "sub_logic_controller = controller.sub_logic_controller:main",
             "robotic_arm_controller = controller.robotic_arm_controller:main", 
-            "chassis_controller = controller.chassis_controller:main"
+            "chassis_controller = controller.chassis_controller:main",
             "realsense_controller = controller.realsense_controller:main",
-            "monitor = tools.monitor:main"
+            "monitor = tools.monitor:main",
+            "test_chassis = controller.test_chassis:main"
         ],
     },
 )

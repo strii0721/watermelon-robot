@@ -160,7 +160,7 @@ class CVUtils:
                      binary: np.ndarray, 
                      roi_y_min_portion: float, 
                      roi_y_max_portion: float, 
-                     detect_step: int):
+                     detect_step: int) -> float:
         
         height, width = binary.shape
         roi_y_min = int(height * roi_y_min_portion)
@@ -214,12 +214,16 @@ class CVUtils:
             thickness = 2
             cv2.arrowedLine(canvas, reference_point, navigate_point, arow_color, thickness, tipLength = 0.05)
 
-            return angle
+        else:
+            angle = 0.0
+
+        return angle
     
     @classmethod
+
     def claculate_angle(cls, 
                         reference_line, 
-                        navigate_line):
+                        navigate_line) -> float:
         
         reference_start, reference_end = reference_line
         navigate_start, navigate_end = navigate_line
@@ -230,6 +234,6 @@ class CVUtils:
         angle_navigate = math.degrees(math.atan2(vector_navigate[1], vector_navigate[0]))
 
         angle_diff = angle_navigate - angle_reference
-        angle_diff = (angle_diff + 90) % 180 - 90
+        angle_diff = float((angle_diff + 90) % 180 - 90)
 
         return angle_diff

@@ -87,11 +87,11 @@ class SubLogicController(Node):
 
         CommonUtils.node_initialized(self)
 
-        video_name = "video-2.mp4"
-        video_path = os.path.join("resource", "lane_detection", video_name)
-        self.video_capture = cv2.VideoCapture(video_path)
-        self.tmr_camera_frame = self.create_timer(timer_period_sec = 1/30, 
-                                                  callback = self.detect_lane)
+        # video_name = "video-2.mp4"
+        # video_path = os.path.join("resource", "lane_detection", video_name)
+        # self.video_capture = cv2.VideoCapture(video_path)
+        # self.tmr_camera_frame = self.create_timer(timer_period_sec = 1/30, 
+        #                                           callback = self.detect_lane)
 
     def logic_controller_comm(self, 
                               request: ILogicControllerComm.Request, 
@@ -133,15 +133,15 @@ class SubLogicController(Node):
             self.get_logger().warn(f"下逻辑控制器 - 底盘通信异常，异常信息：{response.message}")
 
     def detect_lane(self, 
-                    # color_image_msg, 
-                    # depth_image_msg, 
-                    # camera_info_msg):
-    ):
-        rtn, color_image = self.video_capture.read()
+                    color_image_msg, 
+                    depth_image_msg, 
+                    camera_info_msg):
+    # ):
+    #     rtn, color_image = self.video_capture.read()
 
-        # color_image = self.cv_bridge.imgmsg_to_cv2(color_image_msg, desired_encoding = "bgr8")
-        # depth_image = self.cv_bridge.imgmsg_to_cv2(depth_image_msg, desired_encoding = "16UC1")
-        # camera_intrinsics = camera_info_msg
+        color_image = self.cv_bridge.imgmsg_to_cv2(color_image_msg, desired_encoding = "bgr8")
+        depth_image = self.cv_bridge.imgmsg_to_cv2(depth_image_msg, desired_encoding = "16UC1")
+        camera_intrinsics = camera_info_msg
 
         
 
@@ -149,10 +149,10 @@ class SubLogicController(Node):
                                                                                        roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
                                                                                        roi_y_max_portion = config.lane_detection.roi.y_max_portion, )
         angular_error = CVUtils.predict_lane(canvas = color_image, 
-                                           binary = binary_morphology, 
-                                           roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
-                                           roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
-                                           detect_step = config.lane_detection.detect_step)
+                                             binary = binary_morphology, 
+                                             roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                             roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
+                                             detect_step = config.lane_detection.detect_step)
 
         height, width = binary.shape
         now = time.time()

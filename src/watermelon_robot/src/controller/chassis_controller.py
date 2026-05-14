@@ -96,9 +96,10 @@ class ChassisController(Node):
             timestamp = control_variable_msg.timestamp
             angular_error = control_variable_msg.angular_error
             angular_speed = self.pid_controller.update_control_variable(error = angular_error)
+            self.get_logger().info(f"当前角度误差：{angular_error} | 产生控制变量（角速度）{angular_speed}")
             twist_msg = self.chassis_service.apply_control_variable(control_variable = angular_speed,
-                                                                forward_speed = self.forward_speed, 
-                                                                yaw_angle = angular_error)
+                                                                    forward_speed = self.forward_speed, 
+                                                                    yaw_angle = angular_error)
             self.pub_cmd_vel.publish(msg = twist_msg)
 
 

@@ -57,11 +57,11 @@ class ChassisService:
                            sextuple: tuple) -> Twist:
         
         twist_msg = Twist()
-        twist_msg.linear.x = sextuple[0]
-        twist_msg.linear.y = sextuple[1]
-        twist_msg.linear.z = sextuple[2]
-        twist_msg.angular.x = sextuple[3]
-        twist_msg.angular.y = sextuple[4]
-        twist_msg.angular.z = sextuple[5]
+        twist_msg.linear.x = float(sextuple[0])
+        twist_msg.linear.y = float(sextuple[1])
+        twist_msg.linear.z = float(sextuple[2])
+        twist_msg.angular.x = float(sextuple[3])
+        twist_msg.angular.y = float(sextuple[4])
+        twist_msg.angular.z = float(sextuple[5])
 
         return twist_msg

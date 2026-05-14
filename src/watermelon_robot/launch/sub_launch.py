@@ -10,17 +10,17 @@ def generate_launch_description():
         output = "screen"
     )
 
-    AMA_10 = Node(
-        package="watermelon_robot",
-        executable="realsense_controller",
-        name = "AMA_10",
-        output="screen"
-    )
-
     DWDB_221E = Node(
         package="watermelon_robot",
         executable="chassis_controller",
         name = "DWDB_221E",
+        output="screen"
+    )
+
+    AMA_10 = Node(
+        package="watermelon_robot",
+        executable="realsense_controller",
+        name = "AMA_10",
         output="screen"
     )
 
@@ -33,7 +33,7 @@ def generate_launch_description():
     
     return LaunchDescription([
         LYNCHPIN,
-        AMA_10,
         DWDB_221E,
+        AMA_10,
         ZERO_ORDER_OIL_TANK_0
     ])
