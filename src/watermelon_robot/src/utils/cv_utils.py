@@ -149,7 +149,7 @@ class CVUtils:
         binary_morphology[roi_y_max:height, :] = 0
         binary_morphology = CVUtils.not_maximum_connected_area_suppresion(binary_morphology)
         binary_morphology = cv2.morphologyEx(binary_morphology, cv2.MORPH_OPEN, kernel_square, iterations= 20)
-        binary_morphology = cv2.dilate(binary_morphology, kernel_rectangle, iterations = 3)
+        binary_morphology = cv2.dilate(binary_morphology, kernel_rectangle, iterations = 5)
 
         return [hsv, blurred, binary, binary_morphology]
   

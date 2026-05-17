@@ -109,8 +109,8 @@ class SuperLogicController(Node):
             target_list.sort(key=lambda target: target[0])
             target = target_list[-1]
             self.get_logger().info(f"当前目标（手眼相机参考系）：{target}")
-            future_robotic_arm = self.robotic_arm_action_once(camera_coordinate = target)
-            future_robotic_arm.add_done_callback(callback = self.robotic_arm_action_once_done)
+            future = self.robotic_arm_action_once(camera_coordinate = target)
+            future.add_done_callback(callback = self.robotic_arm_action_once_done)
         
 
         now = time.time()

@@ -46,28 +46,32 @@ class SubLogicController(Node):
         self.cv_bridge = CvBridge()
         self.gpr_0 = time.time()   # 用于用于 self.detect_lane() 的帧率统计
         
-        self.sub_eye_on_chassis_color_raw = message_filters.Subscriber(node = self, 
-                                                                       msg_type = Image, 
-                                                                       topic = self.input_0,
+        self.sub_eye_on_chassis_color_raw = message_filters.Subscriber(self, 
+                                                                       Image, 
+                                                                       self.input_0,
                                                                        qos_profile = qos_profile_sensor_data)
         
-        self.sub_eye_on_chassis_depth_raw = message_filters.Subscriber(node = self, 
-                                                                       msg_type = Image, 
-                                                                       topic = self.input_1,
+        self.sub_eye_on_chassis_depth_raw = message_filters.Subscriber(self, 
+                                                                       Image, 
+                                                                       self.input_1,
                                                                        qos_profile = qos_profile_sensor_data)
         
-        self.sub_eye_on_chassis_camera_intrinsics = message_filters.Subscriber(node = self, 
-                                                                               msg_type = CameraInfo, 
-                                                                               topic = self.input_2,
+        self.sub_eye_on_chassis_camera_intrinsics = message_filters.Subscriber(self, 
+                                                                               CameraInfo, 
+                                                                               self.input_2,
                                                                                qos_profile = qos_profile_sensor_data)
         
-        self.pub_chassis_direction = self.create_publisher(msg_type = IChassisDirectionControl, 
-                                                           topic = self.output_0, 
+        self.pub_chassis_direction = self.create_publisher(IChassisDirectionControl, 
+                                                           self.output_0, 
                                                            qos_profile = qos_profile_sensor_data)
         
-        self.pub_eye_on_chassis_direction = self.create_publisher(msg_type = Image, 
-                                                                  topic = self.output_1, 
+        self.pub_eye_on_chassis_direction = self.create_publisher(Image, 
+                                                                  self.output_1, 
                                                                   qos_profile = qos_profile_sensor_data)
+        
+        self.pub_eye_on_chassis_binary_morphology = self.create_publisher(Image, 
+                                                                          self.output_2, 
+                                                                          qos_profile = qos_profile_sensor_data)
         
         self.srv_logic_controller_comm = self.create_service(srv_type = ILogicControllerComm, 
                                                              srv_name = self.duplex_0, 
@@ -87,11 +91,6 @@ class SubLogicController(Node):
 
         CommonUtils.node_initialized(self)
 
-        # video_name = "video-2.mp4"
-        # video_path = os.path.join("resource", "lane_detection", video_name)
-        # self.video_capture = cv2.VideoCapture(video_path)
-        # self.tmr_camera_frame = self.create_timer(timer_period_sec = 1/30, 
-        #                                           callback = self.detect_lane)
 
     def logic_controller_comm(self, 
                               request: ILogicControllerComm.Request, 
@@ -102,57 +101,48 @@ class SubLogicController(Node):
 
         match comm_code:
             case LogicControllerCommCode.CHASSIS_ENABLE: 
-                self.chassis_start_stop(status = True)
+                response_from_chassis = self.chassis_start_stop(status = True)
 
             case LogicControllerCommCode.CHASSIS_DISABLE:
-                self.chassis_start_stop(status = False)
+                response_from_chassis = self.chassis_start_stop(status = False)
 
-        response.is_success = True
+        if response_from_chassis.is_success:
+            response.is_success = True
+        else:
+            self.get_logger().warn(f"下逻辑控制器 - 底盘通信异常，异常信息：{response.message}")
+            response.is_success = False
 
         return response
     
     def chassis_start_stop(self, 
-                           status: bool):
+                           status: bool) -> IChassisStartStopControl.Response:
         
         request = IChassisStartStopControl.Request()
         request.timestamp = time.time()
         request.status = status
-        return self.cli_chassis_start_stop.call_async(request = request)
-    
-    def chassis_start_stop_done(self, 
-                                future):
+        return self.cli_chassis_start_stop.call(request = request)
         
-        response = cast(IChassisStartStopControl.Response, future.result())
-
-        # TODO
-        # 底盘启停异常处理
-
-        if response.is_success:
-            pass
-        else:
-            self.get_logger().warn(f"下逻辑控制器 - 底盘通信异常，异常信息：{response.message}")
 
     def detect_lane(self, 
                     color_image_msg, 
                     depth_image_msg, 
                     camera_info_msg):
-    # ):
-    #     rtn, color_image = self.video_capture.read()
 
         color_image = self.cv_bridge.imgmsg_to_cv2(color_image_msg, desired_encoding = "bgr8")
         depth_image = self.cv_bridge.imgmsg_to_cv2(depth_image_msg, desired_encoding = "16UC1")
         camera_intrinsics = camera_info_msg
 
-        
-
         hsv, blurred, binary, binary_morphology = CVUtils.lane_detection_preprocess(source_image = color_image, 
-                                                                                       roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
-                                                                                       roi_y_max_portion = config.lane_detection.roi.y_max_portion, )
+                                                                                    roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                                                                    roi_y_max_portion = config.lane_detection.roi.y_max_portion, )
         angular_error = CVUtils.predict_lane(canvas = color_image, 
                                              binary = binary_morphology, 
                                              roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
                                              roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
                                              detect_step = config.lane_detection.detect_step)
+
+        # 这一行仅作测试用，实际环境记得注释掉
+        angular_error = 0.01
 
         height, width = binary.shape
         now = time.time()
@@ -166,8 +156,11 @@ class SubLogicController(Node):
                     color = (0, 0, 255), 
                     thickness = 2)
         
+
         image_message = self.cv_bridge.cv2_to_imgmsg(color_image, encoding="bgr8")
         self.pub_eye_on_chassis_direction.publish(msg = image_message)
+        image_message = self.cv_bridge.cv2_to_imgmsg(binary, encoding = "mono8")
+        self.pub_eye_on_chassis_binary_morphology.publish(msg = image_message)
 
         control_msg = IChassisDirectionControl()
         control_msg.timestamp = time.time()

@@ -41,8 +41,7 @@ setup(
             "robotic_arm_controller = controller.robotic_arm_controller:main", 
             "chassis_controller = controller.chassis_controller:main",
             "realsense_controller = controller.realsense_controller:main",
-            "monitor = tools.monitor:main",
-            "test_chassis = controller.test_chassis:main"
+            "monitor = tools.monitor:main"
         ],
     },
 )

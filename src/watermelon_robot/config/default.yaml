@@ -18,11 +18,20 @@ robotic_arm:
                       [0, 0, 1, 10],
                       [0, 0, 0, 1]]
 
+robotic_arm_s: 
+  ip: "192.168.58.2"
+  speed_rate: 70
+  tool_standby_sextuple: [90, -120, 120, -180, -90, -90]
+  camera_pose_matix: [[0, -1, 0, 25],
+                      [1, 0, 0, 60],
+                      [0, 0, 1, 10],
+                      [0, 0, 0, 1]]
+
 # -------------------------------------------------------
 # 导航线检测相关
 lane_detection: 
   roi: 
-    y_min_portion: 0.5
+    y_min_portion: 0.7
     y_max_portion: 0.9
   detect_step: 5
 
@@ -33,8 +42,8 @@ chassis:
   pid_controller: 
     pid_triple: [1.2, 0.1, 0.05]
     control_interval: 0.01
-    maximum_output_abs: 100000
-  forward_speed: 1
+    maximum_output_abs: 100
+  forward_speed: 0.5
 
 
 ######################################## 以下是节点初始化器配置 ########################################
@@ -94,7 +103,7 @@ _node_initializer:
 # -------------------------------------------------------
 
   ##################
-  # 监视器：手眼相机 #
+  # 监视器：手眼相机彩色图（预测框叠加层） #
   ##################
   PRIESTESS_EYES_0:
 
@@ -106,7 +115,7 @@ _node_initializer:
     ###########
     fps: 30                           # 监视器显示帧率
     is_livestream: True               # 开启网页推流
-    livestream_host: "localhost"      # 推流主机名
+    livestream_host: "0.0.0.0"      # 推流主机名
     livestream_port: 8080             # 推流端口号
 
 # -------------------------------------------------------
@@ -122,6 +131,7 @@ _node_initializer:
     input_2: "t/universal/eye_on_chassis/camera_intrinsics"       # 输入：底盘相机内参
     output_0: "t/signal/chassis/direction"                        # 输出：底盘方向控制
     output_1: "t/videostream/eye_on_chassis/direction"            # 输出：底盘相机预测轨迹叠加层
+    output_2: "t/videostream/eye_on_chassis/binary_morphology"    # 输出：底盘相机形态学二值图
     duplex_0: "s/signal/logic_controller/comm"                  # 双工：上/下逻辑控制器
     duplex_1: "s/signal/chassis/start_stop"                  # 双工：底盘启停控制
 
@@ -167,7 +177,7 @@ _node_initializer:
 # -------------------------------------------------------
 
   ##################
-  # 监视器：底盘相机 #
+  # 监视器：底盘相机彩色图（预测轨迹叠加层） #
   ##################
   ZERO_ORDER_OIL_TANK_0:
 
@@ -179,7 +189,25 @@ _node_initializer:
     ###########
     fps: 30                           # 监视器显示帧率
     is_livestream: True               # 开启网页推流
-    livestream_host: "localhost"      # 推流主机名
+    livestream_host: "0.0.0.0"      # 推流主机名
     livestream_port: 8081             # 推流端口号
+
+# -------------------------------------------------------
+
+  ##################
+  # 监视器：底盘相机形态学二值图 #
+  ##################
+  ZERO_ORDER_OIL_TANK_1:
+
+    # 标准通信接口配置块 ###################
+    ##################
+    input_0: "t/videostream/eye_on_chassis/binary_morphology"          # 输入：底盘相机预测轨迹叠加层
+
+    # 通用配置块 ###################
+    ###########
+    fps: 30                           # 监视器显示帧率
+    is_livestream: True               # 开启网页推流
+    livestream_host: "0.0.0.0"      # 推流主机名
+    livestream_port: 8082             # 推流端口号
 
 # -------------------------------------------------------

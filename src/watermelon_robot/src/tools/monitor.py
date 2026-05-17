@@ -64,7 +64,7 @@ class Monitor(Node):
 
     def render(self, message): 
         
-        self.latest_frame = self.cv_bridge.imgmsg_to_cv2(message, desired_encoding='bgr8')
+        self.latest_frame = self.cv_bridge.imgmsg_to_cv2(message, desired_encoding="passthrough")
         flag = False
         if hasattr(self, "is_livestream"):
             if self.is_livestream:
