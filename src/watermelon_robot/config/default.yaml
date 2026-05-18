@@ -11,17 +11,22 @@ model:
 # 机械臂配置相关
 robotic_arm: 
   ip: "192.168.58.2"
-  speed_rate: 70
-  tool_standby_sextuple: [-300, -102, 450, 90, 0, -90]
-  camera_pose_matix: [[-1, 0, 0, 25],
-                      [0, -1, 0, 60],
+  speed_rate: 20
+  # tool_standby_sextuple: [-300, -102, 450, 90, 0, -90]
+  # camera_pose_matix: [[-1, 0, 0, 25],
+  #                     [0, -1, 0, 60],
+  #                     [0, 0, 1, 10],
+  #                     [0, 0, 0, 1]]
+  tool_standby_sextuple: [102, -282.5, 418, 180, -90, -90]
+  camera_pose_matix: [[0, -1, 0, 25],
+                      [1, 0, 0, 60],
                       [0, 0, 1, 10],
                       [0, 0, 0, 1]]
 
 robotic_arm_s: 
   ip: "192.168.58.2"
-  speed_rate: 70
-  tool_standby_sextuple: [90, -120, 120, -180, -90, -90]
+  speed_rate: 20
+  tool_standby_sextuple: [102, -200, 280.5, 180, -90, -90]
   camera_pose_matix: [[0, -1, 0, 25],
                       [1, 0, 0, 60],
                       [0, 0, 1, 10],
@@ -43,7 +48,7 @@ chassis:
     pid_triple: [1.2, 0.1, 0.05]
     control_interval: 0.01
     maximum_output_abs: 100
-  forward_speed: 0.5
+  forward_speed: 0.2
 
 
 ######################################## 以下是节点初始化器配置 ########################################

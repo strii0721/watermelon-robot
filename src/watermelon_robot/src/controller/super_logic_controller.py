@@ -123,6 +123,8 @@ class SuperLogicController(Node):
                                 camera_coordinate: tuple):
         
         self.target_lock = True
+        
+        # 等待底盘停止
         sub_logic_controller_response = self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_DISABLE)
         self.logic_controller_comm_done(sub_logic_controller_response)
         

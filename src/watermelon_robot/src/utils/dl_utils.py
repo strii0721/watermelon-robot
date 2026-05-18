@@ -74,7 +74,7 @@ class DLUtils:
     def check_target_validation(cls, 
                                 target_coordinate: tuple): 
         
-        if not ((-100 < target_coordinate[0] and target_coordinate[0] < 100) and (-50 < target_coordinate[1] and target_coordinate[1] < 50) and (0 < target_coordinate[2] and target_coordinate[2] < 1000)):
+        if not ((-100 < target_coordinate[0] and target_coordinate[0] < 100) and (-50 < target_coordinate[1] and target_coordinate[1] < 50) and (0 < target_coordinate[2] and target_coordinate[2] < 500)):
             return False
         
         if target_coordinate[0] < 0:

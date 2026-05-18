@@ -90,10 +90,13 @@ class RoboticArmService:
 
         pose = self._calculate_pose(position = position)
         midway_pose = self._calculate_midway_pose(pose = pose)
-
         safe_pose = self._calculate_safe_pose(pose = pose)
         safe_midway_pose = self._calculate_safe_pose(pose = midway_pose)
-
+        
+        # 这一块需要注释掉
+        # state_code = 0
+        # print(f"==========================================={safe_pose}")
+        
         state_code = self._robotic_arm_mapper.move_to_pose(pose = safe_midway_pose)
         state_code = self._robotic_arm_mapper.move_to_pose(pose = safe_pose)
         
@@ -105,8 +108,11 @@ class RoboticArmService:
         pose = self._calculate_pose(position = stand_by_position)
         _, current_pose = self._robotic_arm_mapper.get_tcp_pose()
         midway_pose = self._calculate_midway_pose(pose = current_pose)
-        # print(midway_pose)
-        # print(pose)
+        
+        # 这一块需要注释掉
+        # state_code = 0
+        # print(f"==========================================={pose}")
+        
         state_code = self._robotic_arm_mapper.move_to_pose(pose = midway_pose)
         state_code = self._robotic_arm_mapper.move_to_pose(pose = pose)
         

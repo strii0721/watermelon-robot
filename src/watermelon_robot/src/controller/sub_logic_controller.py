@@ -165,7 +165,7 @@ class SubLogicController(Node):
 
         image_message = self.cv_bridge.cv2_to_imgmsg(color_image, encoding="bgr8")
         self.pub_eye_on_chassis_direction.publish(msg = image_message)
-        image_message = self.cv_bridge.cv2_to_imgmsg(binary, encoding = "mono8")
+        image_message = self.cv_bridge.cv2_to_imgmsg(binary_morphology, encoding = "mono8")
         self.pub_eye_on_chassis_binary_morphology.publish(msg = image_message)
 
         control_msg = IChassisDirectionControl()
