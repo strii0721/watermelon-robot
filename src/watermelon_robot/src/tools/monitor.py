@@ -41,9 +41,9 @@ class Monitor(Node):
         self.latest_frame = None
         
         self.sub_camera_current_frame = self.create_subscription(msg_type = Image, 
-                                                                  topic = self.input_0,
-                                                                  qos_profile = qos_profile_sensor_data, 
-                                                                  callback = self.render)
+                                                                 topic = self.input_0,
+                                                                 qos_profile = qos_profile_sensor_data, 
+                                                                 callback = self.render)
         flag = False
         if hasattr(self, "is_livestream"):
             if self.is_livestream:
@@ -56,7 +56,7 @@ class Monitor(Node):
             self.flask_thread = threading.Thread(target=self.flask_server_start, daemon=True)
             self.flask_thread.start()
             CommonUtils.node_initialized(self)
-            self.get_logger().info(f"{self.get_name()} 运行模式：网络推流 | 访问链接：http://{self.livestream_host}:{self.livestream_port}")
+            self.get_logger().info(f"{self.get_name()} 运行模式：网络推流 | 访问端口：{self.livestream_port}")
         else: 
             CommonUtils.node_initialized(self)
             self.get_logger().info(f"{self.get_name()} 运行模式：终端")
@@ -78,7 +78,7 @@ class Monitor(Node):
 
     def flask_server_start(self):
 
-        self.app.run(host=self.livestream_host, port=self.livestream_port, threaded=True, use_reloader=False)
+        self.app.run(host="0.0.0.0", port=self.livestream_port, threaded=True, use_reloader=False)
 
 
     def generate_frames(self):

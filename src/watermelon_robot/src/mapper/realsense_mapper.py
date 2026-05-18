@@ -26,11 +26,9 @@ class RealsenseMapper:
 
         self.pipeline = rs.pipeline()  # type: ignore
         self.pipeline_config = rs.config() # type: ignore
-        self.pipeline_config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30) # type: ignore
         self.pipeline_config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30) # type: ignore
-        profile = self.pipeline.start(self.pipeline_config)
-        # device = profile.get_device()
-        # device.hardware_reset()
+        self.pipeline_config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30) # type: ignore
+        self.pipeline.start(self.pipeline_config)
         self.align_method = rs.align(rs.stream.color) # type: ignore
 
     def retrieve_frames(self) -> list:

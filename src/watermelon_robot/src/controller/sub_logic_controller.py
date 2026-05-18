@@ -106,11 +106,7 @@ class SubLogicController(Node):
             case LogicControllerCommCode.CHASSIS_DISABLE:
                 response_from_chassis = self.chassis_start_stop(status = False)
 
-        if response_from_chassis.is_success:
-            response.is_success = True
-        else:
-            self.get_logger().warn(f"下逻辑控制器 - 底盘通信异常，异常信息：{response.message}")
-            response.is_success = False
+        response.is_success = self.chassis_start_stop_done(response = response_from_chassis)
 
         return response
     
@@ -121,6 +117,16 @@ class SubLogicController(Node):
         request.timestamp = time.time()
         request.status = status
         return self.cli_chassis_start_stop.call(request = request)
+    
+    def chassis_start_stop_done(self, 
+                                response: IChassisStartStopControl.Response):
+        
+        # TODO 需要细化异常处理
+        if response.is_success:
+            return True
+        else:
+            self.get_logger().warn(f"下逻辑控制器 - 底盘通信异常，异常信息：{response.message}")
+            return False
         
 
     def detect_lane(self, 
@@ -135,6 +141,7 @@ class SubLogicController(Node):
         hsv, blurred, binary, binary_morphology = CVUtils.lane_detection_preprocess(source_image = color_image, 
                                                                                     roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
                                                                                     roi_y_max_portion = config.lane_detection.roi.y_max_portion, )
+
         angular_error = CVUtils.predict_lane(canvas = color_image, 
                                              binary = binary_morphology, 
                                              roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
@@ -155,7 +162,6 @@ class SubLogicController(Node):
                     fontScale = 0.5, 
                     color = (0, 0, 255), 
                     thickness = 2)
-        
 
         image_message = self.cv_bridge.cv2_to_imgmsg(color_image, encoding="bgr8")
         self.pub_eye_on_chassis_direction.publish(msg = image_message)

@@ -23,7 +23,7 @@ from utils import CommonUtils
 from geometry_msgs.msg import Twist
 from watermelon_robot_interface.msg import IChassisDirectionControl
 from watermelon_robot_interface.srv import IChassisStartStopControl
-from rclpy.qos import qos_profile_sensor_data, QoSProfile, ReliabilityPolicy, HistoryPolicy
+from rclpy.qos import qos_profile_sensor_data, QoSProfile
 from utils import config
 from service import ChassisService
 import time
@@ -47,20 +47,15 @@ class ChassisController(Node):
                                                               topic = self.input_0,
                                                               qos_profile = qos_profile_sensor_data, 
                                                               callback = self.correct_error)
-        cmd_vel_qos = QoSProfile(
-            reliability=ReliabilityPolicy.RELIABLE,  # <--- 解决你报错的关键
-            history=HistoryPolicy.KEEP_LAST,         # 历史记录策略：保留最新的几个消息
-            depth=10                                 # 队列深度：10
-        )
+        cmd_vel_qos = QoSProfile(depth=10)
 
         self.pub_cmd_vel = self.create_publisher(msg_type = Twist, 
                                                  topic = self.output_0, 
-                                                 qos_profile = 10)
+                                                 qos_profile = cmd_vel_qos)
         
         self.srv_chassis_start_stop = self.create_service(srv_type = IChassisStartStopControl, 
                                                           srv_name = self.duplex_0, 
                                                           callback = self.chassis_start_stop)
-
 
         CommonUtils.node_initialized(self)
 

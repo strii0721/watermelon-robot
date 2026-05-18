@@ -35,7 +35,8 @@ class RoboticArmController(Node):
         CommonUtils.node_initializer(self)
 
         # 此处可快速更换机械臂构型（当然是在配置文件里）
-        robotic_arm = config.robotic_arm
+        # robotic_arm = config.robotic_arm
+        robotic_arm = config.robotic_arm_1
 
         self.robotic_arm_service = RoboticArmService(ip = robotic_arm.ip, 
                                                      tool_standby_sextuplet = tuple(robotic_arm.tool_standby_sextuple), 

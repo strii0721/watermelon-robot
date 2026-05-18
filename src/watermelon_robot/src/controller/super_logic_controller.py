@@ -54,6 +54,7 @@ class SuperLogicController(Node):
                                                                     msg_type = Image, 
                                                                     topic = self.input_0,
                                                                     qos_profile = qos_profile_sensor_data)
+        
         self.sub_eye_on_hand_depth_raw = message_filters.Subscriber(node = self, 
                                                                     msg_type = Image, 
                                                                     topic = self.input_1,
@@ -73,8 +74,6 @@ class SuperLogicController(Node):
         
         self.cli_logic_controller_comm = self.create_client(srv_type = ILogicControllerComm, 
                                                             srv_name = self.duplex_1)
-        
-        
         
         self.approximate_time_synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs = [self.sub_eye_on_hand_color_raw, 
@@ -103,12 +102,11 @@ class SuperLogicController(Node):
                                               camera_intrinsics = camera_intrinsics)
 
         if not self.target_lock and target_list: 
-            self.target_lock = True
-            future_logic_controller = self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_DISABLE)
-            future_logic_controller.add_done_callback(callback = self.logic_controller_action_done)
+            
             target_list.sort(key=lambda target: target[0])
             target = target_list[-1]
             self.get_logger().info(f"当前目标（手眼相机参考系）：{target}")
+            
             future = self.robotic_arm_action_once(camera_coordinate = target)
             future.add_done_callback(callback = self.robotic_arm_action_once_done)
         
@@ -120,21 +118,24 @@ class SuperLogicController(Node):
 
         image_message = self.cv_bridge.cv2_to_imgmsg(color_image, encoding="bgr8")
         self.pub_eye_on_hand_boxed.publish(msg = image_message)
-    
+
     def robotic_arm_action_once(self, 
                                 camera_coordinate: tuple):
+        
+        self.target_lock = True
+        sub_logic_controller_response = self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_DISABLE)
+        self.logic_controller_comm_done(sub_logic_controller_response)
         
         request = IRoboticArmAction.Request()
         request.position_on_camera = camera_coordinate
 
         return self.cli_robotic_arm_action_once.call_async(request)
     
-    
     def robotic_arm_action_once_done(self, 
                                      future):
         
+        # 目标锁解锁
         response = cast(IRoboticArmAction.Response, future.result())
-        self._target_lock = False
         
         if response.is_success: 
             self.get_logger().info(f"机械臂执行完成")
@@ -142,29 +143,28 @@ class SuperLogicController(Node):
         else:
             self.get_logger().warn(f"机械臂执行异常，异常状态码{response.message}")
         
-        future_logic_controller = self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_ENABLE)
-        future_logic_controller.add_done_callback(callback = self.logic_controller_action_done)
-
-
+        sub_logic_controller_response = self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_ENABLE)
+        self.logic_controller_comm_done(sub_logic_controller_response)
+        self.target_lock = False
+        
     def logic_controller_comm(self, 
-                              comm_code: int):
+                              comm_code: int) -> ILogicControllerComm.Response:
         
         request = ILogicControllerComm.Request()
         request.comm_code = comm_code
 
-        return self.cli_logic_controller_comm.call_async(request)
-    
+        return self.cli_logic_controller_comm.call(request)
 
-    def logic_controller_action_done(self, 
-                                     future):
+    def logic_controller_comm_done(self, 
+                                   response: ILogicControllerComm.Response):
         
-        response = cast(ILogicControllerComm.Response, future.result())
-        
+        # TODO 需要细化异常处理
         if response.is_success: 
             self.get_logger().info(f"上下逻辑控制器通信正常")
         
         else:
             self.get_logger().warn(f"上下逻辑控制器通信异常，错误信息：{response.message}")
+        
 
 def main():
 
