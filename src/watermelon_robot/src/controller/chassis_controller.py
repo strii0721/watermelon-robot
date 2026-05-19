@@ -23,7 +23,7 @@ from utils import CommonUtils
 from geometry_msgs.msg import Twist
 from watermelon_robot_interface.msg import IChassisDirectionControl
 from watermelon_robot_interface.srv import IChassisStartStopControl
-from rclpy.qos import qos_profile_sensor_data, QoSProfile
+from protocal import QOSFile
 from utils import config
 from service import ChassisService
 import time
@@ -45,13 +45,12 @@ class ChassisController(Node):
 
         self.sub_chassis_direction = self.create_subscription(msg_type = IChassisDirectionControl, 
                                                               topic = self.input_0,
-                                                              qos_profile = qos_profile_sensor_data, 
+                                                              qos_profile = QOSFile.reliable_qos, 
                                                               callback = self.correct_error)
-        cmd_vel_qos = QoSProfile(depth=10)
 
         self.pub_cmd_vel = self.create_publisher(msg_type = Twist, 
-                                                 topic = self.output_0, 
-                                                 qos_profile = cmd_vel_qos)
+                                                 topic = self.output_0,
+                                                 qos_profile = QOSFile.reliable_qos, )
         
         self.srv_chassis_start_stop = self.create_service(srv_type = IChassisStartStopControl, 
                                                           srv_name = self.duplex_0, 
@@ -63,26 +62,25 @@ class ChassisController(Node):
                            request: IChassisStartStopControl.Request, 
                            response: IChassisStartStopControl.Response) -> IChassisStartStopControl.Response:
         
-        request = IChassisStartStopControl.Request()
         status = request.status
         if status: 
-            self.enable()
+            self.enable_chassis()
         else: 
-            self.disable()
+            self.disable_chassis()
 
         response.is_success = True
 
         return response
 
 
-    def enable(self):
+    def enable_chassis(self):
 
         twist_msg = self.chassis_service.start(forward_speed = self.forward_speed)
         self.pub_cmd_vel.publish(msg = twist_msg)
         self.enable = True
 
 
-    def disable(self): 
+    def disable_chassis(self): 
         
         self.enable = False
         twist_msg = self.chassis_service.stop()
@@ -90,7 +88,7 @@ class ChassisController(Node):
 
 
     def correct_error(self, 
-                  control_variable_msg: IChassisDirectionControl):
+                      control_variable_msg: IChassisDirectionControl):
         
         if self.enable:
             timestamp = control_variable_msg.timestamp
@@ -101,17 +99,6 @@ class ChassisController(Node):
                                                                     forward_speed = self.forward_speed, 
                                                                     yaw_angle = angular_error)
             self.pub_cmd_vel.publish(msg = twist_msg)
-
-
-    def check_enable(self) -> bool:
-
-        return self.enable
-    
-
-    def set_enable(self, 
-                   target_status):
-        
-        self.enable = target_status
 
 
 class PIDController: 

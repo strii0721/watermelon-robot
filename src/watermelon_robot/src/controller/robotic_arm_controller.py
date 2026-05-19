@@ -25,6 +25,7 @@ import time
 from utils import config
 from utils import CommonUtils
 import numpy as np
+from protocal import LogicControllerCommCode
 
 
 class RoboticArmController(Node):
@@ -36,12 +37,12 @@ class RoboticArmController(Node):
 
         # 此处可快速更换机械臂构型（当然是在配置文件里）
         # robotic_arm = config.robotic_arm
-        robotic_arm = config.robotic_arm_s
+        self.robotic_arm = config.robotic_arm_s
 
-        self.robotic_arm_service = RoboticArmService(ip = robotic_arm.ip, 
-                                                     tool_standby_sextuplet = tuple(robotic_arm.tool_standby_sextuple), 
-                                                     camera_pose_matix = np.array(robotic_arm.camera_pose_matix),
-                                                     speed_rate = robotic_arm.speed_rate)
+        self.robotic_arm_service = RoboticArmService(ip = self.robotic_arm.ip, 
+                                                     tool_standby_sextuplet = tuple(self.robotic_arm.tool_standby_sextuple), 
+                                                     camera_pose_matix = np.array(self.robotic_arm.camera_pose_matix),
+                                                     speed_rate = self.robotic_arm.speed_rate)
         
         state_code = self.robotic_arm_service.stand_by()
         if state_code == 0 :
@@ -52,6 +53,7 @@ class RoboticArmController(Node):
         self.srv_robotic_arm_action_once = self.create_service(srv_type = IRoboticArmAction, 
                                                                srv_name = self.duplex_0, 
                                                                callback = self.robotic_arm_action_once)
+        
         CommonUtils.node_initialized(self)
         
         
@@ -59,27 +61,35 @@ class RoboticArmController(Node):
                                 request: IRoboticArmAction.Request, 
                                 response: IRoboticArmAction.Response) -> IRoboticArmAction.Response:
         
-        position = tuple(request.position_on_camera)
+        position_on_camera = request.position_on_camera
+        # 工具偏移
+        position_on_camera[0] += self.robotic_arm.tool_error[0]  
+        position_on_camera[1] += self.robotic_arm.tool_error[1]
+        position_on_camera[2] += self.robotic_arm.tool_error[2]
+               
+        position = tuple(position_on_camera)
         state_code = self.robotic_arm_service.move_to_position(position = position, 
                                                                 is_world_position = False)
         
         if state_code != 0 : 
             response.is_success = False
-            response.message = str(state_code)
+            response.message = f"机械臂运动失败，状态码 {state_code}"
             self.robotic_arm_service.stand_by()
             return response
             
-        
         # 剩余机械臂业务代码
         # TODO
         time.sleep(2)
 
         
         self.robotic_arm_service.stand_by()
+        
         response.is_success = True
-        response.message = str(state_code)
-
+        
         return response
+    
+    
+    
     
         
 def main():

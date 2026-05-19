@@ -32,6 +32,9 @@ from cv_bridge import CvBridge
 import message_filters
 from utils import config
 from protocal import LogicControllerCommCode
+import asyncio
+
+
 
 
 class SuperLogicController(Node):
@@ -75,6 +78,8 @@ class SuperLogicController(Node):
         self.cli_logic_controller_comm = self.create_client(srv_type = ILogicControllerComm, 
                                                             srv_name = self.duplex_1)
         
+        
+        
         self.approximate_time_synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs = [self.sub_eye_on_hand_color_raw, 
                   self.sub_eye_on_hand_depth_raw, 
@@ -107,9 +112,8 @@ class SuperLogicController(Node):
             target = target_list[-1]
             self.get_logger().info(f"当前目标（手眼相机参考系）：{target}")
             
-            future = self.robotic_arm_action_once(camera_coordinate = target)
-            future.add_done_callback(callback = self.robotic_arm_action_once_done)
-        
+            self.robotic_arm_action_once(camera_coordinate = target)
+        1
 
         now = time.time()
         fps = 1.0 / (now - self.gpr_0)
@@ -120,52 +124,48 @@ class SuperLogicController(Node):
         self.pub_eye_on_hand_boxed.publish(msg = image_message)
 
     def robotic_arm_action_once(self, 
-                                camera_coordinate: tuple):
+                                camera_coordinate: tuple) -> None: 
         
+        
+        # 锁定目标
         self.target_lock = True
+        self.get_logger().info(f"目标已锁定")
         
-        # 等待底盘停止
-        sub_logic_controller_response = self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_DISABLE)
-        self.logic_controller_comm_done(sub_logic_controller_response)
+        # 尝试暂停底盘
+        self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_DISABLE)
         
-        request = IRoboticArmAction.Request()
-        request.position_on_camera = camera_coordinate
+        if not True:
+            self.get_logger().info("下逻辑控制器通信失败，目标已解锁")
+            self.target_lock = False
+        else:
+            request = IRoboticArmAction.Request()
+            request.timestamp = time.time()
+            request.position_on_camera = camera_coordinate
 
-        return self.cli_robotic_arm_action_once.call_async(request)
+            future = self.cli_robotic_arm_action_once.call_async(request)
+            future.add_done_callback(callback = self.robotic_arm_action_once_done)
     
     def robotic_arm_action_once_done(self, 
-                                     future):
+                                     future: rclpy.Future) -> None:
         
-        # 目标锁解锁
         response = cast(IRoboticArmAction.Response, future.result())
         
         if response.is_success: 
             self.get_logger().info(f"机械臂执行完成")
         
         else:
-            self.get_logger().warn(f"机械臂执行异常，异常状态码{response.message}")
+            self.get_logger().warn(f"机械臂执行异常，异常信息：{response.message}")
         
-        sub_logic_controller_response = self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_ENABLE)
-        self.logic_controller_comm_done(sub_logic_controller_response)
+        self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_ENABLE)
         self.target_lock = False
+        self.get_logger().info(f"目标已解锁")
         
     def logic_controller_comm(self, 
-                              comm_code: int) -> ILogicControllerComm.Response:
+                              comm_code: LogicControllerCommCode) -> rclpy.Future:
         
         request = ILogicControllerComm.Request()
         request.comm_code = comm_code
-
-        return self.cli_logic_controller_comm.call(request)
-
-    def logic_controller_comm_done(self, 
-                                   response: ILogicControllerComm.Response):
-        
-        # TODO 需要细化异常处理
-        if response.is_success: 
-            self.get_logger().info(f"上下逻辑控制器通信正常")
-        
-        else:
-            self.get_logger().warn(f"上下逻辑控制器通信异常，错误信息：{response.message}")
+        self.cli_logic_controller_comm.call_async(request)
         
 
 def main():

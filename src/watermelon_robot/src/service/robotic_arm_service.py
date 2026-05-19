@@ -59,10 +59,6 @@ class RoboticArmService:
         tcp_T_c = self._robotic_arm_mapper.get_tcpTc_matrix() 
         target_c = np.append(camera_position, 1.0).reshape(4, 1)
         target_w = (w_T_tcp @ tcp_T_c) @ target_c
-        
-        # 处理工具偏移
-        target_w[0] += 50
-        target_w[2] += 70
 
         world_coordinate = tuple(target_w[0:3, 0].tolist())
 
@@ -93,10 +89,6 @@ class RoboticArmService:
         safe_pose = self._calculate_safe_pose(pose = pose)
         safe_midway_pose = self._calculate_safe_pose(pose = midway_pose)
         
-        # 这一块需要注释掉
-        # state_code = 0
-        # print(f"==========================================={safe_pose}")
-        
         state_code = self._robotic_arm_mapper.move_to_pose(pose = safe_midway_pose)
         state_code = self._robotic_arm_mapper.move_to_pose(pose = safe_pose)
         
@@ -109,11 +101,8 @@ class RoboticArmService:
         _, current_pose = self._robotic_arm_mapper.get_tcp_pose()
         midway_pose = self._calculate_midway_pose(pose = current_pose)
         
-        # 这一块需要注释掉
-        # state_code = 0
-        # print(f"==========================================={pose}")
-        
         state_code = self._robotic_arm_mapper.move_to_pose(pose = midway_pose)
+        if state_code != 0:
+            return state_code
         state_code = self._robotic_arm_mapper.move_to_pose(pose = pose)
-        
         return state_code

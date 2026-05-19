@@ -1,1 +1,2 @@
 from .logic_controller_comm_code import LogicControllerCommCode
+from .qos_files import QOSFile

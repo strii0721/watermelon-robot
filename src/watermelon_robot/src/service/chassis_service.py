@@ -28,15 +28,18 @@ class ChassisService:
 
     def stop(self) -> Twist:
 
-        twist_msg = self.generate_twist_msg(sextuple = [0.0] * 6)
+        sextuple = [0] * 6
+        twist_msg = self.generate_twist_msg(sextuple = sextuple)
+        
         return twist_msg
         
 
     def start(self,
-              forward_speed) -> Twist:
+              forward_speed):
         
-        twist_msg = self.generate_twist_msg(sextuple = [forward_speed, 0, 0, 0, 0, 0])
-
+        sextuple = [forward_speed] + [0] * 5
+        twist_msg = self.generate_twist_msg(sextuple = sextuple)
+        
         return twist_msg
     
 
@@ -54,7 +57,7 @@ class ChassisService:
     
 
     def generate_twist_msg(self, 
-                           sextuple: tuple) -> Twist:
+                           sextuple: list) -> Twist:
         
         twist_msg = Twist()
         twist_msg.linear.x = float(sextuple[0])

@@ -22,7 +22,6 @@ from rclpy.node import Node
 from utils import CommonUtils
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image, CameraInfo
-from std_msgs.msg import Float64
 import message_filters
 from utils import CVUtils
 from watermelon_robot_interface.srv import ILogicControllerComm, IChassisStartStopControl
@@ -31,8 +30,8 @@ from utils import config
 import cv2
 import time
 from cv_bridge import CvBridge
-import os
 from protocal import LogicControllerCommCode
+from protocal import QOSFile
 from typing import cast
 
 
@@ -63,7 +62,7 @@ class SubLogicController(Node):
         
         self.pub_chassis_direction = self.create_publisher(IChassisDirectionControl, 
                                                            self.output_0, 
-                                                           qos_profile = qos_profile_sensor_data)
+                                                           qos_profile = QOSFile.reliable_qos)
         
         self.pub_eye_on_chassis_direction = self.create_publisher(Image, 
                                                                   self.output_1, 
@@ -96,38 +95,27 @@ class SubLogicController(Node):
                               request: ILogicControllerComm.Request, 
                               response: ILogicControllerComm.Response) -> ILogicControllerComm.Response:
         
-        request = IChassisStartStopControl.Request()
         comm_code = request.comm_code
+        self.get_logger().info(f"收到上逻辑控制器通信，通信码 {comm_code}")
 
         match comm_code:
             case LogicControllerCommCode.CHASSIS_ENABLE: 
-                response_from_chassis = self.chassis_start_stop(status = True)
+                self.chassis_start_stop(status = True)
 
             case LogicControllerCommCode.CHASSIS_DISABLE:
-                response_from_chassis = self.chassis_start_stop(status = False)
+                self.chassis_start_stop(status = False)
 
-        response.is_success = self.chassis_start_stop_done(response = response_from_chassis)
-
+        response.is_success = True
         return response
     
     def chassis_start_stop(self, 
-                           status: bool) -> IChassisStartStopControl.Response:
+                           status: bool):
         
         request = IChassisStartStopControl.Request()
         request.timestamp = time.time()
         request.status = status
-        return self.cli_chassis_start_stop.call(request = request)
-    
-    def chassis_start_stop_done(self, 
-                                response: IChassisStartStopControl.Response):
-        
-        # TODO 需要细化异常处理
-        if response.is_success:
-            return True
-        else:
-            self.get_logger().warn(f"下逻辑控制器 - 底盘通信异常，异常信息：{response.message}")
-            return False
-        
+        self.cli_chassis_start_stop.call_async(request = request)
+
 
     def detect_lane(self, 
                     color_image_msg, 
@@ -149,7 +137,7 @@ class SubLogicController(Node):
                                              detect_step = config.lane_detection.detect_step)
 
         # 这一行仅作测试用，实际环境记得注释掉
-        angular_error = 0.01
+        angular_error = 0.0001
 
         height, width = binary.shape
         now = time.time()
