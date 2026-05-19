@@ -57,6 +57,20 @@ class ChassisController(Node):
                                                           callback = self.chassis_start_stop)
 
         CommonUtils.node_initialized(self)
+        
+    def enable_chassis(self):
+
+        twist_msg = self.chassis_service.start(forward_speed = self.forward_speed)
+        self.pub_cmd_vel.publish(msg = twist_msg)
+        self.enable = True
+
+
+    def disable_chassis(self): 
+        
+        self.enable = False
+        twist_msg = self.chassis_service.stop()
+        self.pub_cmd_vel.publish(msg = twist_msg)
+        
 
     def chassis_start_stop(self,
                            request: IChassisStartStopControl.Request, 
@@ -73,25 +87,10 @@ class ChassisController(Node):
         return response
 
 
-    def enable_chassis(self):
-
-        twist_msg = self.chassis_service.start(forward_speed = self.forward_speed)
-        self.pub_cmd_vel.publish(msg = twist_msg)
-        self.enable = True
-
-
-    def disable_chassis(self): 
-        
-        self.enable = False
-        twist_msg = self.chassis_service.stop()
-        self.pub_cmd_vel.publish(msg = twist_msg)
-
-
     def correct_error(self, 
                       control_variable_msg: IChassisDirectionControl):
         
         if self.enable:
-            timestamp = control_variable_msg.timestamp
             angular_error = control_variable_msg.angular_error
             angular_speed = self.pid_controller.update_control_variable(error = angular_error)
             self.get_logger().info(f"当前角度误差：{angular_error} | 产生控制变量（角速度）{angular_speed}")

@@ -30,11 +30,7 @@ import time
 import cv2
 from cv_bridge import CvBridge
 import message_filters
-from utils import config
 from protocal import LogicControllerCommCode
-import asyncio
-
-
 
 
 class SuperLogicController(Node):
@@ -46,7 +42,7 @@ class SuperLogicController(Node):
 
         self.target_lock = False
         self.device, self._use_half = ModelUtils.setup_device()
-        self._fa_on = ModelUtils.check_flash_attention()
+        self.fa_on = ModelUtils.check_flash_attention()
         self.cv_bridge = CvBridge()
         self.gpr_0 = time.time()        # 用于 self.detect_target() 的帧率统计
 
@@ -92,13 +88,55 @@ class SuperLogicController(Node):
         CommonUtils.node_initialized(self)
 
     
+    def robotic_arm_action_once_done(self, 
+                                     future: rclpy.Future) -> None:
+        
+        response = cast(IRoboticArmAction.Response, future.result())
+        
+        if response.is_success: 
+            self.get_logger().info(f"机械臂执行完成")
+        
+        else:
+            self.get_logger().warn(f"机械臂执行异常，异常信息：{response.message}")
+        
+        self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_ENABLE)
+        
+        self.target_lock = False
+        self.get_logger().info(f"目标已解锁")
+        
+        
+    def logic_controller_comm(self, 
+                              comm_code: LogicControllerCommCode) -> rclpy.Future:
+        
+        request = ILogicControllerComm.Request()
+        request.comm_code = comm_code
+        self.cli_logic_controller_comm.call_async(request)
+        
+        
+    def robotic_arm_action_once(self, 
+                                camera_coordinate: tuple) -> None: 
+        
+        # 锁定目标
+        self.target_lock = True
+        self.get_logger().info(f"目标已锁定")
+        
+        # 尝试暂停底盘
+        self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_DISABLE)
+        
+        request = IRoboticArmAction.Request()
+        request.timestamp = time.time()
+        request.position_on_camera = camera_coordinate
+        future = self.cli_robotic_arm_action_once.call_async(request)
+        future.add_done_callback(callback = self.robotic_arm_action_once_done)
+        
+        
     def detect_target(self, 
                       color_image_msg, 
                       depth_image_msg, 
                       camera_info_msg):
 
-        color_image = self.cv_bridge.imgmsg_to_cv2(color_image_msg, desired_encoding = "bgr8")
-        depth_image = self.cv_bridge.imgmsg_to_cv2(depth_image_msg, desired_encoding = "16UC1")
+        color_image = self.cv_bridge.imgmsg_to_cv2(color_image_msg, desired_encoding = "passthrough")
+        depth_image = self.cv_bridge.imgmsg_to_cv2(depth_image_msg, desired_encoding = "passthrough")
         camera_intrinsics = camera_info_msg
         target_list = DLUtils.predict_targets(model = self.model, 
                                               device = self.device, 
@@ -122,51 +160,7 @@ class SuperLogicController(Node):
 
         image_message = self.cv_bridge.cv2_to_imgmsg(color_image, encoding="bgr8")
         self.pub_eye_on_hand_boxed.publish(msg = image_message)
-
-    def robotic_arm_action_once(self, 
-                                camera_coordinate: tuple) -> None: 
-        
-        
-        # 锁定目标
-        self.target_lock = True
-        self.get_logger().info(f"目标已锁定")
-        
-        # 尝试暂停底盘
-        self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_DISABLE)
-        
-        if not True:
-            self.get_logger().info("下逻辑控制器通信失败，目标已解锁")
-            self.target_lock = False
-        else:
-            request = IRoboticArmAction.Request()
-            request.timestamp = time.time()
-            request.position_on_camera = camera_coordinate
-
-            future = self.cli_robotic_arm_action_once.call_async(request)
-            future.add_done_callback(callback = self.robotic_arm_action_once_done)
-    
-    def robotic_arm_action_once_done(self, 
-                                     future: rclpy.Future) -> None:
-        
-        response = cast(IRoboticArmAction.Response, future.result())
-        
-        if response.is_success: 
-            self.get_logger().info(f"机械臂执行完成")
-        
-        else:
-            self.get_logger().warn(f"机械臂执行异常，异常信息：{response.message}")
-        
-        self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_ENABLE)
-        self.target_lock = False
-        self.get_logger().info(f"目标已解锁")
-        
-    def logic_controller_comm(self, 
-                              comm_code: LogicControllerCommCode) -> rclpy.Future:
-        
-        request = ILogicControllerComm.Request()
-        request.comm_code = comm_code
-        self.cli_logic_controller_comm.call_async(request)
-        
+                
 
 def main():
 

@@ -49,14 +49,14 @@ class RealsenseController(Node):
                                                                    qos_profile = qos_profile_sensor_data)
         
         self.tmr_camera_frame = self.create_timer(timer_period_sec = 1/self.fps, 
-                                                  callback = self.camera_frame_capture)
+                                                  callback = self.output_frames)
         
         CommonUtils.node_initialized(self)
 
     
-    def camera_frame_capture(self):
+    def output_frames(self):
         
-        rtn = self.realsense_service.read_current_frame()
+        rtn = self.realsense_service.read_frames()
 
         if not rtn: 
             return None

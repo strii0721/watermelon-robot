@@ -25,7 +25,6 @@ import time
 from utils import config
 from utils import CommonUtils
 import numpy as np
-from protocal import LogicControllerCommCode
 
 
 class RoboticArmController(Node):
@@ -81,7 +80,7 @@ class RoboticArmController(Node):
         # TODO
         time.sleep(2)
 
-        
+
         self.robotic_arm_service.stand_by()
         
         response.is_success = True

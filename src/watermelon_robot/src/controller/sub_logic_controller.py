@@ -32,7 +32,6 @@ import time
 from cv_bridge import CvBridge
 from protocal import LogicControllerCommCode
 from protocal import QOSFile
-from typing import cast
 
 
 class SubLogicController(Node):
@@ -89,6 +88,15 @@ class SubLogicController(Node):
         self.approximate_time_synchronizer.registerCallback(self.detect_lane)
 
         CommonUtils.node_initialized(self)
+        
+
+    def chassis_start_stop(self, 
+                           status: bool):
+        
+        request = IChassisStartStopControl.Request()
+        request.timestamp = time.time()
+        request.status = status
+        self.cli_chassis_start_stop.call_async(request = request)
 
 
     def logic_controller_comm(self, 
@@ -108,22 +116,14 @@ class SubLogicController(Node):
         response.is_success = True
         return response
     
-    def chassis_start_stop(self, 
-                           status: bool):
-        
-        request = IChassisStartStopControl.Request()
-        request.timestamp = time.time()
-        request.status = status
-        self.cli_chassis_start_stop.call_async(request = request)
-
 
     def detect_lane(self, 
                     color_image_msg, 
                     depth_image_msg, 
                     camera_info_msg):
 
-        color_image = self.cv_bridge.imgmsg_to_cv2(color_image_msg, desired_encoding = "bgr8")
-        depth_image = self.cv_bridge.imgmsg_to_cv2(depth_image_msg, desired_encoding = "16UC1")
+        color_image = self.cv_bridge.imgmsg_to_cv2(color_image_msg, desired_encoding = "passthrough")
+        depth_image = self.cv_bridge.imgmsg_to_cv2(depth_image_msg, desired_encoding = "passthrough")
         camera_intrinsics = camera_info_msg
 
         hsv, blurred, binary, binary_morphology = CVUtils.lane_detection_preprocess(source_image = color_image, 

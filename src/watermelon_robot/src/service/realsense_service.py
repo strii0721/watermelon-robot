@@ -27,7 +27,7 @@ class RealsenseService:
         self.camera_mapper = RealsenseMapper()
 
 
-    def read_current_frame(self) -> list | None: 
+    def read_frames(self) -> list | None: 
 
         [color_frame, 
          depth_frame, 
