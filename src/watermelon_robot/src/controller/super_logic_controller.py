@@ -31,6 +31,7 @@ import cv2
 from cv_bridge import CvBridge
 import message_filters
 from protocal import LogicControllerCommCode
+from protocal import ST_SUPER_LOGIC_CONTROLLER as ST
 
 
 class SuperLogicController(Node):
@@ -39,12 +40,12 @@ class SuperLogicController(Node):
 
         super().__init__("super_logic_controller")
         CommonUtils.node_initializer(self)
-
-        self.target_lock = False
+        
+        CommonUtils.transfer_node_status(self, ST.STANDBY)
         self.device, self._use_half = ModelUtils.setup_device()
         self.fa_on = ModelUtils.check_flash_attention()
         self.cv_bridge = CvBridge()
-        self.gpr_0 = time.time()        # 用于 self.detect_target() 的帧率统计
+        self.last_frame_time = time.time()
 
         self.model = ModelUtils.load_model(device = self.device, 
                                            use_half = self._use_half)
@@ -86,49 +87,68 @@ class SuperLogicController(Node):
         self.approximate_time_synchronizer.registerCallback(self.detect_target)
         
         CommonUtils.node_initialized(self)
-
+        
+    def resume_move(self, 
+                    future: rclpy.Future):
+        
+        sub_logic_controller_response = cast(ILogicControllerComm.Response, future.result())
+        
+        if sub_logic_controller_response.is_success:
+            self.get_logger().info(f"底盘启动成功！")
+            CommonUtils.transfer_node_status(self, ST.STANDBY)
+        else:
+            self.get_logger().info(f"底盘启动失败！")
+            CommonUtils.transfer_node_status(self, ST.QUIT)
     
-    def robotic_arm_action_once_done(self, 
+    def operate_robotic_arm_done(self, 
                                      future: rclpy.Future) -> None:
         
         response = cast(IRoboticArmAction.Response, future.result())
         
         if response.is_success: 
             self.get_logger().info(f"机械臂执行完成")
+            future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.CHASSIS_ENABLE)
+            future.add_done_callback(callback = self.resume_move)
         
         else:
             self.get_logger().warn(f"机械臂执行异常，异常信息：{response.message}")
+            CommonUtils.transfer_node_status(self, ST.QUIT)
         
-        self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_ENABLE)
-        
-        self.target_lock = False
-        self.get_logger().info(f"目标已解锁")
-        
-        
-    def logic_controller_comm(self, 
-                              comm_code: LogicControllerCommCode) -> rclpy.Future:
-        
-        request = ILogicControllerComm.Request()
-        request.comm_code = comm_code
-        self.cli_logic_controller_comm.call_async(request)
-        
-        
-    def robotic_arm_action_once(self, 
-                                camera_coordinate: tuple) -> None: 
-        
-        # 锁定目标
-        self.target_lock = True
-        self.get_logger().info(f"目标已锁定")
-        
-        # 尝试暂停底盘
-        self.logic_controller_comm(comm_code = LogicControllerCommCode.CHASSIS_DISABLE)
+    def operate_robotic_arm(self, 
+                            coordinate_camera: tuple):
         
         request = IRoboticArmAction.Request()
         request.timestamp = time.time()
-        request.position_on_camera = camera_coordinate
+        request.position_on_camera = coordinate_camera
         future = self.cli_robotic_arm_action_once.call_async(request)
-        future.add_done_callback(callback = self.robotic_arm_action_once_done)
+        future.add_done_callback(callback = self.operate_robotic_arm_done)
         
+    def stopped(self, 
+                  future: rclpy.Future):
+        
+        sub_logic_controller_response = cast(ILogicControllerComm.Response, future.result())
+        
+        if sub_logic_controller_response.is_success:
+            self.get_logger().info(f"底盘停止成功！")
+            CommonUtils.transfer_node_status(self, ST.READY_TO_OPERATE)
+        else: 
+            self.get_logger().info(f"底盘停止失败！")
+            CommonUtils.transfer_node_status(self, ST.QUIT)
+            
+    def command_sub_logic_controller(self, 
+                                     comm_code: LogicControllerCommCode) -> rclpy.Future:
+        
+        request = ILogicControllerComm.Request()
+        request.comm_code = comm_code
+        future = self.cli_logic_controller_comm.call_async(request)
+        future.add_done_callback(callback = self.stopped)
+            
+    def lock_target(self) -> None: 
+        
+        self.get_logger().info(f"目标已锁定")
+        CommonUtils.transfer_node_status(self, ST.TARGET_LOCKED)
+        
+        self.command_sub_logic_controller(comm_code = LogicControllerCommCode.CHASSIS_DISABLE)
         
     def detect_target(self, 
                       color_image_msg, 
@@ -144,18 +164,22 @@ class SuperLogicController(Node):
                                               depth_image = depth_image, 
                                               camera_intrinsics = camera_intrinsics)
 
-        if not self.target_lock and target_list: 
-            
-            target_list.sort(key=lambda target: target[0])
-            target = target_list[-1]
-            self.get_logger().info(f"当前目标（手眼相机参考系）：{target}")
-            
-            self.robotic_arm_action_once(camera_coordinate = target)
-        1
+        match self.status:
+            case ST.QUIT:
+                self.get_logger().warn(f"节点已进入退出状态，若未退出请手动退出...")
+                return
+            case ST.STANDBY:
+                if target_list:
+                    self.lock_target()
+            case ST.READY_TO_OPERATE:
+                target_list.sort(key=lambda target: target[0])
+                target = target_list[-1]
+                self.get_logger().info(f"当前目标（手眼相机参考系）：{target}")
+                self.operate_robotic_arm(coordinate_camera = target)
 
-        now = time.time()
-        fps = 1.0 / (now - self.gpr_0)
-        self.gpr_0 = now
+        now_time = time.time()
+        fps = 1.0 / (now_time - self.last_frame_time)
+        self.last_frame_time = now_time
         cv2.putText(color_image, f'FPS: {fps:.2f}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
 
         image_message = self.cv_bridge.cv2_to_imgmsg(color_image, encoding="bgr8")

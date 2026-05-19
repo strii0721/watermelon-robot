@@ -34,7 +34,6 @@ class RoboticArmController(Node):
         super().__init__('robotic_arm_controller')
         CommonUtils.node_initializer(self)
 
-        # 此处可快速更换机械臂构型（当然是在配置文件里）
         # robotic_arm = config.robotic_arm
         self.robotic_arm = config.robotic_arm_s
 
@@ -61,7 +60,7 @@ class RoboticArmController(Node):
                                 response: IRoboticArmAction.Response) -> IRoboticArmAction.Response:
         
         position_on_camera = request.position_on_camera
-        # 工具偏移
+
         position_on_camera[0] += self.robotic_arm.tool_error[0]  
         position_on_camera[1] += self.robotic_arm.tool_error[1]
         position_on_camera[2] += self.robotic_arm.tool_error[2]
@@ -70,25 +69,28 @@ class RoboticArmController(Node):
         state_code = self.robotic_arm_service.move_to_position(position = position, 
                                                                 is_world_position = False)
         
-        if state_code != 0 : 
-            response.is_success = False
-            response.message = f"机械臂运动失败，状态码 {state_code}"
-            self.robotic_arm_service.stand_by()
-            return response
+        if state_code == 0: 
+            self.get_logger().info(f"机械臂就位，正在剪切...")
             
-        # 剩余机械臂业务代码
-        # TODO
-        time.sleep(2)
-
-
-        self.robotic_arm_service.stand_by()
+            
+            # TODO 剩余机械臂业务代码
+            
+            
+            time.sleep(2)
+        else: 
+            self.get_logger().warn(f"目标位置无效")
+            
+        self.get_logger().info(f"机械臂正在复位...")
+        state_code = self.robotic_arm_service.stand_by()
         
-        response.is_success = True
-        
+        if state_code == 0:
+            self.get_logger().info(f"机械臂复位成功！")
+            response.is_success = True
+        else:
+            self.get_logger().info(f"机械臂复位失败！")
+            response.is_success = False
+            
         return response
-    
-    
-    
     
         
 def main():

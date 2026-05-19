@@ -59,3 +59,11 @@ class CommonUtils:
         
         node_name = node_entity.get_name()
         node_entity.get_logger().info(f"{node_name} 初始化完成...")
+        
+    @classmethod
+    def transfer_node_status(cls, 
+                        node_entity: Node, 
+                        status) -> None:
+        
+        node_entity.status = status
+        node_entity.get_logger().info(f"状态切换，当前状态：{node_entity.status}")
