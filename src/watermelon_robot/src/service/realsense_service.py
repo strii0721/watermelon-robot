@@ -26,8 +26,12 @@ class RealsenseService:
         
         self.camera_mapper = RealsenseMapper()
 
-
     def read_frames(self) -> list | None: 
+        """读取 RealSense 的一帧，并转换为 OpenCV 的 Numpy 数组格式再交付上层。
+
+        Returns:
+            list | None: 包含彩色图像、深度图像以及当前帧相机内参的列表。
+        """        
 
         [color_frame, 
          depth_frame, 

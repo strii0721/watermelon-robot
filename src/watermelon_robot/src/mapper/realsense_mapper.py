@@ -18,7 +18,6 @@
 
 
 import pyrealsense2 as rs
-import time
 
 class RealsenseMapper: 
 
@@ -32,6 +31,11 @@ class RealsenseMapper:
         self.align_method = rs.align(rs.stream.color) # type: ignore
 
     def retrieve_frames(self) -> list:
+        """向上交付 RealSense 获取的对齐后原始数据。
+
+        Returns:
+            list: 一帧原始数据（包含彩色图像、深度图像、相机内参）。
+        """        
 
         frames = self.pipeline.wait_for_frames()
         aligned_frames = self.align_method.process(frames)

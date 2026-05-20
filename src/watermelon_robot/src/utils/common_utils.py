@@ -23,13 +23,22 @@ import os
 import json
 from types import SimpleNamespace
 from rclpy.node import Node
+from protocol import ST_BASE
 
 
 class CommonUtils: 
 
     @classmethod
     def get_config(cls, 
-                   config_profile: str = "default"): 
+                   config_profile: str = "default") -> SimpleNamespace: 
+        """读取配置文件并封装为一个可访问对象。
+
+        Args:
+            config_profile (str, optional): 配置文件名称. Defaults to "default".
+
+        Returns:
+            SimpleNamespace: 可访问对象，之后可以使用 "." 访问。
+        """        
         
         package_share_dir = get_package_share_directory('watermelon_robot')
         config_dir = os.path.join(package_share_dir, "config", f"{config_profile}.yaml")
@@ -40,10 +49,14 @@ class CommonUtils:
 
         return config
 
-
     @classmethod
     def node_initializer(cls, 
                          node_entity: Node) -> None:
+        """初始化节点对象，为其绑定属性，同时向终端打印初始化信息。
+
+        Args:
+            node_entity (Node): 初始化节点对象。
+        """        
         
         node_name = node_entity.get_name()
         node_entity.get_logger().info(f"{node_name} 已上线，正在初始化...")
@@ -56,15 +69,29 @@ class CommonUtils:
     @classmethod
     def node_initialized(cls, 
                          node_entity: Node) -> None:
+        """节点对象初始化结束后行为。
+
+        Args:
+            node_entity (Node): 初始化节点对象。
+        """        
         
         node_name = node_entity.get_name()
         node_entity.get_logger().info(f"{node_name} 初始化完成...")
         
     @classmethod
     def transfer_node_state(cls, 
-                        node_entity: Node, 
-                        state) -> None:
+                            node_entity: Node, 
+                            state: ST_BASE) -> None:
+        """转移节点状态机状态。若状态转移则会在终端打印相关信息。
+
+        Args:
+            node_entity (Node): 节点对象。
+            state (ST_BASE): 目标状态。
+        """        
         
-        if node_entity.state != state:
-            node_entity.state = state
+        if not hasattr(node_entity, "state"):
+            node_entity.state = None
+        
+        if node_entity.state != state:   
+            node_entity.state = state 
             node_entity.get_logger().info(f"状态切换，当前状态：{node_entity.state}")

@@ -71,6 +71,14 @@ class RoboticArmMapper:
     
     def get_tcp_pose(self, 
                      block: bool = False) -> tuple:
+        """获取当前机械臂末端位姿六元组
+
+        Args:
+            block (bool, optional): 调用 SDK 函数的方式是否为阻塞. Defaults to False.
+
+        Returns:
+            tuple: 机械臂末端位姿六元组
+        """        
         
         block_flag = 0 if block else 1
         rtn = self._robotic_arm.GetActualTCPPose(flag = block_flag)
@@ -82,6 +90,14 @@ class RoboticArmMapper:
     
     def move_to_pose(self, 
                      pose: tuple) -> int:
+        """移动至给定位姿六元组。
+
+        Args:
+            pose (tuple): 位姿六元组（世界坐标系）。
+
+        Returns:
+            int: 机械臂状态码。
+        """        
         
         tool_numero = self.get_tool_numero()
         user_numero = self.get_user_numero()

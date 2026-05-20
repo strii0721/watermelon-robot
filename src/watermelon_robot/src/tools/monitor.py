@@ -61,8 +61,13 @@ class Monitor(Node):
             CommonUtils.node_initialized(self)
             self.get_logger().info(f"{self.get_name()} 运行模式：终端")
 
+    def render(self, 
+               message: Image): 
+        """接收到监听话题传来的图像消息后统一从该函数进行渲染。可以向终端或者网页端渲染。
 
-    def render(self, message): 
+        Args:
+            message (Image): 图像消息。
+        """        
         
         self.latest_frame = self.cv_bridge.imgmsg_to_cv2(message, desired_encoding="passthrough")
         flag = False
@@ -74,7 +79,6 @@ class Monitor(Node):
         else:
             cv2.imshow(f"{self.get_name()}", self.latest_frame)
             cv2.waitKey(self.render_interval)
-
 
     def flask_server_start(self):
 
@@ -95,11 +99,9 @@ class Monitor(Node):
                     
             time.sleep(1/self.fps)
 
-
     def video_feed(self):
 
         return Response(self.generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
 
     def index(self):
         html = f"""

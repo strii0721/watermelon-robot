@@ -27,37 +27,64 @@ class ChassisService:
 
 
     def stop(self) -> Twist:
+        """生成停止的控制消息。
+
+        Returns:
+            Twist: Ros2 的速度控制消息。
+        """        
 
         sextuple = [0] * 6
         twist_msg = self.generate_twist_msg(sextuple = sextuple)
         
         return twist_msg
         
-
     def start(self,
-              forward_speed):
+              forward_speed: float) -> Twist:
+        """生成启动时仅具有前进线速度的控制消息。
+
+        Args:
+            forward_speed (float): 目标前进线速度。
+
+        Returns:
+            Twist: Ros2 的速度控制消息。
+        """        
         
         sextuple = [forward_speed] + [0] * 5
         twist_msg = self.generate_twist_msg(sextuple = sextuple)
         
         return twist_msg
     
-
     def apply_control_variable(self, 
                                control_variable: float, 
                                forward_speed: float,
                                yaw_angle: float) -> Twist:
+        """根据控制量生成 Ros2 的控制消息。
+
+        Args:
+            control_variable (float): 控制量（PID 控制器输出）。
+            forward_speed (float): 目标前进线速度。
+            yaw_angle (float): 当前偏航角度。
+
+        Returns:
+            Twist: Ros2 的速度控制消息。
+        """        
         
-          linear_x = forward_speed * math.cos(math.radians(yaw_angle))
-          angular_z = control_variable
-
-          twist_msg = self.generate_twist_msg(sextuple = [linear_x, 0, 0, 0, 0, angular_z])
-
-          return twist_msg
-    
+        linear_x = forward_speed * math.cos(math.radians(yaw_angle))
+        angular_z = control_variable
+        twist_msg = self.generate_twist_msg(sextuple = [linear_x, 0, 0, 0, 0, angular_z])
+        
+        return twist_msg
 
     def generate_twist_msg(self, 
                            sextuple: list) -> Twist:
+        """根据 [线速度，角速度] 六元组生成 Ros2 的控制消息。
+
+        Args:
+            sextuple (list): 目标速度六元组
+
+        Returns:
+            Twist: Ros2 的速度控制消息。
+        """        
         
         twist_msg = Twist()
         twist_msg.linear.x = float(sextuple[0])

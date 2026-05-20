@@ -25,14 +25,31 @@ class RealsenseUtils:
 
     @classmethod
     def convert_pyrealsense2cv2array(cls, 
-                                     source_image):
+                                     source_image) -> np.ndarray:
+        """将 RealSense 格式图像转为 OpenCV 的 Numpy 数组格式。
+
+        Args:
+            source_image (未知类型): RealSense 格式图像。
+
+        Returns:
+            np.ndarray: OpenCV 格式图像。
+        """        
         
         cv2_array = np.asanyarray(source_image.get_data())
 
         return cv2_array
     
     @classmethod
-    def convert_intrinsics2camera_info(cls, rs_intrinsics):
+    def convert_intrinsics2camera_info(cls, 
+                                       rs_intrinsics) -> CameraInfo:
+        """将 RealSense 格式相机内参转换为 ROS2 标准相机内参数据结构。
+
+        Args:
+            rs_intrinsics (未知类型): RealSense 格式相机内参。
+
+        Returns:
+            CameraInfo: ROS2 格式相机内参。
+        """        
 
         camera_info = CameraInfo()
         camera_info.width = rs_intrinsics.width

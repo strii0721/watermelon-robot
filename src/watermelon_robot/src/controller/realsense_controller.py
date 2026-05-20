@@ -53,30 +53,26 @@ class RealsenseController(Node):
         
         CommonUtils.node_initialized(self)
 
-    
     def output_frames(self):
+        """读取 RealSense 深度相机的一帧，并发布至话题。
+        """        
         
         rtn = self.realsense_service.read_frames()
 
-        if not rtn: 
-            return None
+        if rtn:       
+            [color_frame, depth_frame, camera_intrinsics] = rtn
+            color_msg = self.cv_bridge.cv2_to_imgmsg(color_frame, encoding = "bgr8")
+            depth_msg = self.cv_bridge.cv2_to_imgmsg(depth_frame, encoding = "16UC1")
+            intrinsics_msg = camera_intrinsics
+            timestamp = self.get_clock().now().to_msg()
+            color_msg.header.stamp = timestamp
+            depth_msg.header.stamp = timestamp
+            intrinsics_msg.header.stamp = timestamp
+            self.eye_on_hand_color_raw.publish(msg = color_msg)
+            self.eye_on_hand_depth_raw.publish(msg = depth_msg)
+            self.eye_on_hand_camera_intrinsics.publish(msg = intrinsics_msg)
         
-        [color_frame, depth_frame, camera_intrinsics] = rtn
-
-        color_msg = self.cv_bridge.cv2_to_imgmsg(color_frame, encoding = "bgr8")
-        depth_msg = self.cv_bridge.cv2_to_imgmsg(depth_frame, encoding = "16UC1")
-        intrinsics_msg = camera_intrinsics
-
-        timestamp = self.get_clock().now().to_msg()
-        color_msg.header.stamp = timestamp
-        depth_msg.header.stamp = timestamp
-        intrinsics_msg.header.stamp = timestamp
-
-        self.eye_on_hand_color_raw.publish(msg = color_msg)
-        self.eye_on_hand_depth_raw.publish(msg = depth_msg)
-        self.eye_on_hand_camera_intrinsics.publish(msg = intrinsics_msg)
         
-
 def main():
 
     rclpy.init()

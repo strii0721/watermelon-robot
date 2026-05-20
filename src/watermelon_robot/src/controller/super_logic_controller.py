@@ -30,8 +30,8 @@ import time
 import cv2
 from cv_bridge import CvBridge
 import message_filters
-from protocal import LogicControllerCommCode
-from protocal import ST_SUPER_LOGIC_CONTROLLER as ST
+from protocol import LogicControllerCommCode
+from protocol import ST_SUPER_LOGIC_CONTROLLER as ST
 from types import SimpleNamespace
 
 
@@ -98,7 +98,7 @@ class SuperLogicController(Node):
 
         Args:
             comm_code (LogicControllerCommCode): 命令码。
-            retransmission (int, optional): 请求重传次数. Defaults to 1.
+            retransmission (int, optional): 请求重传次数. Defaults to 0.
 
         Returns:
             rclpy.Future: 下逻辑控制器响应的 Futrue 对象。
@@ -112,7 +112,7 @@ class SuperLogicController(Node):
         
     def enable_chassis_done(self, 
                             future: rclpy.Future):
-        """启动底盘请求的回调函数。
+        """启动底盘请求的回调函数。此处应用重传机制，若一次请求失败则会在回调中重传请求，直到成功或超过重传次数限制。
 
         Args:
             future (rclpy.Future): 底盘响应的 Future 对象。
@@ -174,7 +174,7 @@ class SuperLogicController(Node):
         
     def disable_chassis_done(self, 
                              future: rclpy.Future):
-        """停止底盘请求的回调函数。
+        """停止底盘请求的回调函数。此处应用重传机制，若一次请求失败则会在回调中重传请求，直到成功或超过重传次数限制。
 
         Args:
             future (rclpy.Future): 底盘响应的 Future 对象。

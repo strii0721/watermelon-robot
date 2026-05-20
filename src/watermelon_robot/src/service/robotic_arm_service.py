@@ -38,22 +38,46 @@ class RoboticArmService:
                                                     tool_working_orientation = tool_working_orientation, 
                                                     camera_pose_matix = camera_pose_matix)
     
-    def _calculate_safe_pose(self, 
-                             pose: tuple) -> tuple:
+    def calculate_safe_pose(self, 
+                            pose: tuple) -> tuple:
+        """由于 Fairino 机械臂 SDK 限制，特殊位姿参数会导致逆运动学解算失败，故需要在特殊位姿参数加上极小的修正量。
+
+        Args:
+            pose (tuple): 原始位姿六元组。
+
+        Returns:
+            tuple: 安全位姿六元组。
+        """        
         
         zero = 0.02
 
         return tuple(0.02 if abs(x) < zero else x for x in pose)
     
-    def _calculate_pose(self, 
-                        position: tuple) -> tuple: 
+    def calculate_pose(self, 
+                       position: tuple) -> tuple: 
+        """根据目标位置坐标计算目标位姿。
+
+        Args:
+            position (tuple): 目标位置坐标。
+
+        Returns:
+            tuple: 目标位姿六元组。
+        """        
         
         pose = position + self._robotic_arm_mapper.get_tool_working_orientation()
 
         return pose
     
-    def _calculate_world_position(self, 
-                                  camera_position: tuple) -> tuple:
+    def calculate_world_position(self, 
+                                 camera_position: tuple) -> tuple:
+        """根据相机坐标计算世界参考系坐标。
+
+        Args:
+            camera_position (tuple): 相机参考系位置坐标。
+
+        Returns:
+            tuple: 世界参考系坐标六元组。
+        """        
         
         w_T_tcp = self._robotic_arm_mapper.get_wTtcp_matrix()
         tcp_T_c = self._robotic_arm_mapper.get_tcpTc_matrix() 
@@ -64,8 +88,16 @@ class RoboticArmService:
 
         return world_coordinate
     
-    def _calculate_midway_pose(self, 
-                               pose: tuple) -> tuple: 
+    def calculate_midway_pose(self, 
+                              pose: tuple) -> tuple: 
+        """计算中间位置的位姿。机械臂会先移动到与目标位置世界参考系 z 轴等高的位置。
+
+        Args:
+            pose (tuple): 目标位姿六元组。
+
+        Returns:
+            tuple: 中间位置位姿。
+        """        
         
         midway_pose = list(pose)
         stand_by_position = self._robotic_arm_mapper.get_tool_stand_by_position()
@@ -75,34 +107,50 @@ class RoboticArmService:
         midway_pose = tuple(midway_pose)
 
         return midway_pose
-
     
     def move_to_position(self, 
                          position: tuple, 
                          is_world_position: bool = False) -> int:
+        """移动机械臂至指定位姿。
+
+        Args:
+            position (tuple): 目标位置坐标。
+            is_world_position (bool, optional): 该坐标是否为世界参考系（机械臂底座参考系）. Defaults to False.
+
+        Returns:
+            int: 机械臂状态码
+        """        
         
         if not is_world_position: 
-            position = self._calculate_world_position(camera_position = position)
+            position = self.calculate_world_position(camera_position = position)
 
-        pose = self._calculate_pose(position = position)
-        midway_pose = self._calculate_midway_pose(pose = pose)
-        safe_pose = self._calculate_safe_pose(pose = pose)
-        safe_midway_pose = self._calculate_safe_pose(pose = midway_pose)
+        pose = self.calculate_pose(position = position)
+        midway_pose = self.calculate_midway_pose(pose = pose)
+        safe_pose = self.calculate_safe_pose(pose = pose)
+        safe_midway_pose = self.calculate_safe_pose(pose = midway_pose)
         
         state_code = self._robotic_arm_mapper.move_to_pose(pose = safe_midway_pose)
+        if state_code != 0:
+            return state_code
         state_code = self._robotic_arm_mapper.move_to_pose(pose = safe_pose)
         
         return state_code
     
     def stand_by(self) -> int: 
+        """恢复机械臂为初始位姿
+
+        Returns:
+            int: 机械臂状态码
+        """        
         
         stand_by_position = self._robotic_arm_mapper.get_tool_stand_by_position()
-        pose = self._calculate_pose(position = stand_by_position)
+        pose = self.calculate_pose(position = stand_by_position)
         _, current_pose = self._robotic_arm_mapper.get_tcp_pose()
-        midway_pose = self._calculate_midway_pose(pose = current_pose)
+        midway_pose = self.calculate_midway_pose(pose = current_pose)
         
         state_code = self._robotic_arm_mapper.move_to_pose(pose = midway_pose)
         if state_code != 0:
             return state_code
         state_code = self._robotic_arm_mapper.move_to_pose(pose = pose)
+        
         return state_code

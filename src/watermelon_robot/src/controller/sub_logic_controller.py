@@ -30,8 +30,8 @@ from utils import config
 import cv2
 import time
 from cv_bridge import CvBridge
-from protocal import LogicControllerCommCode, QOSFile
-from protocal import ST_SUB_LOGIC_CONTROLLER as ST
+from protocol import LogicControllerCommCode, QOSFile
+from protocol import ST_SUB_LOGIC_CONTROLLER as ST
 from typing import cast
 from types import SimpleNamespace
 
@@ -98,6 +98,11 @@ class SubLogicController(Node):
         
     def chassis_start_done(self, 
                            future: rclpy.Future):
+        """启动底盘响应的回调函数。
+
+        Args:
+            future (rclpy.Future): 底盘响应的 Future 对象。
+        """        
         
         response = cast(IChassisStartStopControl.Response, future.result())
         if response.is_success:
@@ -109,6 +114,8 @@ class SubLogicController(Node):
             CommonUtils.transfer_node_state(self, ST.QUIT)
 
     def enable_chassis(self) -> rclpy.Future:
+        """启动底盘。
+        """        
         
         request = IChassisStartStopControl.Request()
         request.timestamp = time.time()
@@ -116,10 +123,14 @@ class SubLogicController(Node):
         future = self.cli_chassis_start_stop.call_async(request = request)
         future.add_done_callback(callback = self.chassis_start_done)
         CommonUtils.transfer_node_state(self, ST.PENDING)
-        return future
         
     def chassis_stop_done(self, 
                           future: rclpy.Future):
+        """关闭底盘响应的回调函数。
+
+        Args:
+            future (rclpy.Future): 底盘响应的 Future 对象。
+        """        
         
         response = cast(IChassisStartStopControl.Response, future.result())
         if response.is_success:
@@ -131,6 +142,8 @@ class SubLogicController(Node):
             CommonUtils.transfer_node_state(self, ST.QUIT)
         
     def disable_chassis(self):
+        """关闭底盘。
+        """        
         
         request = IChassisStartStopControl.Request()
         request.timestamp = time.time()
@@ -139,10 +152,18 @@ class SubLogicController(Node):
         future.add_done_callback(callback = self.chassis_stop_done)
         CommonUtils.transfer_node_state(self, ST.PENDING)
 
-
     def answer_super_logic_controller(self, 
                                       request: ILogicControllerComm.Request, 
                                       response: ILogicControllerComm.Response) -> ILogicControllerComm.Response:
+        """响应上逻辑控制器发来的逻辑控制器命令。此处应用重传机制，至少一次重传才会请求成功。
+
+        Args:
+            request (ILogicControllerComm.Request): 逻辑控制器命令请求。
+            response (ILogicControllerComm.Response): 逻辑控制器命令响应。
+
+        Returns:
+            ILogicControllerComm.Response: 逻辑控制器命令响应。
+        """        
         
         comm_code = request.comm_code
         retransmission = request.retransmission
@@ -166,6 +187,8 @@ class SubLogicController(Node):
         return response
     
     def correct_direction_error(self) -> None:
+        """发布角度误差（角度）。
+        """        
         
         control_msg = IChassisDirectionControl()
         control_msg.timestamp = time.time()
@@ -173,6 +196,8 @@ class SubLogicController(Node):
         self.pub_chassis_direction.publish(msg = control_msg)
     
     def analysis_latest_frame(self):
+        """分析最新帧获取并保存目标列表，并发布附加导航线叠加层的彩色图片消息。
+        """      
 
         if vars(self.latest_frame): 
             color_image = self.latest_frame.color_image
@@ -209,7 +234,14 @@ class SubLogicController(Node):
     def recieve_latest_frame(self, 
                              color_image_msg: Image, 
                              depth_image_msg: Image, 
-                             camera_info_msg: CameraInfo):
+                             camera_info_msg: CameraInfo) -> None:
+        """接收摄像头回传的最新帧图片消息并保存。
+
+        Args:
+            color_image_msg (Image): 彩色图片消息。
+            depth_image_msg (Image): 深度图片消息。
+            camera_info_msg (CameraInfo): 相机内参。
+        """  
         
         cv_bridge = CvBridge()
         self.latest_frame.color_image = cv_bridge.imgmsg_to_cv2(color_image_msg, desired_encoding = "passthrough")
@@ -223,6 +255,8 @@ class SubLogicController(Node):
         self.get_logger().warn(f"节点已进入退出状态，若未退出请手动退出...")
             
     def heartbeat(self) -> None:
+        """节点的核心业务循环，加入了状态机机制。
+        """        
         
         self.analysis_latest_frame()
         

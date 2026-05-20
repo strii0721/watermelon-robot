@@ -27,9 +27,19 @@ class CVUtils:
 
     @classmethod
     def calculate_median_depth(cls, 
-                               depth_image, 
+                               depth_image: np.ndarray, 
                                center_pixel: tuple,
-                               window_size: int = 5):
+                               window_size: int = 5) -> float:
+        """应用中值滤波器计算目标像素点深度。
+
+        Args:
+            depth_image (np.ndarray): 深度图像。
+            center_pixel (tuple): 像素点坐标。
+            window_size (int, optional): 滤波器窗口宽度. Defaults to 5.
+
+        Returns:
+            float: 目标点预测深度 (mm)。
+        """        
 
         center_y, center_x = center_pixel
         radius = max(0, window_size // 2)
@@ -54,6 +64,16 @@ class CVUtils:
                                     center_pixel: tuple,
                                     depth_image: np.ndarray,
                                     camera_intrinsics: CameraInfo) -> tuple:
+        """计算目标像素点在相机参考系下的坐标。
+
+        Args:
+            center_pixel (tuple): 目标像素点坐标。
+            depth_image (np.ndarray): 深度图片。
+            camera_intrinsics (CameraInfo): 相机内参。
+
+        Returns:
+            tuple: 相机参考系下坐标。
+        """        
         
         x_pixel, y_pixel = center_pixel
         Z = CVUtils.calculate_median_depth(depth_image = depth_image, 
@@ -71,7 +91,15 @@ class CVUtils:
 
     @classmethod
     def calculate_YCrCgCb(cls, 
-                          bgr_image):
+                          bgr_image: np.ndarray) -> tuple:
+        """根据 BGR 图像计算 Y, Cr, Cg, Cb 四个颜色分量。转换公式参考文献 DOI: 10.11975/j.issn.1002-6819.202412107.
+
+        Args:
+            bgr_image (np.ndarray): BGR 格式图片。
+
+        Returns:
+            tuple: Y, Cr, Cg, Cb 四个颜色分量。
+        """        
 
         b, g ,r = cv2.split(bgr_image)
 
@@ -82,10 +110,17 @@ class CVUtils:
 
         return (Y, Cr, Cg, Cb)
 
-
     @classmethod
     def BGR2DCgCrCb(cls, 
-                    bgr_image):
+                    bgr_image: np.ndarray) -> np.ndarray:
+        """将 BGR 格式图像转换为 2Cg-Cr-Cb 分量图像。
+
+        Args:
+            bgr_image (np.ndarray): _description_
+
+        Returns:
+            np.ndarray: _description_
+        """        
 
         Y, Cr, Cg, Cb = CVUtils.calculate_YCrCgCb(bgr_image = bgr_image)
 
@@ -99,7 +134,15 @@ class CVUtils:
     
     @classmethod
     def not_maximum_connected_area_suppresion(cls, 
-                                              binary_image):
+                                              binary_image: np.ndarray) -> np.ndarray:
+        """仅保留二值图中面积最大的连通图形。
+
+        Args:
+            binary_image (np.ndarray): 二值图。
+
+        Returns:
+            np.ndarray: 非极大连通抑制后的二值图。
+        """        
 
         contours, hierarchy = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -114,12 +157,21 @@ class CVUtils:
 
         return supressed
     
-    
     @classmethod
     def lane_detection_preprocess(cls, 
                                   source_image: np.ndarray, 
                                   roi_y_min_portion: float, 
                                   roi_y_max_portion: float) -> list:
+        """导航线预测的预处理。
+
+        Args:
+            source_image (np.ndarray): 彩色图片。
+            roi_y_min_portion (float): 兴趣区域的顶部 y 坐标。
+            roi_y_max_portion (float): 兴趣区域的底部 y 坐标。
+
+        Returns:
+            list: _description_
+        """        
         
         height, width = source_image.shape[:2]
 
@@ -152,7 +204,6 @@ class CVUtils:
         binary_morphology = cv2.dilate(binary_morphology, kernel_rectangle, iterations = 5)
 
         return [hsv, blurred, binary, binary_morphology]
-  
     
     @classmethod
     def predict_lane(cls, 
@@ -161,6 +212,18 @@ class CVUtils:
                      roi_y_min_portion: float, 
                      roi_y_max_portion: float, 
                      detect_step: int) -> float:
+        """预测导航线并输出误差角度。
+
+        Args:
+            canvas (np.ndarray): 叠加层渲染对象图片。
+            binary (np.ndarray): 预处理后的二值图，用于导航线预测。
+            roi_y_min_portion (float): 兴趣区域的顶部 y 坐标（比例形式）。
+            roi_y_max_portion (float): 兴趣区域的底部 y 坐标（比例形式）。
+            detect_step (int): 导航点生成间隔像素数。
+
+        Returns:
+            float: 当前航向与预测导航线误差角度。
+        """        
         
         height, width = binary.shape
         roi_y_min = int(height * roi_y_min_portion)
@@ -220,10 +283,18 @@ class CVUtils:
         return angle
     
     @classmethod
-
     def claculate_angle(cls, 
-                        reference_line, 
-                        navigate_line) -> float:
+                        reference_line: tuple, 
+                        navigate_line: tuple) -> float:
+        """计算两线段的夹角（锐角）。
+
+        Args:
+            reference_line (tuple): A 线段起点终点坐标组成的元组。
+            navigate_line (tuple): B 线段起点终点坐标组成的元组。
+
+        Returns:
+            float: 两线段夹角（锐角）
+        """        
         
         reference_start, reference_end = reference_line
         navigate_start, navigate_end = navigate_line

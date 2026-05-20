@@ -3,7 +3,7 @@
 model: 
   name: "yolov26-best.pt"
   use_half: False
-  confidence: 0.7
+  confidence: 0.5
   iou: 0.8
   device: "0"
 
@@ -75,7 +75,8 @@ _node_initializer:
     ats:                        # 近似时序同步器
       queue_size: 10             # 缓存队列大小
       slop: 0.05                 # 最大时间差（秒）
-    heartbeat_interval: 0.1     # Heartbeat 循环周期
+    heartbeat_interval: 0.01    # Heartbeat 循环周期
+    request_retransmission_limit: 3
 
 # -------------------------------------------------------
   
@@ -147,8 +148,7 @@ _node_initializer:
     ats:                        # 近似时序同步器
       queue_size: 10             # 缓存队列大小
       slop: 0.05                 # 最大时间差（秒）
-    heartbeat_interval: 0.1     # Heartbeat 循环周期
-    request_retransmission_limit = 3
+    heartbeat_interval: 0.01    # Heartbeat 循环周期
 
 # -------------------------------------------------------
   

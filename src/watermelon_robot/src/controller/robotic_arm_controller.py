@@ -54,10 +54,18 @@ class RoboticArmController(Node):
         
         CommonUtils.node_initialized(self)
         
-        
     def robotic_arm_action_once(self, 
                                 request: IRoboticArmAction.Request, 
                                 response: IRoboticArmAction.Response) -> IRoboticArmAction.Response:
+        """机械臂的一次完整运动，包括移动至目标位置、剪切、复位等。若无法移动至目标位置则会尝试复位。只有当复位失败才会返回 is_success = False。
+
+        Args:
+            request (IRoboticArmAction.Request): 请求对象。
+            response (IRoboticArmAction.Response): 响应对象。
+
+        Returns:
+            IRoboticArmAction.Response: 响应对象。
+        """        
         
         position_on_camera = request.position_on_camera
         position_on_camera[0] += self.robotic_arm.tool_error[0]  
