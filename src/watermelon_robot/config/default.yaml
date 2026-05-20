@@ -3,7 +3,7 @@
 model: 
   name: "yolov26-best.pt"
   use_half: False
-  confidence: 0.4
+  confidence: 0.7
   iou: 0.8
   device: "0"
 
@@ -27,12 +27,12 @@ robotic_arm:
 robotic_arm_s: 
   ip: "192.168.58.2"
   speed_rate: 20
-  tool_standby_sextuple: [102, -200, 250, 180, -90, -90]
+  tool_standby_sextuple: [102, -230, 190, 179, -89, -89]
   camera_pose_matix: [[0, -1, 0, 25],
                       [1, 0, 0, 60],
                       [0, 0, 1, 10],
                       [0, 0, 0, 1]]
-  tool_error: [0, 100, 180]
+  tool_error: [-80, 150, -70]
 
 # -------------------------------------------------------
 # 导航线检测相关
@@ -50,7 +50,7 @@ chassis:
     pid_triple: [1.2, 0.1, 0.05]
     control_interval: 0.01
     maximum_output_abs: 100
-  forward_speed: 0.4
+  forward_speed: 0.35
 
 
 ######################################## 以下是节点初始化器配置 ########################################

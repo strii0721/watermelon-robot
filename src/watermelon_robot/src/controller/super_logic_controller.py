@@ -88,8 +88,16 @@ class SuperLogicController(Node):
         
         CommonUtils.node_initialized(self)
         
-    def resume_move(self, 
-                    future: rclpy.Future):
+    def command_sub_logic_controller(self, 
+                                     comm_code: LogicControllerCommCode) -> rclpy.Future:
+        
+        request = ILogicControllerComm.Request()
+        request.comm_code = comm_code
+        future = self.cli_logic_controller_comm.call_async(request)
+        return future
+        
+    def enable_chassis(self, 
+                       future: rclpy.Future):
         
         sub_logic_controller_response = cast(ILogicControllerComm.Response, future.result())
         
@@ -108,7 +116,7 @@ class SuperLogicController(Node):
         if response.is_success: 
             self.get_logger().info(f"机械臂执行完成")
             future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.CHASSIS_ENABLE)
-            future.add_done_callback(callback = self.resume_move)
+            future.add_done_callback(callback = self.enable_chassis)
         
         else:
             self.get_logger().warn(f"机械臂执行异常，异常信息：{response.message}")
@@ -117,14 +125,16 @@ class SuperLogicController(Node):
     def operate_robotic_arm(self, 
                             coordinate_camera: tuple):
         
+        self.get_logger().info(f"当前目标（手眼相机参考系）：{coordinate_camera}")
+        CommonUtils.transfer_node_status(self, ST.OPERATING)
         request = IRoboticArmAction.Request()
         request.timestamp = time.time()
         request.position_on_camera = coordinate_camera
         future = self.cli_robotic_arm_action_once.call_async(request)
         future.add_done_callback(callback = self.operate_robotic_arm_done)
         
-    def stopped(self, 
-                  future: rclpy.Future):
+    def disable_chassis(self, 
+                     future: rclpy.Future):
         
         sub_logic_controller_response = cast(ILogicControllerComm.Response, future.result())
         
@@ -135,20 +145,13 @@ class SuperLogicController(Node):
             self.get_logger().info(f"底盘停止失败！")
             CommonUtils.transfer_node_status(self, ST.QUIT)
             
-    def command_sub_logic_controller(self, 
-                                     comm_code: LogicControllerCommCode) -> rclpy.Future:
-        
-        request = ILogicControllerComm.Request()
-        request.comm_code = comm_code
-        future = self.cli_logic_controller_comm.call_async(request)
-        future.add_done_callback(callback = self.stopped)
-            
     def lock_target(self) -> None: 
         
         self.get_logger().info(f"目标已锁定")
-        CommonUtils.transfer_node_status(self, ST.TARGET_LOCKED)
+        CommonUtils.transfer_node_status(self, ST.TARGET_DETECTED)
         
-        self.command_sub_logic_controller(comm_code = LogicControllerCommCode.CHASSIS_DISABLE)
+        future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.CHASSIS_DISABLE)
+        future.add_done_callback(callback = self.disable_chassis)
         
     def detect_target(self, 
                       color_image_msg, 
@@ -171,11 +174,15 @@ class SuperLogicController(Node):
             case ST.STANDBY:
                 if target_list:
                     self.lock_target()
+            case ST.TARGET_DETECTED:
+                pass
             case ST.READY_TO_OPERATE:
-                target_list.sort(key=lambda target: target[0])
-                target = target_list[-1]
-                self.get_logger().info(f"当前目标（手眼相机参考系）：{target}")
-                self.operate_robotic_arm(coordinate_camera = target)
+                if target_list:
+                    target_list.sort(key=lambda target: target[0])
+                    target = target_list[-1]
+                    self.operate_robotic_arm(coordinate_camera = target)
+            case ST.OPERATING:
+                pass
 
         now_time = time.time()
         fps = 1.0 / (now_time - self.last_frame_time)

@@ -33,8 +33,6 @@ from cv_bridge import CvBridge
 from protocal import LogicControllerCommCode, QOSFile
 from protocal import ST_SUB_LOGIC_CONTROLLER as ST
 from typing import cast
-from rclpy.executors import MultiThreadedExecutor
-from rclpy.callback_groups import ReentrantCallbackGroup
 
 
 class SubLogicController(Node):
@@ -44,7 +42,7 @@ class SubLogicController(Node):
         super().__init__("sub_logic_controller")
         CommonUtils.node_initializer(self)
 
-        CommonUtils.transfer_node_status(self, ST.STANDBY)
+        CommonUtils.transfer_node_status(self, ST.STOPPED)
         self.cv_bridge = CvBridge()
         self.last_frame_time = time.time()   # 用于用于 self.detect_lane() 的帧率统计
         
@@ -75,16 +73,12 @@ class SubLogicController(Node):
                                                                           self.output_2, 
                                                                           qos_profile = qos_profile_sensor_data)
         
-        self.chassis_callback_group = ReentrantCallbackGroup()
-        
         self.srv_logic_controller_comm = self.create_service(srv_type = ILogicControllerComm, 
                                                              srv_name = self.duplex_0, 
-                                                             callback = self.command_sub_logic_controller, 
-                                                             callback_group = self.chassis_callback_group)
+                                                             callback = self.answer_super_logic_controller)
         
         self.cli_chassis_start_stop = self.create_client(srv_type = IChassisStartStopControl, 
-                                                         srv_name = self.duplex_1,
-                                                         callback_group = self.chassis_callback_group)
+                                                         srv_name = self.duplex_1)
         
         self.approximate_time_synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs = [self.sub_eye_on_chassis_color_raw, 
@@ -104,13 +98,14 @@ class SubLogicController(Node):
         response = cast(IChassisStartStopControl.Response, future.result())
         if response.is_success:
             self.get_logger().info(f"底盘启动成功！")
-            CommonUtils.transfer_node_status(self, ST.MOVING_FORWATD)
+            
         else:
             self.get_logger().warn(f"底盘启动失败！")
             CommonUtils.transfer_node_status(self, ST.QUIT)
 
     def chassis_start(self):
         
+        CommonUtils.transfer_node_status(self, ST.MOVING_FORWATD)
         request = IChassisStartStopControl.Request()
         request.timestamp = time.time()
         request.status = True
@@ -124,23 +119,24 @@ class SubLogicController(Node):
         response = cast(IChassisStartStopControl.Response, future.result())
         if response.is_success:
             self.get_logger().info(f"底盘已停止！")
-            CommonUtils.transfer_node_status(self, ST.STANDBY)
+            
         else:
             self.get_logger().warn(f"底盘停止失败！")
             CommonUtils.transfer_node_status(self, ST.QUIT)
         
     def chassis_stop(self):
         
+        CommonUtils.transfer_node_status(self, ST.STOPPED)
         request = IChassisStartStopControl.Request()
         request.timestamp = time.time()
-        request.status = True
+        request.status = False
         future = self.cli_chassis_start_stop.call_async(request = request)
         future.add_done_callback(callback = self.chassis_stop_done)
         return future
 
-    async def command_sub_logic_controller(self, 
-                                     request: ILogicControllerComm.Request, 
-                                     response: ILogicControllerComm.Response) -> ILogicControllerComm.Response:
+    def answer_super_logic_controller(self, 
+                                      request: ILogicControllerComm.Request, 
+                                      response: ILogicControllerComm.Response) -> ILogicControllerComm.Response:
         
         comm_code = request.comm_code
         self.get_logger().info(f"收到上逻辑控制器通信，通信码 {comm_code}")
@@ -152,7 +148,7 @@ class SubLogicController(Node):
             case LogicControllerCommCode.CHASSIS_DISABLE:
                 future = self.chassis_stop()
 
-        response = await future
+        response.is_success = True
         
         return response
     
@@ -200,7 +196,7 @@ class SubLogicController(Node):
             case ST.QUIT:
                 self.get_logger().warn(f"节点已进入退出状态，若未退出请手动退出...")
                 return
-            case ST.STANDBY:
+            case ST.STOPPED:
                 pass
             case ST.MOVING_FORWATD:
                 control_msg = IChassisDirectionControl()
@@ -213,9 +209,7 @@ def main():
 
     rclpy.init()
     sub_logic_controller = SubLogicController()
-    executor = MultiThreadedExecutor()
-    executor.add_node(sub_logic_controller)
-    executor.spin()
+    rclpy.spin(sub_logic_controller)
     sub_logic_controller.destroy_node()
     rclpy.shutdown()
 

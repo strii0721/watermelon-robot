@@ -60,11 +60,9 @@ class RoboticArmController(Node):
                                 response: IRoboticArmAction.Response) -> IRoboticArmAction.Response:
         
         position_on_camera = request.position_on_camera
-
         position_on_camera[0] += self.robotic_arm.tool_error[0]  
         position_on_camera[1] += self.robotic_arm.tool_error[1]
         position_on_camera[2] += self.robotic_arm.tool_error[2]
-               
         position = tuple(position_on_camera)
         state_code = self.robotic_arm_service.move_to_position(position = position, 
                                                                 is_world_position = False)
@@ -78,7 +76,7 @@ class RoboticArmController(Node):
             
             time.sleep(2)
         else: 
-            self.get_logger().warn(f"目标位置无效")
+            self.get_logger().warn(f"机械臂移动失败，状态码：{state_code}")
             
         self.get_logger().info(f"机械臂正在复位...")
         state_code = self.robotic_arm_service.stand_by()
@@ -87,9 +85,8 @@ class RoboticArmController(Node):
             self.get_logger().info(f"机械臂复位成功！")
             response.is_success = True
         else:
-            self.get_logger().info(f"机械臂复位失败！")
+            self.get_logger().info(f"机械臂复位失败！状态码：{state_code}")
             response.is_success = False
-            
         return response
     
         
