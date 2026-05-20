@@ -61,7 +61,7 @@ class CommonUtils:
         node_entity.get_logger().info(f"{node_name} 初始化完成...")
         
     @classmethod
-    def transfer_node_status(cls, 
+    def transfer_node_state(cls, 
                         node_entity: Node, 
                         status) -> None:
         

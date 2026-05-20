@@ -3,10 +3,13 @@ from enum import Enum
 class ST_SUPER_LOGIC_CONTROLLER(Enum):
     
     QUIT = 0
-    STANDBY = 101
-    TARGET_DETECTED = 201
+    
+    DETECTING = 101
+    
+    TARGET_LOCKED = 201
     READY_TO_OPERATE = 202
-    OPERATING = 203
+    
+    PENDING = 1024
     
     
 class ST_SUB_LOGIC_CONTROLLER(Enum):

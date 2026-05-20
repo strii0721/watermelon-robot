@@ -42,7 +42,7 @@ class SubLogicController(Node):
         super().__init__("sub_logic_controller")
         CommonUtils.node_initializer(self)
 
-        CommonUtils.transfer_node_status(self, ST.STOPPED)
+        CommonUtils.transfer_node_state(self, ST.STOPPED)
         self.cv_bridge = CvBridge()
         self.last_frame_time = time.time()   # 用于用于 self.detect_lane() 的帧率统计
         
@@ -90,7 +90,7 @@ class SubLogicController(Node):
         self.approximate_time_synchronizer.registerCallback(self.detect_lane)
 
         CommonUtils.node_initialized(self)
-        CommonUtils.transfer_node_status(self, ST.MOVING_FORWATD)
+        CommonUtils.transfer_node_state(self, ST.MOVING_FORWATD)
         
     def chassis_start_done(self, 
                            future: rclpy.Future):
@@ -101,11 +101,11 @@ class SubLogicController(Node):
             
         else:
             self.get_logger().warn(f"底盘启动失败！")
-            CommonUtils.transfer_node_status(self, ST.QUIT)
+            CommonUtils.transfer_node_state(self, ST.QUIT)
 
     def chassis_start(self):
         
-        CommonUtils.transfer_node_status(self, ST.MOVING_FORWATD)
+        CommonUtils.transfer_node_state(self, ST.MOVING_FORWATD)
         request = IChassisStartStopControl.Request()
         request.timestamp = time.time()
         request.status = True
@@ -122,11 +122,11 @@ class SubLogicController(Node):
             
         else:
             self.get_logger().warn(f"底盘停止失败！")
-            CommonUtils.transfer_node_status(self, ST.QUIT)
+            CommonUtils.transfer_node_state(self, ST.QUIT)
         
     def chassis_stop(self):
         
-        CommonUtils.transfer_node_status(self, ST.STOPPED)
+        CommonUtils.transfer_node_state(self, ST.STOPPED)
         request = IChassisStartStopControl.Request()
         request.timestamp = time.time()
         request.status = False
