@@ -1,8 +1,10 @@
 # Request
 float64 timestamp
+int64 retransmission
 int64 comm_code
 ---
 # Response
 float64 timestamp
+int64 retransmission
 bool is_success
 string message

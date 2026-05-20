@@ -33,6 +33,7 @@ from cv_bridge import CvBridge
 from protocal import LogicControllerCommCode, QOSFile
 from protocal import ST_SUB_LOGIC_CONTROLLER as ST
 from typing import cast
+from types import SimpleNamespace
 
 
 class SubLogicController(Node):
@@ -42,9 +43,12 @@ class SubLogicController(Node):
         super().__init__("sub_logic_controller")
         CommonUtils.node_initializer(self)
 
-        CommonUtils.transfer_node_state(self, ST.STOPPED)
-        self.cv_bridge = CvBridge()
-        self.last_frame_time = time.time()   # 用于用于 self.detect_lane() 的帧率统计
+        self.latest_frame = SimpleNamespace()
+        self.angular_error = 0.0
+        self.last_frame_time = time.time()
+        
+        self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_interval, 
+                                                 callback = self.heartbeat)
         
         self.sub_eye_on_chassis_color_raw = message_filters.Subscriber(self, 
                                                                        Image, 
@@ -87,10 +91,10 @@ class SubLogicController(Node):
             queue_size = self.ats.queue_size,
             slop = self.ats.slop
         )
-        self.approximate_time_synchronizer.registerCallback(self.detect_lane)
+        self.approximate_time_synchronizer.registerCallback(self.recieve_latest_frame)
 
         CommonUtils.node_initialized(self)
-        CommonUtils.transfer_node_state(self, ST.MOVING_FORWATD)
+        CommonUtils.transfer_node_state(self, ST.ENABLED)
         
     def chassis_start_done(self, 
                            future: rclpy.Future):
@@ -98,19 +102,20 @@ class SubLogicController(Node):
         response = cast(IChassisStartStopControl.Response, future.result())
         if response.is_success:
             self.get_logger().info(f"底盘启动成功！")
+            CommonUtils.transfer_node_state(self, ST.ENABLED)
             
         else:
             self.get_logger().warn(f"底盘启动失败！")
             CommonUtils.transfer_node_state(self, ST.QUIT)
 
-    def chassis_start(self):
+    def enable_chassis(self) -> rclpy.Future:
         
-        CommonUtils.transfer_node_state(self, ST.MOVING_FORWATD)
         request = IChassisStartStopControl.Request()
         request.timestamp = time.time()
         request.status = True
         future = self.cli_chassis_start_stop.call_async(request = request)
         future.add_done_callback(callback = self.chassis_start_done)
+        CommonUtils.transfer_node_state(self, ST.PENDING)
         return future
         
     def chassis_stop_done(self, 
@@ -119,90 +124,120 @@ class SubLogicController(Node):
         response = cast(IChassisStartStopControl.Response, future.result())
         if response.is_success:
             self.get_logger().info(f"底盘已停止！")
+            CommonUtils.transfer_node_state(self, ST.DISABLED)
             
         else:
             self.get_logger().warn(f"底盘停止失败！")
             CommonUtils.transfer_node_state(self, ST.QUIT)
         
-    def chassis_stop(self):
+    def disable_chassis(self):
         
-        CommonUtils.transfer_node_state(self, ST.STOPPED)
         request = IChassisStartStopControl.Request()
         request.timestamp = time.time()
         request.status = False
         future = self.cli_chassis_start_stop.call_async(request = request)
         future.add_done_callback(callback = self.chassis_stop_done)
-        return future
+        CommonUtils.transfer_node_state(self, ST.PENDING)
+
 
     def answer_super_logic_controller(self, 
                                       request: ILogicControllerComm.Request, 
                                       response: ILogicControllerComm.Response) -> ILogicControllerComm.Response:
         
         comm_code = request.comm_code
+        retransmission = request.retransmission
         self.get_logger().info(f"收到上逻辑控制器通信，通信码 {comm_code}")
-
-        match comm_code:
-            case LogicControllerCommCode.CHASSIS_ENABLE: 
-                future = self.chassis_start()
-
-            case LogicControllerCommCode.CHASSIS_DISABLE:
-                future = self.chassis_stop()
-
-        response.is_success = True
+        response.is_success = False
+        response.retransmission = retransmission
         
+        match comm_code:
+            case LogicControllerCommCode.DISABLE_CHASSIS:
+                if self.state == ST.DISABLED:
+                    response.is_success = True
+                else:
+                    self.disable_chassis()
+
+            case LogicControllerCommCode.ENABLE_CHASSIS: 
+                if self.state == ST.ENABLED:
+                    response.is_success = True
+                else:
+                    self.enable_chassis()
+                    
         return response
     
+    def correct_direction_error(self) -> None:
+        
+        control_msg = IChassisDirectionControl()
+        control_msg.timestamp = time.time()
+        control_msg.angular_error = self.angular_error
+        self.pub_chassis_direction.publish(msg = control_msg)
+    
+    def analysis_latest_frame(self):
 
-    def detect_lane(self, 
-                    color_image_msg, 
-                    depth_image_msg, 
-                    camera_info_msg):
+        if vars(self.latest_frame): 
+            color_image = self.latest_frame.color_image
+            cv_bridge = CvBridge()
+            hsv, blurred, binary, binary_morphology = CVUtils.lane_detection_preprocess(source_image = color_image, 
+                                                                                        roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                                                                        roi_y_max_portion = config.lane_detection.roi.y_max_portion, )
 
-        color_image = self.cv_bridge.imgmsg_to_cv2(color_image_msg, desired_encoding = "passthrough")
-        depth_image = self.cv_bridge.imgmsg_to_cv2(depth_image_msg, desired_encoding = "passthrough")
-        camera_intrinsics = camera_info_msg
+            self.angular_error = CVUtils.predict_lane(canvas = color_image, 
+                                                 binary = binary_morphology, 
+                                                 roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                                 roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
+                                                 detect_step = config.lane_detection.detect_step)
 
-        hsv, blurred, binary, binary_morphology = CVUtils.lane_detection_preprocess(source_image = color_image, 
-                                                                                    roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
-                                                                                    roi_y_max_portion = config.lane_detection.roi.y_max_portion, )
+            # 这一行仅作测试用，实际环境记得注释掉
+            self.angular_error = 0.0001
 
-        angular_error = CVUtils.predict_lane(canvas = color_image, 
-                                             binary = binary_morphology, 
-                                             roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
-                                             roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
-                                             detect_step = config.lane_detection.detect_step)
+            height, width = binary.shape
+            now_time = time.time()
+            real_fps = int(1/(now_time - self.last_frame_time))
+            self.last_frame_time = now_time
+            cv2.putText(img = color_image, 
+                        text = f"FPS {real_fps} | Frame Size {width}x{height}", 
+                        org = (5, 20), 
+                        fontFace = cv2.FONT_HERSHEY_SIMPLEX, 
+                        fontScale = 0.5, 
+                        color = (0, 0, 255), 
+                        thickness = 2)
+            image_message = cv_bridge.cv2_to_imgmsg(color_image, encoding="bgr8")
+            self.pub_eye_on_chassis_direction.publish(msg = image_message)
+            image_message = cv_bridge.cv2_to_imgmsg(binary_morphology, encoding = "mono8")
+            self.pub_eye_on_chassis_binary_morphology.publish(msg = image_message)
 
-        # 这一行仅作测试用，实际环境记得注释掉
-        angular_error = 0.0001
-
-        height, width = binary.shape
-        now_time = time.time()
-        real_fps = int(1/(now_time - self.last_frame_time))
-        self.last_frame_time = now_time
-        cv2.putText(img = color_image, 
-                    text = f"FPS {real_fps} | Frame Size {width}x{height}", 
-                    org = (5, 20), 
-                    fontFace = cv2.FONT_HERSHEY_SIMPLEX, 
-                    fontScale = 0.5, 
-                    color = (0, 0, 255), 
-                    thickness = 2)
-
-        image_message = self.cv_bridge.cv2_to_imgmsg(color_image, encoding="bgr8")
-        self.pub_eye_on_chassis_direction.publish(msg = image_message)
-        image_message = self.cv_bridge.cv2_to_imgmsg(binary_morphology, encoding = "mono8")
-        self.pub_eye_on_chassis_binary_morphology.publish(msg = image_message)
-
-        match self.status:
+    def recieve_latest_frame(self, 
+                             color_image_msg: Image, 
+                             depth_image_msg: Image, 
+                             camera_info_msg: CameraInfo):
+        
+        cv_bridge = CvBridge()
+        self.latest_frame.color_image = cv_bridge.imgmsg_to_cv2(color_image_msg, desired_encoding = "passthrough")
+        self.latest_frame.depth_image = cv_bridge.imgmsg_to_cv2(depth_image_msg, desired_encoding = "passthrough")
+        self.latest_frame.camera_intrinsics = camera_info_msg
+        
+    def wait_quit(self) -> None:
+        """等待退出。
+        """        
+        
+        self.get_logger().warn(f"节点已进入退出状态，若未退出请手动退出...")
+            
+    def heartbeat(self) -> None:
+        
+        self.analysis_latest_frame()
+        
+        match self.state:
             case ST.QUIT:
-                self.get_logger().warn(f"节点已进入退出状态，若未退出请手动退出...")
-                return
-            case ST.STOPPED:
+                self.wait_quit()
+                
+            case ST.ENABLED:
+                self.correct_direction_error()
+                
+            case ST.DISABLED:
                 pass
-            case ST.MOVING_FORWATD:
-                control_msg = IChassisDirectionControl()
-                control_msg.timestamp = time.time()
-                control_msg.angular_error = angular_error
-                self.pub_chassis_direction.publish(msg = control_msg)
+            
+            case ST.PENDING:
+                pass
 
 
 def main():

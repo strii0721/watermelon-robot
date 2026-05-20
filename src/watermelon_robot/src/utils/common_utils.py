@@ -63,7 +63,8 @@ class CommonUtils:
     @classmethod
     def transfer_node_state(cls, 
                         node_entity: Node, 
-                        status) -> None:
+                        state) -> None:
         
-        node_entity.status = status
-        node_entity.get_logger().info(f"状态切换，当前状态：{node_entity.status}")
+        if node_entity.state != state:
+            node_entity.state = state
+            node_entity.get_logger().info(f"状态切换，当前状态：{node_entity.state}")

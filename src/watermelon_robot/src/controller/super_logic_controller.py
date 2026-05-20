@@ -42,7 +42,6 @@ class SuperLogicController(Node):
         super().__init__("super_logic_controller")
         CommonUtils.node_initializer(self)
         
-        CommonUtils.transfer_node_state(self, ST.DETECTING)
         self.latest_frame = SimpleNamespace()
         self.target_list = []
         self.current_target = None
@@ -52,6 +51,9 @@ class SuperLogicController(Node):
         self.last_frame_time = time.time()
         self.model = ModelUtils.load_model(device = self.device, 
                                            use_half = self._use_half)
+        
+        self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_interval, 
+                                                 callback = self.heartbeat)
         
         self.sub_eye_on_hand_color_raw = message_filters.Subscriber(node = self, 
                                                                     msg_type = Image, 
@@ -67,7 +69,6 @@ class SuperLogicController(Node):
                                                                             msg_type = CameraInfo, 
                                                                             topic = self.input_2,
                                                                             qos_profile = qos_profile_sensor_data)
-        
         self.pub_eye_on_hand_boxed = self.create_publisher(msg_type = Image, 
                                                            topic = self.output_0, 
                                                            qos_profile = qos_profile_sensor_data)
@@ -77,11 +78,6 @@ class SuperLogicController(Node):
         
         self.cli_logic_controller_comm = self.create_client(srv_type = ILogicControllerComm, 
                                                             srv_name = self.duplex_1)
-        
-        self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_interval, 
-                                                 callback = self.heartbeat)
-        
-        
         
         self.approximate_time_synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs = [self.sub_eye_on_hand_color_raw, 
@@ -93,13 +89,16 @@ class SuperLogicController(Node):
         self.approximate_time_synchronizer.registerCallback(self.recieve_latest_frame)
         
         CommonUtils.node_initialized(self)
+        CommonUtils.transfer_node_state(self, ST.DETECTING)
         
     def command_sub_logic_controller(self, 
-                                     comm_code: LogicControllerCommCode) -> rclpy.Future:
+                                     comm_code: LogicControllerCommCode, 
+                                     retransmission:int = 0) -> rclpy.Future:  
         """向下逻辑控制器发送命令。
 
         Args:
             comm_code (LogicControllerCommCode): 命令码。
+            retransmission (int, optional): 请求重传次数. Defaults to 1.
 
         Returns:
             rclpy.Future: 下逻辑控制器响应的 Futrue 对象。
@@ -107,6 +106,7 @@ class SuperLogicController(Node):
         
         request = ILogicControllerComm.Request()
         request.comm_code = comm_code
+        request.retransmission = retransmission
         future = self.cli_logic_controller_comm.call_async(request)
         return future
         
@@ -118,21 +118,28 @@ class SuperLogicController(Node):
             future (rclpy.Future): 底盘响应的 Future 对象。
         """        
         
-        sub_logic_controller_response = cast(ILogicControllerComm.Response, future.result())
+        response = cast(ILogicControllerComm.Response, future.result())
+        retransmission = response.retransmission + 1
         
-        if sub_logic_controller_response.is_success:
+        if response.is_success:
             self.get_logger().info(f"底盘启动成功！")
             CommonUtils.transfer_node_state(self, ST.DETECTING)
         else:
-            self.get_logger().info(f"底盘启动失败！")
-            CommonUtils.transfer_node_state(self, ST.QUIT)
+            if retransmission <= self.request_retransmission_limit:
+                future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode. ENABLE_CHASSIS, 
+                                                           retransmission = retransmission)
+                future.add_done_callback(callback = self.enable_chassis_done)
+            else:
+                self.get_logger().info(f"底盘启动失败！")
+                CommonUtils.transfer_node_state(self, ST.QUIT)
             
     def enable_chassis(self) -> None:
         """发布启动底盘的请求。
         """        
         
-        future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.CHASSIS_ENABLE)
+        future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.ENABLE_CHASSIS)
         future.add_done_callback(callback = self.enable_chassis_done)
+        CommonUtils.transfer_node_state(self, ST.PENDING)
     
     def operate_robotic_arm_done(self, 
                                  future: rclpy.Future) -> None:
@@ -173,20 +180,26 @@ class SuperLogicController(Node):
             future (rclpy.Future): 底盘响应的 Future 对象。
         """        
         
-        sub_logic_controller_response = cast(ILogicControllerComm.Response, future.result())
+        response = cast(ILogicControllerComm.Response, future.result())
+        retransmission = response.retransmission + 1
         
-        if sub_logic_controller_response.is_success:
+        if response.is_success:
             self.get_logger().info(f"底盘停止成功！")
             CommonUtils.transfer_node_state(self, ST.READY_TO_OPERATE)
         else: 
-            self.get_logger().info(f"底盘停止失败！")
-            CommonUtils.transfer_node_state(self, ST.QUIT)
+            if retransmission <= self.request_retransmission_limit:
+                future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode. DISABLE_CHASSIS, 
+                                                           retransmission = retransmission)
+                future.add_done_callback(callback = self.disable_chassis_done)
+            else:
+                self.get_logger().info(f"底盘停止失败！")
+                CommonUtils.transfer_node_state(self, ST.QUIT)
             
     def diable_chassis(self) -> None:
         """发布停止底盘的请求。
         """        
         
-        future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.CHASSIS_DISABLE)
+        future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.DISABLE_CHASSIS)
         future.add_done_callback(callback = self.disable_chassis_done)
         CommonUtils.transfer_node_state(self, ST.PENDING)
             
@@ -210,10 +223,10 @@ class SuperLogicController(Node):
         if vars(self.latest_frame): 
             cv_bridge = CvBridge()
             self.target_list = DLUtils.predict_targets(model = self.model, 
-                                                  device = self.device, 
-                                                  color_image = self.latest_frame.color_image, 
-                                                  depth_image = self.latest_frame.depth_image, 
-                                                  camera_intrinsics = self.latest_frame.camera_intrinsics)
+                                                       device = self.device, 
+                                                       color_image = self.latest_frame.color_image, 
+                                                       depth_image = self.latest_frame.depth_image, 
+                                                       camera_intrinsics = self.latest_frame.camera_intrinsics)
             
             now_time = time.time()
             fps = 1.0 / (now_time - self.last_frame_time)
@@ -225,13 +238,13 @@ class SuperLogicController(Node):
     def recieve_latest_frame(self, 
                              color_image_msg: Image, 
                              depth_image_msg: Image, 
-                             camera_info_msg: Image) -> None:
+                             camera_info_msg: CameraInfo) -> None:
         """接收摄像头回传的最新帧图片消息并保存。
 
         Args:
             color_image_msg (Image): 彩色图片消息。
             depth_image_msg (Image): 深度图片消息。
-            camera_info_msg (Image): 相机内参。
+            camera_info_msg (CameraInfo): 相机内参。
         """        
 
         cv_bridge = CvBridge()
@@ -245,7 +258,7 @@ class SuperLogicController(Node):
         
         self.get_logger().warn(f"节点已进入退出状态，若未退出请手动退出...")
         
-    def heartbeat(self): 
+    def heartbeat(self) -> None: 
         """节点的核心业务循环，加入了状态机机制。
         """        
         

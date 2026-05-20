@@ -72,11 +72,10 @@ _node_initializer:
 
     # 通用配置块 ###################
     ###########
-    ats:               # 近似时序同步器
-      queue_size: 10    # 缓存队列大小
-      slop: 0.05        # 最大时间差（秒）
-    
-    heartbeat_interval: 0.1
+    ats:                        # 近似时序同步器
+      queue_size: 10             # 缓存队列大小
+      slop: 0.05                 # 最大时间差（秒）
+    heartbeat_interval: 0.1     # Heartbeat 循环周期
 
 # -------------------------------------------------------
   
@@ -145,9 +144,11 @@ _node_initializer:
 
     # 通用配置块 ###################
     ###########
-    ats:               # 近似时序同步器
-      queue_size: 10    # 缓存队列大小
-      slop: 0.05        # 最大时间差（秒）
+    ats:                        # 近似时序同步器
+      queue_size: 10             # 缓存队列大小
+      slop: 0.05                 # 最大时间差（秒）
+    heartbeat_interval: 0.1     # Heartbeat 循环周期
+    request_retransmission_limit = 3
 
 # -------------------------------------------------------
   

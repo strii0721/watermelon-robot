@@ -1,4 +1,4 @@
 class LogicControllerCommCode:
 
-    CHASSIS_ENABLE = 400
-    CHASSIS_DISABLE = 401
+    ENABLE_CHASSIS = 400
+    DISABLE_CHASSIS = 401
