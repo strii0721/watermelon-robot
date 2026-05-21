@@ -213,7 +213,7 @@ class SubLogicController(Node):
                                                  detect_step = config.lane_detection.detect_step)
 
             # 这一行仅作测试用，实际环境记得注释掉
-            self.angular_error = 0.0001
+            # self.angular_error = 0.0001
 
             height, width = binary.shape
             now_time = time.time()

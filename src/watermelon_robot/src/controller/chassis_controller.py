@@ -62,7 +62,7 @@ class ChassisController(Node):
         """        
 
         twist_msg = self.chassis_service.start(forward_speed = self.forward_speed)
-        # self.get_logger().info(f"{twist_msg}")
+        self.get_logger().info(f"{twist_msg}")
         self.pub_cmd_vel.publish(msg = twist_msg)
 
     def disable_chassis(self): 
@@ -70,7 +70,7 @@ class ChassisController(Node):
         """        
         
         twist_msg = self.chassis_service.stop()
-        # self.get_logger().info(f"{twist_msg}")
+        self.get_logger().info(f"{twist_msg}")
         self.pub_cmd_vel.publish(msg = twist_msg)
 
     def chassis_start_stop(self,
@@ -106,7 +106,7 @@ class ChassisController(Node):
         
         angular_error = control_variable_msg.angular_error
         angular_speed = self.pid_controller.update_control_variable(error = angular_error)
-        # self.get_logger().info(f"当前角度误差：{angular_error} | 产生控制变量（角速度）{angular_speed}")
+        self.get_logger().info(f"当前角度误差：{angular_error} | 产生控制变量（角速度）{angular_speed}")
         twist_msg = self.chassis_service.apply_control_variable(control_variable = angular_speed,
                                                                 forward_speed = self.forward_speed, 
                                                                 yaw_angle = angular_error)

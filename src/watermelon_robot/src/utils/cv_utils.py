@@ -264,7 +264,7 @@ class CVUtils:
             navigate_line = (reference_point, navigate_point)
 
             angle = CVUtils.claculate_angle(reference_line = reference_line, 
-                                            navigate_line = navigate_line)
+                                            navigation_line = navigate_line)
 
             mark_size = 5
             cv2.line(canvas, (navigate_point[0] - mark_size, navigate_point[1]), (navigate_point[0] + mark_size, navigate_point[1]), (0, 0, 255), 2)
@@ -285,19 +285,19 @@ class CVUtils:
     @classmethod
     def claculate_angle(cls, 
                         reference_line: tuple, 
-                        navigate_line: tuple) -> float:
+                        navigation_line: tuple) -> float:
         """计算两线段的夹角（锐角）。
 
         Args:
-            reference_line (tuple): A 线段起点终点坐标组成的元组。
-            navigate_line (tuple): B 线段起点终点坐标组成的元组。
+            reference_line (tuple): 朝向参考线线段起点终点坐标对。
+            navigation_line (tuple): 预测导航线线段起点终点坐标对。
 
         Returns:
             float: 两线段夹角（锐角）
         """        
         
         reference_start, reference_end = reference_line
-        navigate_start, navigate_end = navigate_line
+        navigate_start, navigate_end = navigation_line
         vector_feference = (reference_end[0] - reference_start[0], -(reference_end[1] - reference_start[1]))
         vector_navigate = (navigate_end[0] - navigate_start[0], -(navigate_end[1] - navigate_start[1]))
 
