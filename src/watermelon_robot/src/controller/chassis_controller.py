@@ -17,6 +17,7 @@
 #
 
 
+from control_algorithm import PIDController
 import rclpy
 from rclpy.node import Node
 from utils import CommonUtils
@@ -38,8 +39,9 @@ class ChassisController(Node):
 
         self.chassis_service = ChassisService()
         self.forward_speed = config.chassis.forward_speed
-        self.pid_controller = PIDController(pid_triple = config.chassis.pid_controller.pid_triple, 
-                                            maximum_output_abs = config.chassis.pid_controller.maximum_output_abs)
+        self.last_control_time = 0
+        self.controller = PIDController(pid_triple = config.chassis.pid_controller.pid_triple, 
+                                        maximum_output_abs = config.chassis.pid_controller.maximum_output_abs)
 
 
         self.sub_chassis_direction = self.create_subscription(msg_type = IChassisDirectionControl, 
@@ -62,16 +64,16 @@ class ChassisController(Node):
         """        
 
         twist_msg = self.chassis_service.start(forward_speed = self.forward_speed)
-        self.get_logger().info(f"{twist_msg}")
         self.pub_cmd_vel.publish(msg = twist_msg)
+        self.last_control_time = time.time()
 
     def disable_chassis(self): 
         """向底盘 SDK 订阅的话题直接发布速度为0的消息。
         """        
         
         twist_msg = self.chassis_service.stop()
-        self.get_logger().info(f"{twist_msg}")
         self.pub_cmd_vel.publish(msg = twist_msg)
+        self.last_control_time = 0
 
     def chassis_start_stop(self,
                            request: IChassisStartStopControl.Request, 
@@ -104,61 +106,18 @@ class ChassisController(Node):
             control_variable_msg (IChassisDirectionControl): 包装角度误差数据的消息对象。
         """        
         
-        angular_error = control_variable_msg.angular_error
-        angular_speed = self.pid_controller.update_control_variable(error = angular_error)
-        self.get_logger().info(f"当前角度误差：{angular_error} | 产生控制变量（角速度）{angular_speed}")
-        twist_msg = self.chassis_service.apply_control_variable(control_variable = angular_speed,
-                                                                forward_speed = self.forward_speed, 
-                                                                yaw_angle = angular_error)
-        self.pub_cmd_vel.publish(msg = twist_msg)
-
-
-class PIDController: 
-
-    def __init__(self, 
-                 pid_triple: tuple, 
-                 maximum_output_abs: float):
-        
-        self.kp, self.ki, self.kd = pid_triple
-        self.maximum_output_abs = maximum_output_abs
-        self.integral = 0
-        self.previous_error = 0
-        self.previous_time = time.time()
-
-    def update_control_variable(self, 
-                                error: float) -> float:
-        """根据误差应用 PID 控制器输出控制量。
-
-        Args:
-            error (float): 角度误差（角度）。
-
-        Returns:
-            float: 控制量。
-        """        
-
         now = time.time()
-        dt = now - self.previous_time
-        self.previous_time = now
-
-        p_term = self.kp * error
-        
-        self.integral += error * dt
-            
-        i_term = self.ki * self.integral
-        
-        derivative = (error - self.previous_error) / dt
-        d_term = self.kd * derivative
-        
-        output = p_term + i_term + d_term
-        
-        sign = 1 if output >= 0 else -1
-
-        if abs(output) > self.maximum_output_abs:
-            output = sign * self.maximum_output_abs
-            
-        self.previous_error = error
-        
-        return output
+        if self.last_control_time:
+            contro_interval = now - self.last_control_time
+            angular_error = control_variable_msg.angular_error
+            control_variable = self.controller.update_control_variable(error = angular_error, 
+                                                                       control_interval = contro_interval)
+            self.get_logger().info(f"当前角度误差：{angular_error} | 产生控制变量：{control_variable}")
+            twist_msg = self.chassis_service.apply_control_variable(control_variable = control_variable,
+                                                                    forward_speed = self.forward_speed, 
+                                                                    yaw_angle = angular_error)
+            self.pub_cmd_vel.publish(msg = twist_msg)
+        self.last_control_time = now
 
 
 def main():

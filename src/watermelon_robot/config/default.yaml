@@ -41,6 +41,8 @@ lane_detection:
     y_min_portion: 0.7
     y_max_portion: 0.9
   detect_step: 5
+  maximum_window_size: 5
+  reference_depth: 5
 
 # -------------------------------------------------------
 # 底盘控制相关

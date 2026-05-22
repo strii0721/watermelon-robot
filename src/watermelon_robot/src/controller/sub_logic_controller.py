@@ -46,6 +46,7 @@ class SubLogicController(Node):
         self.latest_frame = SimpleNamespace()
         self.angular_error = 0.0
         self.last_frame_time = time.time()
+        self.refernce_frames = []
         
         self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_interval, 
                                                  callback = self.heartbeat)
@@ -94,7 +95,7 @@ class SubLogicController(Node):
         self.approximate_time_synchronizer.registerCallback(self.recieve_latest_frame)
 
         CommonUtils.node_initialized(self)
-        CommonUtils.transfer_node_state(self, ST.ENABLED)
+        self.enable_chassis()
         
     def chassis_start_done(self, 
                            future: rclpy.Future):
@@ -196,24 +197,26 @@ class SubLogicController(Node):
         self.pub_chassis_direction.publish(msg = control_msg)
     
     def analysis_latest_frame(self):
-        """分析最新帧获取并保存目标列表，并发布附加导航线叠加层的彩色图片消息。
+        """分析最新帧获取并保存角度误差，并发布附加导航线叠加层的彩色图片消息。
         """      
 
         if vars(self.latest_frame): 
             color_image = self.latest_frame.color_image
             cv_bridge = CvBridge()
-            hsv, blurred, binary, binary_morphology = CVUtils.lane_detection_preprocess(source_image = color_image, 
-                                                                                        roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
-                                                                                        roi_y_max_portion = config.lane_detection.roi.y_max_portion, )
-
+            [binary, 
+             binary_suppressed, 
+             binary_morphology] = CVUtils.lane_detection_preprocess(source_image = color_image, 
+                                                                    roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                                                    roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
+                                                                    maximum_window_size = config.lane_detection.maximum_window_size,
+                                                                    reference_frames = self.refernce_frames)
+            self.reference_frames.append(binary_suppressed)
+            self.refernce_frames = self.refernce_frames[-config.lane_detection.reference_depth:]
             self.angular_error = CVUtils.predict_lane(canvas = color_image, 
-                                                 binary = binary_morphology, 
-                                                 roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
-                                                 roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
-                                                 detect_step = config.lane_detection.detect_step)
-
-            # 这一行仅作测试用，实际环境记得注释掉
-            # self.angular_error = 0.0001
+                                                      binary = binary_morphology, 
+                                                      roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                                      roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
+                                                      detect_step = config.lane_detection.detect_step)
 
             height, width = binary.shape
             now_time = time.time()

@@ -134,11 +134,15 @@ class CVUtils:
     
     @classmethod
     def not_maximum_connected_area_suppresion(cls, 
-                                              binary_image: np.ndarray) -> np.ndarray:
-        """仅保留二值图中面积最大的连通图形。
+                                              binary_image: np.ndarray, 
+                                              maximum_window_size: int,
+                                              reference_frames: list) -> np.ndarray:
+        """仅保留二值图中面积最大的连通图形。现在采用取 n 个最大面积轮廓，与前 k 帧生成的非极大面积抑制后的结果进行匹配度比较，选择匹配度最高（差异度最低）的。
 
         Args:
             binary_image (np.ndarray): 二值图。
+            maximum_window_size (int): 取窗口大小个最大面积轮廓参与与历史帧匹配度的比较。
+            reference_frames (list): 参与匹配度比较的历史帧数量。
 
         Returns:
             np.ndarray: 非极大连通抑制后的二值图。
@@ -149,25 +153,35 @@ class CVUtils:
         if not contours:
             return binary_image
 
-        largest_contour = max(contours, key=cv2.contourArea)
-
+        largest_contours = sorted(contours, key=cv2.contourArea, reverse=True)[:maximum_window_size]
+        difference = [idx / 10 for idx in range(len(largest_contours))]
+        for reference_frame in reference_frames:
+            c, _ = cv2.findContours(reference_frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if c:
+                reference_contour = max(c, key=cv2.contourArea)               
+                for idx in range(len(largest_contours)):
+                    difference[idx] += cv2.matchShapes(largest_contours[idx], reference_contour, cv2.CONTOURS_MATCH_I1, 0.0)
+        print(f"最小差异度：{min(difference)}")
+        largest_contour = largest_contours[difference.index(min(difference))]            
         supressed = np.zeros_like(binary_image)
-
         cv2.drawContours(supressed, [largest_contour], -1, 255, thickness=cv2.FILLED)
-
+        
         return supressed
     
     @classmethod
     def lane_detection_preprocess(cls, 
                                   source_image: np.ndarray, 
                                   roi_y_min_portion: float, 
-                                  roi_y_max_portion: float) -> list:
+                                  roi_y_max_portion: float, 
+                                  maximum_window_size: int,
+                                  reference_frames: list = []) -> list:
         """导航线预测的预处理。
 
         Args:
             source_image (np.ndarray): 彩色图片。
             roi_y_min_portion (float): 兴趣区域的顶部 y 坐标。
             roi_y_max_portion (float): 兴趣区域的底部 y 坐标。
+            reference_frames (list, optional): 参与划分道路的参考帧列表. Defaults to [].
 
         Returns:
             list: _description_
@@ -183,7 +197,7 @@ class CVUtils:
         # 是时候使用 HSV 了，效果要比 RGB 好
         h, s, v = cv2.split(hsv)
 
-        # dCgCrCb = CommonUtils.BGR2DCgCrCb(source_image)
+        # dCgCrCb = CVUtils.BGR2DCgCrCb(source_image)
 
         # gray = cv2.cvtColor(dCgCrCb, cv2.COLOR_BGR2GRAY)
 
@@ -196,14 +210,16 @@ class CVUtils:
         kernel_square = np.ones((2, 2), np.uint8)
         binary_morphology = binary.copy()
         binary_morphology = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel_rectangle, iterations= 30)
-        binary_morphology = cv2.erode(binary_morphology, kernel_rectangle, iterations = 3)
+        binary_morphology = cv2.erode(binary_morphology, kernel_rectangle, iterations = 10)
         binary_morphology[0:roi_y_min, :] = 0
         binary_morphology[roi_y_max:height, :] = 0
-        binary_morphology = CVUtils.not_maximum_connected_area_suppresion(binary_morphology)
-        binary_morphology = cv2.morphologyEx(binary_morphology, cv2.MORPH_OPEN, kernel_square, iterations= 20)
-        binary_morphology = cv2.dilate(binary_morphology, kernel_rectangle, iterations = 5)
+        binary_supressed = CVUtils.not_maximum_connected_area_suppresion(binary_image = binary_morphology, 
+                                                                         maximum_window_size = maximum_window_size,
+                                                                         reference_frames = reference_frames)
+        binary_morphology = cv2.morphologyEx(binary_supressed, cv2.MORPH_OPEN, kernel_square, iterations= 20)
+        # binary_morphology = cv2.dilate(binary_morphology, kernel_rectangle, iterations = 5)
 
-        return [hsv, blurred, binary, binary_morphology]
+        return [binary, binary_supressed, binary_morphology]
     
     @classmethod
     def predict_lane(cls, 
@@ -293,7 +309,7 @@ class CVUtils:
             navigation_line (tuple): 预测导航线线段起点终点坐标对。
 
         Returns:
-            float: 两线段夹角（锐角）
+            float: 两线段夹角（锐角）。
         """        
         
         reference_start, reference_end = reference_line
