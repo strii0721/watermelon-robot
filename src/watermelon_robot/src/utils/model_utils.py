@@ -13,19 +13,6 @@ package_share_dir = get_package_share_directory('watermelon_robot')
 class ModelUtils:
 
     @classmethod
-    def setup_device(cls):
-
-        if config.model.device is not None:
-            device = torch.device(
-                f"cuda:{config.model.device}" if str(config.model.device).isdigit() else config.model.device
-            )
-        else:
-            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        use_half = bool(config.model.use_half and device.type == "cuda")
-
-        return device, use_half
-
-    @classmethod
     def check_flash_attention(cls):
         with suppress(Exception):
             import flash_attn
@@ -35,17 +22,28 @@ class ModelUtils:
 
     @classmethod
     def load_model(cls,
-                   device: torch.device, 
-                   use_half: bool):
+                   model_name: str,
+                   use_engine: bool = False,
+                   use_half: bool | None = None, 
+                   device_no: str | int | None = None, 
+                   image_size: list | None = None, 
+                   confidence: float | None = None, 
+                   iou: float | None = None):
         
-        weights = os.path.join(package_share_dir, "model_weights", config.model.name)
+        weights = os.path.join(package_share_dir, "model_weights", model_name)
         model = YOLO(weights)
-        model.overrides["imgsz"] = 640
-        model.overrides["conf"] = config.model.confidence
-        model.overrides["iou"] = config.model.iou
-        model.to(device)
-
-        if use_half:
-            model = model.half()
+        if image_size is not None: model.overrides["imgsz"] = image_size
+        if confidence is not None: model.overrides["conf"] = confidence
+        if iou is not None: model.overrides["iou"] = iou
+        if not use_engine:
+            if device_no is not None:
+                device = torch.device(
+                    f"cuda:{device_no}" if str(device_no).isdigit() else device_no
+                )
+            else:
+                device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            model.to(device)
+            if use_half:
+                model = model.half()
             
         return model

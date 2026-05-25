@@ -161,7 +161,7 @@ class CVUtils:
                 reference_contour = max(c, key=cv2.contourArea)               
                 for idx in range(len(largest_contours)):
                     difference[idx] += cv2.matchShapes(largest_contours[idx], reference_contour, cv2.CONTOURS_MATCH_I1, 0.0)
-        print(f"最小差异度：{min(difference)}")
+        # print(f"最小差异度：{min(difference)}")
         largest_contour = largest_contours[difference.index(min(difference))]            
         supressed = np.zeros_like(binary_image)
         cv2.drawContours(supressed, [largest_contour], -1, 255, thickness=cv2.FILLED)
@@ -223,8 +223,8 @@ class CVUtils:
     
     @classmethod
     def predict_lane(cls, 
+                     source_image: np.ndarray, 
                      canvas: np.ndarray, 
-                     binary: np.ndarray, 
                      roi_y_min_portion: float, 
                      roi_y_max_portion: float, 
                      detect_step: int) -> float:
@@ -241,7 +241,7 @@ class CVUtils:
             float: 当前航向与预测导航线误差角度。
         """        
         
-        height, width = binary.shape
+        height, width = source_image.shape
         roi_y_min = int(height * roi_y_min_portion)
         roi_y_max = int(height * roi_y_max_portion)
         step = detect_step
@@ -256,7 +256,7 @@ class CVUtils:
 
         for y in range(roi_y_max, roi_y_min, -step):
 
-            row = binary[y, :]
+            row = source_image[y, :]
 
             reference_pixels = np.where(row == 255)[0]
 
@@ -282,6 +282,7 @@ class CVUtils:
             angle = CVUtils.claculate_angle(reference_line = reference_line, 
                                             navigation_line = navigate_line)
 
+            # 绘制航向点十字准星
             mark_size = 5
             cv2.line(canvas, (navigate_point[0] - mark_size, navigate_point[1]), (navigate_point[0] + mark_size, navigate_point[1]), (0, 0, 255), 2)
             cv2.line(canvas, (navigate_point[0], navigate_point[1] - mark_size), (navigate_point[0], navigate_point[1] + mark_size), (0, 0, 255), 2)

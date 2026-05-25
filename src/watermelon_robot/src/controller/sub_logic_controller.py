@@ -34,6 +34,8 @@ from protocol import LogicControllerCommCode, QOSFile
 from protocol import ST_SUB_LOGIC_CONTROLLER as ST
 from typing import cast
 from types import SimpleNamespace
+from utils import ModelUtils
+from utils import DLUtils
 
 
 class SubLogicController(Node):
@@ -46,7 +48,14 @@ class SubLogicController(Node):
         self.latest_frame = SimpleNamespace()
         self.angular_error = 0.0
         self.last_frame_time = time.time()
-        self.refernce_frames = []
+        self.use_yolo = config.lane_detection.use_yolo
+        if self.use_yolo:
+            self.model = ModelUtils.load_model(model_name = config.lane_detection.model.name, 
+                                               use_engine = config.lane_detection.model.use_engine,
+                                               confidence = config.lane_detection.model.confidence)
+        else:
+            self.reference_frames = []
+        
         
         self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_interval, 
                                                  callback = self.heartbeat)
@@ -95,7 +104,15 @@ class SubLogicController(Node):
         self.approximate_time_synchronizer.registerCallback(self.recieve_latest_frame)
 
         CommonUtils.node_initialized(self)
-        self.enable_chassis()
+        CommonUtils.transfer_node_state(self, ST.ENABLED)
+    #     self.test_timer = self.create_timer(timer_period_sec = 0.01, 
+    #                                         callback = self.test_send)
+    #     self.video_capture = cv2.VideoCapture("/home/lynchpin/repository/watermelon-robot/resource/datasets/lane-detection/v20260524/video/video-5.mp4")
+        
+    # def test_send(self):
+        
+    #     rtn, frame = self.video_capture.read()
+    #     if rtn: self.latest_frame.color_image = frame
         
     def chassis_start_done(self, 
                            future: rclpy.Future):
@@ -122,7 +139,7 @@ class SubLogicController(Node):
         request.timestamp = time.time()
         request.status = True
         future = self.cli_chassis_start_stop.call_async(request = request)
-        future.add_done_callback(callback = self.chassis_start_done)
+        future.add_done_callback(callback = self.x)
         CommonUtils.transfer_node_state(self, ST.PENDING)
         
     def chassis_stop_done(self, 
@@ -196,43 +213,59 @@ class SubLogicController(Node):
         control_msg.angular_error = self.angular_error
         self.pub_chassis_direction.publish(msg = control_msg)
     
-    def analysis_latest_frame(self):
+    def analysis_latest_frame(self, 
+                              use_yolo):
         """分析最新帧获取并保存角度误差，并发布附加导航线叠加层的彩色图片消息。
         """      
 
         if vars(self.latest_frame): 
             color_image = self.latest_frame.color_image
+            canvas = color_image.copy()
             cv_bridge = CvBridge()
-            [binary, 
-             binary_suppressed, 
-             binary_morphology] = CVUtils.lane_detection_preprocess(source_image = color_image, 
-                                                                    roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
-                                                                    roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
-                                                                    maximum_window_size = config.lane_detection.maximum_window_size,
-                                                                    reference_frames = self.refernce_frames)
-            self.reference_frames.append(binary_suppressed)
-            self.refernce_frames = self.refernce_frames[-config.lane_detection.reference_depth:]
-            self.angular_error = CVUtils.predict_lane(canvas = color_image, 
-                                                      binary = binary_morphology, 
-                                                      roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
-                                                      roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
-                                                      detect_step = config.lane_detection.detect_step)
+            
+            if use_yolo: 
+                self.angular_error = DLUtils.predict_lane(model = self.model, 
+                                                          source_image = color_image, 
+                                                          canvas = canvas, 
+                                                          roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                                          roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
+                                                          detect_step = config.lane_detection.detect_step)
+            else:
+                [binary, 
+                 binary_suppressed, 
+                 binary_mask] = CVUtils.lane_detection_preprocess(source_image = color_image, 
+                                                                  roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                                                  roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
+                                                                  maximum_window_size = config.lane_detection.maximum_window_size,
+                                                                  reference_frames = self.reference_frames)
+                self.reference_frames.append(binary_suppressed)
+                self.reference_frames = self.reference_frames[-config.lane_detection.reference_depth:]
+                self.angular_error = CVUtils.predict_lane(source_image = binary_mask, 
+                                                          canvas = canvas, 
+                                                          roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                                          roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
+                                                          detect_step = config.lane_detection.detect_step)
 
-            height, width = binary.shape
+            height, width = canvas.shape[:2]
             now_time = time.time()
             real_fps = int(1/(now_time - self.last_frame_time))
             self.last_frame_time = now_time
-            cv2.putText(img = color_image, 
+            cv2.putText(img = canvas, 
                         text = f"FPS {real_fps} | Frame Size {width}x{height}", 
                         org = (5, 20), 
                         fontFace = cv2.FONT_HERSHEY_SIMPLEX, 
                         fontScale = 0.5, 
                         color = (0, 0, 255), 
                         thickness = 2)
-            image_message = cv_bridge.cv2_to_imgmsg(color_image, encoding="bgr8")
+            image_message = cv_bridge.cv2_to_imgmsg(canvas, encoding="bgr8")
             self.pub_eye_on_chassis_direction.publish(msg = image_message)
-            image_message = cv_bridge.cv2_to_imgmsg(binary_morphology, encoding = "mono8")
-            self.pub_eye_on_chassis_binary_morphology.publish(msg = image_message)
+            
+            if use_yolo:
+                additional = cv_bridge.cv2_to_imgmsg(color_image, encoding = "bgr8")
+                self.pub_eye_on_chassis_binary_morphology.publish(msg = additional)
+            else:
+                additional = cv_bridge.cv2_to_imgmsg(binary_mask, encoding = "mono8")
+                self.pub_eye_on_chassis_binary_morphology.publish(msg = additional)
 
     def recieve_latest_frame(self, 
                              color_image_msg: Image, 
@@ -261,7 +294,7 @@ class SubLogicController(Node):
         """节点的核心业务循环，加入了状态机机制。
         """        
         
-        self.analysis_latest_frame()
+        self.analysis_latest_frame(use_yolo = config.lane_detection.use_yolo)
         
         match self.state:
             case ST.QUIT:

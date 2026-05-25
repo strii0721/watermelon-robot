@@ -24,6 +24,7 @@ from watermelon_robot_interface.srv import IRoboticArmAction, ILogicControllerCo
 from typing import cast
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image, CameraInfo
+from utils import config
 from utils import DLUtils
 from utils import ModelUtils
 import time
@@ -45,12 +46,14 @@ class SuperLogicController(Node):
         self.latest_frame = SimpleNamespace()
         self.target_list = []
         self.current_target = None
-        
-        self.device, self._use_half = ModelUtils.setup_device()
         self.fa_on = ModelUtils.check_flash_attention()
         self.last_frame_time = time.time()
-        self.model = ModelUtils.load_model(device = self.device, 
-                                           use_half = self._use_half)
+        self.model = ModelUtils.load_model(model_name = config.model.name, 
+                                           use_half = config.model.use_half, 
+                                           device_no = config.model.device_no, 
+                                           image_size = config.model.image_size, 
+                                           confidence = config.model.confidence, 
+                                           iou = config.model.iou)
         
         self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_interval, 
                                                  callback = self.heartbeat)
@@ -223,7 +226,6 @@ class SuperLogicController(Node):
         if vars(self.latest_frame): 
             cv_bridge = CvBridge()
             self.target_list = DLUtils.predict_targets(model = self.model, 
-                                                       device = self.device, 
                                                        color_image = self.latest_frame.color_image, 
                                                        depth_image = self.latest_frame.depth_image, 
                                                        camera_intrinsics = self.latest_frame.camera_intrinsics)

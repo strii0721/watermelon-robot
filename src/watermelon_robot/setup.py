@@ -17,7 +17,7 @@ setup(
             ['package.xml']),
             
         (os.path.join('share', package_name, 'model_weights'), 
-            glob("resource/model_weights/*.pt")), 
+            glob("resource/model_weights/*")), 
         (os.path.join('share', package_name, 'launch'), 
             glob('launch/*.py')),
         (os.path.join('share', package_name, 'config'), 

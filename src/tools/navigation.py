@@ -15,7 +15,7 @@ def main():
                                                                                         maximum_window_size = 5,
                                                                                         reference_frames = reference_frames)
         angular_error = CVUtils.predict_lane(canvas = frame, 
-                                             binary = binary_morphology, 
+                                             source_image = binary_morphology, 
                                              roi_y_min_portion = 0.7, 
                                              roi_y_max_portion = 0.9,  
                                              detect_step = 5)

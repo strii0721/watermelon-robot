@@ -18,7 +18,7 @@
 
 
 import cv2
-from mapper import RealsenseMapper
+from service import RealsenseService
 import time
 import os
 
@@ -27,11 +27,11 @@ def main():
     INTERVAL = 1/30
     SAVE_FOLDER = "realsense_capture"
 
-    camera_mapper = RealsenseMapper()
+    camera_service = RealsenseService()
 
     while True:
 
-        color_frame, depth_frame, intrinsics = camera_mapper.retrieve_frames()
+        color_frame, depth_frame, intrinsics = camera_service.read_frames()
         timestamp = int(time.time() * 1000)
         depth_map_image_array = cv2.applyColorMap(cv2.convertScaleAbs(depth_frame, alpha=0.03), cv2.COLORMAP_JET)
 

@@ -78,7 +78,7 @@ class ChassisController(Node):
     def chassis_start_stop(self,
                            request: IChassisStartStopControl.Request, 
                            response: IChassisStartStopControl.Response) -> IChassisStartStopControl.Response:
-        """控制底盘的启停/
+        """控制底盘的启停
 
         Args:
             request (IChassisStartStopControl.Request): 请求对象。

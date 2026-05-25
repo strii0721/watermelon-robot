@@ -2,10 +2,11 @@
 # 目标检测模型相关
 model: 
   name: "yolov26-best.pt"
-  use_half: False
+  use_half: True
+  image_size: [480, 640]
   confidence: 0.5
   iou: 0.8
-  device: "0"
+  device_no: "0"
 
 # -------------------------------------------------------
 # 机械臂配置相关
@@ -43,6 +44,13 @@ lane_detection:
   detect_step: 5
   maximum_window_size: 5
   reference_depth: 5
+  use_yolo: True
+  model: 
+    name: "yolo26n-seg-b8-1779665610-fp16.engine"
+    use_engine: True
+    device_no: "0"
+    use_half: True
+    confidence: 0.5
 
 # -------------------------------------------------------
 # 底盘控制相关
@@ -141,7 +149,7 @@ _node_initializer:
     input_2: "t/realsense/on_chassis/camera_intrinsics"   # 输入：底盘相机内参
     output_0: "t/chassis/direction_correction_value"      # 输出：底盘方向修正量
     output_1: "t/monitor/sub/color_navigation"            # 输出：底盘相机预测轨迹叠加层
-    output_2: "t/monitor/sub/binary_morphology"           # 输出：底盘相机形态学二值图
+    output_2: "t/monitor/sub/additional"           # 输出：底盘相机形态学二值图
     duplex_0: "s/logic_controller/comm"                   # 双工：上/下逻辑控制器
     duplex_1: "s/chassis/start_stop"                      # 双工：底盘启停控制
 
@@ -204,14 +212,14 @@ _node_initializer:
 
 # -------------------------------------------------------
 
-  ##################
-  # 监视器：底盘相机形态学二值图 #
-  ##################
+  ##########################
+  # 监视器：底盘相机辅助图像 #
+  ##########################
   ZERO_ORDER_OIL_TANK_1:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/monitor/sub/binary_morphology"          # 输入：底盘相机预测轨迹叠加层
+    input_0: "t/monitor/sub/additional"          # 输入：底盘相机预测轨迹叠加层
 
     # 通用配置块 ###################
     ###########

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+rsync -avz \
+    --exclude "build" \
+    --exclude "install" \
+    --exclude "log" \
+    --exclude "__pycache__" \
+    --exclude ".git" \
+    --exclude "runs" \
+    --exclude "yolo26n.pt" \
+    --exclude "resource/weights_raw" \
+    --exclude "resource/weights_quantized" \
+    --exclude "resource/datasets/lane-detection/v20260524/video" \
+    ~/repository/watermelon-robot wheeltec@192.168.0.100:~/fr_ws
