@@ -34,24 +34,16 @@ class RoboticArmMapper:
                  tool_working_orientation: tuple, 
                  camera_pose_matix: np.ndarray):
         
-        self._robotic_arm = Robot.RPC(ip)
-        self._tool_numero = tool_numero
-        self._user_numero = user_numero
-        self._robotic_arm.SetSpeed(speed_rate)
+        self.robotic_arm = Robot.RPC(ip)
+        self.tool_numero = tool_numero
+        self.user_numero = user_numero
+        self.robotic_arm.SetSpeed(speed_rate)
         self._tool_stand_by_position = tool_stand_by_position
         self._tool_working_orientation = tool_working_orientation
 
         tool_pose = tool_stand_by_position + tool_working_orientation
         self._w_T_tcp = KinematicsUtils.calculate_pose_matrix_from_tuple(pose_tuple = tool_pose)
         self._tcp_T_c = camera_pose_matix
-    
-    def get_tool_numero(self) -> int:
-
-        return self._tool_numero
-    
-    def get_user_numero(self) -> int:
-
-        return self._user_numero
     
     def get_tool_stand_by_position(self) -> tuple:
 
@@ -81,7 +73,7 @@ class RoboticArmMapper:
         """        
         
         block_flag = 0 if block else 1
-        rtn = self._robotic_arm.GetActualTCPPose(flag = block_flag)
+        rtn = self.robotic_arm.GetActualTCPPose(flag = block_flag)
         state_code, tcp_pose_list = rtn
         state_code = cast(int, state_code)
         tcp_pose = tuple(tcp_pose_list)
@@ -96,16 +88,33 @@ class RoboticArmMapper:
             pose (tuple): 位姿六元组（世界坐标系）。
 
         Returns:
-            int: 机械臂状态码。
+            int: 机械臂响应状态码。
         """        
         
-        tool_numero = self.get_tool_numero()
-        user_numero = self.get_user_numero()
         pose_list = list(pose)
-        state_code = self._robotic_arm.MoveCart(desc_pos = pose_list, 
-                                                tool = tool_numero, 
-                                                user = user_numero)
-        
+        state_code = self.robotic_arm.MoveCart(desc_pos = pose_list, 
+                                                tool = self.tool_numero, 
+                                                user = self.user_numero)
         state_code = cast(int, state_code)
 
+        return state_code
+    
+    def operate_tool(self, 
+                     tool_id: int, 
+                     command_code: int) -> int:
+        """向末端工具输出一个命令码。
+
+        Args:
+            tool_id (int): 工具编号。
+            command_code (int): 命令码。
+
+        Returns:
+            int: 工具响应状态码。
+        """        
+        
+        state_code = self.robotic_arm.SetDO(id = tool_id, 
+                                             status = command_code, 
+                                             smooth = 0, 
+                                             block = 0)
+        
         return state_code

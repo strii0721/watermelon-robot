@@ -33,10 +33,9 @@ class RoboticArmController(Node):
         
         super().__init__('robotic_arm_controller')
         CommonUtils.node_initializer(self)
-
+        
         # robotic_arm = config.robotic_arm
         self.robotic_arm = config.robotic_arm_s
-
         self.robotic_arm_service = RoboticArmService(ip = self.robotic_arm.ip, 
                                                      tool_standby_sextuplet = tuple(self.robotic_arm.tool_standby_sextuple), 
                                                      camera_pose_matix = np.array(self.robotic_arm.camera_pose_matix),
@@ -50,14 +49,14 @@ class RoboticArmController(Node):
 
         self.srv_robotic_arm_action_once = self.create_service(srv_type = IRoboticArmAction, 
                                                                srv_name = self.duplex_0, 
-                                                               callback = self.robotic_arm_action_once)
+                                                               callback = self.robotic_arm_act_once)
         
         CommonUtils.node_initialized(self)
         
-    def robotic_arm_action_once(self, 
-                                request: IRoboticArmAction.Request, 
-                                response: IRoboticArmAction.Response) -> IRoboticArmAction.Response:
-        """机械臂的一次完整运动，包括移动至目标位置、剪切、复位等。若无法移动至目标位置则会尝试复位。只有当复位失败才会返回 is_success = False。
+    def robotic_arm_act_once(self, 
+                             request: IRoboticArmAction.Request, 
+                             response: IRoboticArmAction.Response) -> IRoboticArmAction.Response:
+        """机械臂的一次完整动作，包括移动至目标位置、剪切、复位等。若无法移动至目标位置则会尝试复位。当剪刀控制失效/复位失败时返回 is_success = False。
 
         Args:
             request (IRoboticArmAction.Request): 请求对象。
@@ -67,37 +66,68 @@ class RoboticArmController(Node):
             IRoboticArmAction.Response: 响应对象。
         """        
         
+        is_success = True
         position_on_camera = request.position_on_camera
         position_on_camera[0] += self.robotic_arm.tool_error[0]  
         position_on_camera[1] += self.robotic_arm.tool_error[1]
         position_on_camera[2] += self.robotic_arm.tool_error[2]
         position = tuple(position_on_camera)
-        state_code = self.robotic_arm_service.move_to_position(position = position, 
-                                                                is_world_position = False)
         
-        if state_code == 0: 
+        state_code_robotic_arm = self.robotic_arm_service.move_to_position(position = position, 
+                                                                           is_world_position = False)
+        if state_code_robotic_arm == 0: 
             self.get_logger().info(f"机械臂就位，正在剪切...")
-            
-            
-            # TODO 剩余机械臂业务代码
-            
-            
-            time.sleep(2)
+            open_delay_sec = config.scissors.open_delay_sec
+            state_code_scissors = self.scissors_act_once(open_delay_sec = open_delay_sec)
+            if state_code_scissors != 0:
+                self.get_logger().warn(f"剪刀控制失效，状态码：{state_code_scissors}")
+                is_success = False
+            else: 
+                self.get_logger().info(f"剪刀动作成功！")
         else: 
-            self.get_logger().warn(f"机械臂移动失败，状态码：{state_code}")
+            self.get_logger().warn(f"机械臂移动失败，状态码：{state_code_robotic_arm}")
             
         self.get_logger().info(f"机械臂正在复位...")
-        state_code = self.robotic_arm_service.stand_by()
-        
-        if state_code == 0:
+        state_code_robotic_arm = self.robotic_arm_service.stand_by()
+            
+        if state_code_robotic_arm == 0:
             self.get_logger().info(f"机械臂复位成功！")
-            response.is_success = True
         else:
-            self.get_logger().info(f"机械臂复位失败！状态码：{state_code}")
-            response.is_success = False
+            self.get_logger().info(f"机械臂复位失败！状态码：{state_code_robotic_arm}")
+            is_success = False
+            
+        response.is_success = is_success
         return response
     
+    def scissors_act_once(self, 
+                          open_delay_sec: int) -> int:
+        """剪刀的一次完整动作。
+
+        Args:
+            open_delay_sec (int): 剪刀闭合/张开的中间延迟（秒）。
+
+        Returns:
+            int: 剪刀响应状态码。
+        """        
         
+        scissors_id = config.scissors.tool_id
+        close_flag = config.scissors.close_flag
+        state_code = self.robotic_arm_service.scissors_close(tool_id = scissors_id, 
+                                                             close_flag = close_flag)
+        if state_code != 0:
+            self.get_logger().warn(f"剪刀闭合失败！")
+            
+            return state_code
+        
+        time.sleep(open_delay_sec)
+        state_code = self.robotic_arm_service.scissors_open(tool_id = scissors_id, 
+                                                            close_flag = close_flag)
+        
+        if state_code != 0:
+            self.get_logger().warn(f"剪刀张开失败！")
+        
+        return state_code
+    
 def main():
 
     rclpy.init()

@@ -30,7 +30,7 @@ class RoboticArmService:
         
         tool_stand_by_position = tool_standby_sextuplet[:3]
         tool_working_orientation = tool_standby_sextuplet[3:]
-        self._robotic_arm_mapper = RoboticArmMapper(ip = ip, 
+        self.robotic_arm_mapper = RoboticArmMapper(ip = ip, 
                                                     tool_numero = 0, 
                                                     user_numero = 0, 
                                                     speed_rate = speed_rate, 
@@ -64,7 +64,7 @@ class RoboticArmService:
             tuple: 目标位姿六元组。
         """        
         
-        pose = position + self._robotic_arm_mapper.get_tool_working_orientation()
+        pose = position + self.robotic_arm_mapper.get_tool_working_orientation()
 
         return pose
     
@@ -79,8 +79,8 @@ class RoboticArmService:
             tuple: 世界参考系坐标六元组。
         """        
         
-        w_T_tcp = self._robotic_arm_mapper.get_wTtcp_matrix()
-        tcp_T_c = self._robotic_arm_mapper.get_tcpTc_matrix() 
+        w_T_tcp = self.robotic_arm_mapper.get_wTtcp_matrix()
+        tcp_T_c = self.robotic_arm_mapper.get_tcpTc_matrix() 
         target_c = np.append(camera_position, 1.0).reshape(4, 1)
         target_w = (w_T_tcp @ tcp_T_c) @ target_c
 
@@ -100,7 +100,7 @@ class RoboticArmService:
         """        
         
         midway_pose = list(pose)
-        stand_by_position = self._robotic_arm_mapper.get_tool_stand_by_position()
+        stand_by_position = self.robotic_arm_mapper.get_tool_stand_by_position()
         midway_pose[0] = stand_by_position[0]
         midway_pose[1] = stand_by_position[1]
         midway_pose[2] = pose[2]
@@ -118,7 +118,7 @@ class RoboticArmService:
             is_world_position (bool, optional): 该坐标是否为世界参考系（机械臂底座参考系）. Defaults to False.
 
         Returns:
-            int: 机械臂状态码
+            int: 动作响应状态码
         """        
         
         if not is_world_position: 
@@ -129,10 +129,10 @@ class RoboticArmService:
         safe_pose = self.calculate_safe_pose(pose = pose)
         safe_midway_pose = self.calculate_safe_pose(pose = midway_pose)
         
-        state_code = self._robotic_arm_mapper.move_to_pose(pose = safe_midway_pose)
+        state_code = self.robotic_arm_mapper.move_to_pose(pose = safe_midway_pose)
         if state_code != 0:
             return state_code
-        state_code = self._robotic_arm_mapper.move_to_pose(pose = safe_pose)
+        state_code = self.robotic_arm_mapper.move_to_pose(pose = safe_pose)
         
         return state_code
     
@@ -140,17 +140,55 @@ class RoboticArmService:
         """恢复机械臂为初始位姿
 
         Returns:
-            int: 机械臂状态码
+            int: 动作响应状态码
         """        
         
-        stand_by_position = self._robotic_arm_mapper.get_tool_stand_by_position()
+        stand_by_position = self.robotic_arm_mapper.get_tool_stand_by_position()
         pose = self.calculate_pose(position = stand_by_position)
-        _, current_pose = self._robotic_arm_mapper.get_tcp_pose()
+        _, current_pose = self.robotic_arm_mapper.get_tcp_pose()
         midway_pose = self.calculate_midway_pose(pose = current_pose)
         
-        state_code = self._robotic_arm_mapper.move_to_pose(pose = midway_pose)
+        state_code = self.robotic_arm_mapper.move_to_pose(pose = midway_pose)
         if state_code != 0:
             return state_code
-        state_code = self._robotic_arm_mapper.move_to_pose(pose = pose)
+        state_code = self.robotic_arm_mapper.move_to_pose(pose = pose)
+        
+        return state_code
+    
+    def scissors_close(self,
+                       tool_id: int, 
+                       close_flag: int) -> int:
+        """剪刀闭合。
+
+        Args:
+            tool_id (int): 剪刀的工具编号。
+            close_flag (int): 控制闭合的命令码。
+
+        Returns:
+            int: 动作响应状态码
+        """        
+        
+        command_code = close_flag
+        state_code = self.robotic_arm_mapper.operate_tool(tool_id = tool_id, 
+                                                          command_code = command_code)
+        
+        return state_code
+    
+    def scissors_open(self,
+                      tool_id: int, 
+                      close_flag: int) -> int:
+        """剪刀张开。
+
+        Args:
+            tool_id (int): 剪刀的工具编号。
+            close_flag (int): 控制闭合的命令码。
+
+        Returns:
+            int: 动作响应状态码。
+        """
+        
+        command_code = 1 - close_flag
+        state_code = self.robotic_arm_mapper.operate_tool(tool_id = tool_id, 
+                                                          command_code = command_code)
         
         return state_code
