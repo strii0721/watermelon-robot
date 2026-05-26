@@ -75,12 +75,26 @@ class DLUtils:
                      canvas: np.ndarray,
                      roi_y_min_portion: float, 
                      roi_y_max_portion: float, 
-                     detect_step: int) -> float:
+                     detect_step: int) -> list:
+        """使用 YOLO 检测道路。
+
+        Args:
+            model (YOLO): 应该传入一个模型对象而非模型路径或者名字。
+            source_image (np.ndarray): 相机获得的原始图像。
+            canvas (np.ndarray): 用于绘制叠加层的图像。
+            roi_y_min_portion (float): 兴趣区域的顶部 y 坐标。
+            roi_y_max_portion (float): 兴趣区域的底部 y 坐标。
+            detect_step (int): 中心点绘制步长。
+
+        Returns:
+            list: 关键数据列表 [当前偏移角度, 最远点像素坐标]。
+        """        
         
         height, width = source_image.shape[:2]
         roi_y_min = int(height * roi_y_min_portion)
         roi_y_max = int(height * roi_y_max_portion)
         step = detect_step
+        endpoint = None
         
         # 绘制当前航向参考点和参考航向线
         results = model.predict(source = source_image, 
@@ -105,14 +119,15 @@ class DLUtils:
                     x_right = white_pixels[-1]
                     x_center = int((x_left + x_right) / 2)
                     center_points.append((x_center, y))
+                    if len(center_points) == 1: endpoint = center_points[0]
             overlay = canvas.copy()
             cv2.fillPoly(overlay, [polygon], (0, 255, 0))
             cv2.addWeighted(overlay, 0.3, canvas, 0.7, 0, dst = canvas)
-            # for i in range(len(center_points) - 1):
-            #     pt1 = center_points[i]
-            #     pt2 = center_points[i+1]
-            #     cv2.line(source_image, pt1, pt2, (0, 0, 255), 3)
-            #     cv2.circle(source_image, pt1, 2, (0, 255, 255), -1)
+            for i in range(len(center_points) - 1):
+                pt1 = center_points[i]
+                pt2 = center_points[i+1]
+                cv2.line(canvas, pt1, pt2, (0, 0, 255), 3)
+                cv2.circle(canvas, pt1, 2, (0, 255, 255), -1)
             if len(center_points) >= 2:
                 points_arr = np.array(center_points)
                 x = points_arr[:, 0]
@@ -143,11 +158,19 @@ class DLUtils:
         else:
             angle = 0.0
         
-        return angle
+        return [angle, endpoint]
 
     @classmethod
     def check_target_validation(cls, 
-                                target_coordinate: tuple): 
+                                target_coordinate: tuple) -> bool:
+        """判断检测到的目标坐标是否合法。
+
+        Args:
+            target_coordinate (tuple): 目标坐标（相机参考系下）。
+
+        Returns:
+            bool: 目标合法性.
+        """        
         
         if not ((-200 < target_coordinate[0] and target_coordinate[0] < 200) and (-200 < target_coordinate[1] and target_coordinate[1] < 200) and (0 < target_coordinate[2] and target_coordinate[2] < 500)):
             return False

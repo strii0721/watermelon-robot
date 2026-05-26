@@ -106,14 +106,18 @@ class SubLogicController(Node):
 
         CommonUtils.node_initialized(self)
         CommonUtils.transfer_node_state(self, ST.ENABLED)
-    #     self.test_timer = self.create_timer(timer_period_sec = 0.01, 
-    #                                         callback = self.test_send)
-    #     self.video_capture = cv2.VideoCapture("/home/lynchpin/repository/watermelon-robot/resource/datasets/lane-detection/v20260524/video/video-5.mp4")
         
-    # def test_send(self):
+        # TODO 测试用，之后记得删
+        if self.is_test:
+            self.test_timer = self.create_timer(timer_period_sec = 0.01, 
+                                                callback = self.test_send)
+            video_path = "/home/lynchpin/repository/watermelon-robot/resource/datasets/lane-detection/legacy/video-5.mp4"
+            self.video_capture = cv2.VideoCapture(video_path)
         
-    #     rtn, frame = self.video_capture.read()
-    #     if rtn: self.latest_frame.color_image = frame
+    def test_send(self):
+        
+        rtn, frame = self.video_capture.read()
+        if rtn: self.latest_frame.color_image = frame
         
     def chassis_start_done(self, 
                            future: rclpy.Future):
@@ -214,8 +218,23 @@ class SubLogicController(Node):
         control_msg.angular_error = self.angular_error
         self.pub_chassis_direction.publish(msg = control_msg)
     
-    def analysis_latest_frame(self, 
-                              use_yolo):
+    def check_terminal(self, 
+                       test_point: tuple) -> bool:
+        """检查是否抵达终点。
+
+        Args:
+            test_point (tuple): 检测点（通常是道路遮罩最靠上的中心点）。
+
+        Returns:
+            bool: 是否抵达终点。
+        """        
+        
+        distance = CVUtils.calculate_median_depth(depth_image = self.latest_frame.depth_image, 
+                                                  center_pixel = test_point)
+        reach_terminal = (distance <= config.lane_detection.terminal_distance)
+        return reach_terminal
+    
+    def analysis_latest_frame(self):
         """分析最新帧获取并保存角度误差，并发布附加导航线叠加层的彩色图片消息。
         """      
 
@@ -224,29 +243,32 @@ class SubLogicController(Node):
             canvas = color_image.copy()
             cv_bridge = CvBridge()
             
-            if use_yolo: 
-                self.angular_error = DLUtils.predict_lane(model = self.model, 
-                                                          source_image = color_image, 
-                                                          canvas = canvas, 
-                                                          roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
-                                                          roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
-                                                          detect_step = config.lane_detection.detect_step)
+            if self.use_yolo: 
+                self.angular_error, endpoint = DLUtils.predict_lane(model = self.model, 
+                                                                    source_image = color_image, 
+                                                                    canvas = canvas, 
+                                                                    roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                                                    roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
+                                                                    detect_step = config.lane_detection.detect_step)
             else:
                 [binary, 
                  binary_suppressed, 
                  binary_mask] = CVUtils.lane_detection_preprocess(source_image = color_image, 
                                                                   roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
                                                                   roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
-                                                                  maximum_window_size = config.lane_detection.maximum_window_size,
+                                                                  maximum_window_size = config.lane_detection.cv.maximum_window_size,
                                                                   reference_frames = self.reference_frames)
                 self.reference_frames.append(binary_suppressed)
-                self.reference_frames = self.reference_frames[-config.lane_detection.reference_depth:]
-                self.angular_error = CVUtils.predict_lane(source_image = binary_mask, 
-                                                          canvas = canvas, 
-                                                          roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
-                                                          roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
-                                                          detect_step = config.lane_detection.detect_step)
-
+                self.reference_frames = self.reference_frames[-config.lane_detection.cv.reference_depth:]
+                self.angular_error, endpoint = CVUtils.predict_lane(source_image = binary_mask, 
+                                                                    canvas = canvas, 
+                                                                    roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                                                    roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
+                                                                    detect_step = config.lane_detection.detect_step)
+            if not self.is_test and endpoint:
+                if self.check_terminal(test_point = endpoint): 
+                    self.disable_chassis()
+                
             height, width = canvas.shape[:2]
             now_time = time.time()
             real_fps = int(1/(now_time - self.last_frame_time))
@@ -261,7 +283,7 @@ class SubLogicController(Node):
             image_message = cv_bridge.cv2_to_imgmsg(canvas, encoding="bgr8")
             self.pub_eye_on_chassis_direction.publish(msg = image_message)
             
-            if use_yolo:
+            if self.use_yolo:
                 additional = cv_bridge.cv2_to_imgmsg(color_image, encoding = "bgr8")
                 self.pub_eye_on_chassis_binary_morphology.publish(msg = additional)
             else:
@@ -295,7 +317,7 @@ class SubLogicController(Node):
         """节点的核心业务循环，加入了状态机机制。
         """        
         
-        self.analysis_latest_frame(use_yolo = config.lane_detection.use_yolo)
+        self.analysis_latest_frame()
         
         match self.state:
             case ST.QUIT:

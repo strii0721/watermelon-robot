@@ -22,16 +22,25 @@ class PIDController:
 
     def __init__(self,
                  pid_triple: tuple,
-                 maximum_output_abs: float):
+                 integral_limit: float,
+                 output_limit: float):
+        """构造函数。
+
+        Args:
+            pid_triple (tuple): PID 参数。
+            integral_limit (float): 积分项绝对值上限。
+            output_limit (float): 输出绝对值上限。
+        """        
 
         self.kp, self.ki, self.kd = pid_triple
-        self.maximum_output_abs = maximum_output_abs
+        self.maximum_output_abs = output_limit
+        self.integral_limit = integral_limit
         self.integral = 0
         self.previous_error = 0
 
     def update_control_variable(self,
                                 error: float, 
-                                control_interval: float) -> float:
+                                control_interval: float) -> float:        
         """根据误差应用 PID 控制器输出控制量。
 
         Args:
@@ -43,7 +52,8 @@ class PIDController:
         
         dt = control_interval
         p_term = self.kp * error
-        self.integral += error * dt
+        integral = self.integral + error * dt
+        self.integral = max(-self.integral_limit, min(self.integral_limit, integral))
         i_term = self.ki * self.integral
         derivative = (error - self.previous_error) / dt
         d_term = self.kd * derivative

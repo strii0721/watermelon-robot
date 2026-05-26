@@ -30,7 +30,7 @@ class CVUtils:
                                depth_image: np.ndarray, 
                                center_pixel: tuple,
                                window_size: int = 5) -> float:
-        """应用中值滤波器计算目标像素点深度。
+        """应用中值滤波器计算目标像素点深度(mm)。
 
         Args:
             depth_image (np.ndarray): 深度图像。
@@ -181,6 +181,7 @@ class CVUtils:
             source_image (np.ndarray): 彩色图片。
             roi_y_min_portion (float): 兴趣区域的顶部 y 坐标。
             roi_y_max_portion (float): 兴趣区域的底部 y 坐标。
+            maximum_window_size (int): 取窗口大小个最大面积轮廓参与与历史帧匹配度的比较。
             reference_frames (list, optional): 参与划分道路的参考帧列表. Defaults to [].
 
         Returns:
@@ -227,8 +228,8 @@ class CVUtils:
                      canvas: np.ndarray, 
                      roi_y_min_portion: float, 
                      roi_y_max_portion: float, 
-                     detect_step: int) -> float:
-        """预测导航线并输出误差角度。
+                     detect_step: int) -> list:
+        """使用传统形态学分析检测道路。
 
         Args:
             canvas (np.ndarray): 叠加层渲染对象图片。
@@ -238,7 +239,7 @@ class CVUtils:
             detect_step (int): 导航点生成间隔像素数。
 
         Returns:
-            float: 当前航向与预测导航线误差角度。
+            list: 关键数据列表 [当前偏移角度, 最远点像素坐标]。
         """        
         
         height, width = source_image.shape
@@ -253,6 +254,7 @@ class CVUtils:
         cv2.line(canvas, reference_line[0], reference_line[1], (255, 0, 0), 2)
 
         center_points = []
+        endpoint = None
 
         for y in range(roi_y_max, roi_y_min, -step):
 
@@ -266,6 +268,8 @@ class CVUtils:
 
         if len(center_points) > 2:
 
+            endpoint = center_points[-1]
+            
             # 绘制预测航向点
             points_arr = np.array(center_points)
             x = points_arr[:, 0]
@@ -297,7 +301,7 @@ class CVUtils:
         else:
             angle = 0.0
 
-        return angle
+        return [angle, endpoint]
     
     @classmethod
     def claculate_angle(cls, 

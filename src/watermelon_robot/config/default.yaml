@@ -42,10 +42,12 @@ lane_detection:
     y_min_portion: 0.7
     y_max_portion: 0.9
   detect_step: 5
-  maximum_window_size: 5
-  reference_depth: 5
+  terminal_distance: 500
   use_yolo: True
-  model: 
+  cv:
+    maximum_window_size: 5
+    reference_depth: 5
+  model:  
     name: "yolo26n-seg-b64-1779671885-fp16.engine"
     use_engine: True
     device_no: "0"
@@ -159,6 +161,7 @@ _node_initializer:
       queue_size: 10             # 缓存队列大小
       slop: 0.05                 # 最大时间差（秒）
     heartbeat_interval: 0.01    # Heartbeat 循环周期
+    is_test: True
 
 # -------------------------------------------------------
   

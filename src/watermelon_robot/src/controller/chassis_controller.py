@@ -41,7 +41,8 @@ class ChassisController(Node):
         self.forward_speed = config.chassis.forward_speed
         self.last_control_time = 0
         self.controller = PIDController(pid_triple = config.chassis.pid_controller.pid_triple, 
-                                        maximum_output_abs = config.chassis.pid_controller.maximum_output_abs)
+                                        integral_limit = 50,
+                                        output_limit = config.chassis.pid_controller.maximum_output_abs)
 
 
         self.sub_chassis_direction = self.create_subscription(msg_type = IChassisDirectionControl, 
