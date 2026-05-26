@@ -24,21 +24,21 @@ import os
 
 def main():
 
-    INTERVAL = 1/30
+    INTERVAL = 1/10
     SAVE_FOLDER = "realsense_capture"
 
     camera_service = RealsenseService()
+    image_folder = os.path.join("resource", SAVE_FOLDER)
+    os.makedirs(image_folder, exist_ok = True)
+    os.makedirs(os.path.join(image_folder, "color"), exist_ok = True)
+    os.makedirs(os.path.join(image_folder, "depth"), exist_ok = True)
+    os.makedirs(os.path.join(image_folder, "depth-map"), exist_ok = True)
 
     while True:
 
         color_frame, depth_frame, intrinsics = camera_service.read_frames()
         timestamp = int(time.time() * 1000)
         depth_map_image_array = cv2.applyColorMap(cv2.convertScaleAbs(depth_frame, alpha=0.03), cv2.COLORMAP_JET)
-
-        image_folder = os.path.join("resource", SAVE_FOLDER)
-        if image_folder and not os.path.exists(image_folder):
-            os.makedirs(image_folder)
-        
         color_image_path = os.path.join(image_folder, f"color", f"{timestamp}-color.png")
         depth_image_path = os.path.join(image_folder, f"depth", f"{timestamp}-depth.png")
         depth_map_image_path = os.path.join(image_folder, f"depth-map", f"{timestamp}-depth-map.png")

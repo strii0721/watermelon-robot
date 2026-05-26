@@ -49,6 +49,7 @@ class SuperLogicController(Node):
         self.fa_on = ModelUtils.check_flash_attention()
         self.last_frame_time = time.time()
         self.model = ModelUtils.load_model(model_name = config.model.name, 
+                                           task = "target-detection",
                                            use_half = config.model.use_half, 
                                            device_no = config.model.device_no, 
                                            image_size = config.model.image_size, 

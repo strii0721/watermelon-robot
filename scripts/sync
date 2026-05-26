@@ -1,14 +1,25 @@
 #!/usr/bin/env bash
 
+target_ip=$1
 rsync -avz \
+    --exclude "__pycache__" \
+    --exclude ".git" \
+    \
     --exclude "build" \
     --exclude "install" \
     --exclude "log" \
-    --exclude "__pycache__" \
-    --exclude ".git" \
+    \
     --exclude "runs" \
     --exclude "yolo26n.pt" \
-    --exclude "resource/weights_raw" \
-    --exclude "resource/weights_quantized" \
-    --exclude "resource/datasets/lane-detection/v20260524/video" \
-    ~/repository/watermelon-robot wheeltec@192.168.0.100:~/fr_ws
+    \
+    --include "resource/weights-best" \
+    --include "resource/datasets" \
+    --exclude "resource/datasets/lane-detection/legacy" \
+    --include "resource/libs" \
+    --exclude "resource/*" \
+    \
+    --exclude "src/watermelon_robot/resource/model_weights" \
+    $HOME/repository/watermelon-robot wheeltec@$target_ip:~/fr_ws
+
+rsync -avz \
+    $HOME/repository/watermelon-robot/resource/resource/ wheeltec@$target_ip:~/fr_ws/watermelon-robot/src/watermelon_robot/resource/

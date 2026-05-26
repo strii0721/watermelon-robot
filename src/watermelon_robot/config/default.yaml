@@ -46,11 +46,11 @@ lane_detection:
   reference_depth: 5
   use_yolo: True
   model: 
-    name: "yolo26n-seg-b8-1779665610-fp16.engine"
+    name: "yolo26n-seg-b64-1779671885-fp16.engine"
     use_engine: True
     device_no: "0"
     use_half: True
-    confidence: 0.5
+    confidence: 0.8
 
 # -------------------------------------------------------
 # 底盘控制相关
