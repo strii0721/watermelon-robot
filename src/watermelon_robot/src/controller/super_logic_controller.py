@@ -49,7 +49,8 @@ class SuperLogicController(Node):
         self.fa_on = ModelUtils.check_flash_attention()
         self.last_frame_time = time.time()
         self.model = ModelUtils.load_model(model_name = config.model.name, 
-                                           task = "target-detection",
+                                           task = config.model.task,
+                                           use_engine = config.model.use_engine,
                                            use_half = config.model.use_half, 
                                            device_no = config.model.device_no, 
                                            image_size = config.model.image_size, 
@@ -141,9 +142,13 @@ class SuperLogicController(Node):
         """发布启动底盘的请求。
         """        
         
-        future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.ENABLE_CHASSIS)
-        future.add_done_callback(callback = self.enable_chassis_done)
-        CommonUtils.transfer_node_state(self, ST.PENDING)
+        if self.is_test:
+            self.get_logger().info(f"模拟底盘启动成功！")
+            CommonUtils.transfer_node_state(self, ST.DETECTING)
+        else:
+            future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.ENABLE_CHASSIS)
+            future.add_done_callback(callback = self.enable_chassis_done)
+            CommonUtils.transfer_node_state(self, ST.PENDING)
     
     def operate_robotic_arm_done(self, 
                                  future: rclpy.Future) -> None:
@@ -203,9 +208,13 @@ class SuperLogicController(Node):
         """发布停止底盘的请求。
         """        
         
-        future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.DISABLE_CHASSIS)
-        future.add_done_callback(callback = self.disable_chassis_done)
-        CommonUtils.transfer_node_state(self, ST.PENDING)
+        if self.is_test:
+            self.get_logger().info(f"模拟底盘停止成功！")
+            CommonUtils.transfer_node_state(self, ST.READY_TO_OPERATE)
+        else:
+            future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.DISABLE_CHASSIS)
+            future.add_done_callback(callback = self.disable_chassis_done)
+            CommonUtils.transfer_node_state(self, ST.PENDING)
             
     def lock_target(self) -> None: 
         """锁定视野中最靠近前进方向反方向的目标。

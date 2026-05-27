@@ -51,7 +51,7 @@ class SubLogicController(Node):
         self.use_yolo = config.lane_detection.use_yolo
         if self.use_yolo:
             self.model = ModelUtils.load_model(model_name = config.lane_detection.model.name, 
-                                               task = "lane-detection",
+                                               task = config.lane_detection.model.task, 
                                                use_engine = config.lane_detection.model.use_engine,
                                                confidence = config.lane_detection.model.confidence)
         else:

@@ -115,6 +115,6 @@ class RoboticArmMapper:
         state_code = self.robotic_arm.SetDO(id = tool_id, 
                                              status = command_code, 
                                              smooth = 0, 
-                                             block = 0)
+                                             block = 1)
         
         return state_code

@@ -29,7 +29,7 @@ class CVUtils:
     def calculate_median_depth(cls, 
                                depth_image: np.ndarray, 
                                center_pixel: tuple,
-                               window_size: int = 5) -> float:
+                               window_size: int = 3) -> float:
         """应用中值滤波器计算目标像素点深度(mm)。
 
         Args:
@@ -77,7 +77,7 @@ class CVUtils:
         
         x_pixel, y_pixel = center_pixel
         Z = CVUtils.calculate_median_depth(depth_image = depth_image, 
-                                              center_pixel = center_pixel)
+                                           center_pixel = center_pixel)
         
         fx = camera_intrinsics.k[0]
         cx = camera_intrinsics.k[2]

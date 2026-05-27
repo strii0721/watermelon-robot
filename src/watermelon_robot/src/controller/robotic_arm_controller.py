@@ -122,6 +122,7 @@ class RoboticArmController(Node):
         time.sleep(open_delay_sec)
         state_code = self.robotic_arm_service.scissors_open(tool_id = scissors_id, 
                                                             close_flag = close_flag)
+        time.sleep(open_delay_sec)
         
         if state_code != 0:
             self.get_logger().warn(f"剪刀张开失败！")

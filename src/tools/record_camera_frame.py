@@ -24,7 +24,7 @@ import os
 
 def main():
 
-    INTERVAL = 1/10
+    INTERVAL = 1/5
     SAVE_FOLDER = "realsense_capture"
 
     camera_service = RealsenseService()

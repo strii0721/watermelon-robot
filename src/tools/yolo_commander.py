@@ -22,16 +22,16 @@ def parse_args():
     parser_train.add_argument("--base-model", 
                               type = str, 
                               default = "yolo26n-seg",
-                              help = "基座模型名称")
+                              help = "预训练模型名称")
     parser_train.add_argument("--dataset", 
                               type = str, 
-                              default = "v20260524",
-                              help = "训练集版本号") 
+                              default = "yolo-segment",
+                              help = "训练集名称") 
     parser_train.add_argument("--batch-size", 
                               type = int, 
                               default = 64, 
                               help = "训练用批次大小")
-    parser_train.add_argument("--epoch-number", 
+    parser_train.add_argument("--epoch-number",
                               type = int,
                               default = 512, 
                               help = "训练迭代次数")
