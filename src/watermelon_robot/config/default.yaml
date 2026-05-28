@@ -24,24 +24,24 @@ model:
 
 robotic_arm_s: 
   ip: "192.168.58.2"
-  speed_rate: 20
-  tool_standby_sextuple: [102, -230, 190, 179, -89, -89]
-  camera_pose_matix: [[0, -1, 0, 25],
+  speed_rate: 20                                            # 机械臂运动速率
+  tool_standby_sextuple: [102, -230, 190, 179, -89, -89]    # 机械臂待机状态末端执行器位姿六元组
+  camera_pose_matix: [[0, -1, 0, 25],                       # 相机参考系到执行器参考系的变换
                       [1, 0, 0, 60],
                       [0, 0, 1, 10],
                       [0, 0, 0, 1]]
-  tool_error: [-50, 170, -90]
+  tool_error: [-50, 170, -90]                               # 剪刀的位置偏差（相机参考系下）
 
 # -------------------------------------------------------
 # 导航线检测相关
 lane_detection: 
-  roi: 
-    y_min_portion: 0.75
-    y_max_portion: 0.99
+  roi:
+    y_min_portion: 0.75                                     # 兴趣区域上界占图片高度比例
+    y_max_portion: 0.99                                     # 兴趣区域下界占图片高度比例
   detect_step: 10
-  terminal_distance: 500
-  use_yolo: True
-  cv:
+  terminal_distance: 500                                    # 这个配置项被弃用了，是上一版底盘停止的配置项
+  use_yolo: True                                            # 底盘导航的方式，建议用 yolo
+  cv:                                                       # 这两个配置项和形态学导航方案的滤波有关，但是如果用 yolo 方案就用不到了
     maximum_window_size: 3
     reference_depth: 5
   model:  
@@ -61,16 +61,16 @@ chassis:
     control_interval: 0.1
     integral_limit: 99999
     output_limit: 99999
-  forward_speed: 0.40
-  stop_delay: 3
+  forward_speed: 0.40                                       # 底盘前进速度（m/s)
+  stop_delay: 3                                             # 当前版本底盘停止方案用来控制底盘停止的延迟。相关函数注释里有说明。
 
 # -------------------------------------------------------
 # 剪刀控制相关
 
 scissors:
-  tool_id: 8
-  close_flag: 1
-  open_delay_sec: 2
+  tool_id: 8                # 剪刀在机械臂中的工具编号
+  close_flag: 1             # 0/1 哪一个控制剪刀闭合
+  open_delay_sec: 2         # 剪刀张开、闭合结束等待时间
 
 ######################################## 以下是节点初始化器配置 ########################################
 _node_initializer:

@@ -1,0 +1,21 @@
+name: fairino
+
+dependencies:
+  - python=3.10.3
+  - pip
+
+  - pip:
+    - torch
+    - torchvision
+    - ultralytics-opencv-headless
+    - numpy==1.23.5
+    - opencv-python
+    - pyrealsense2
+    - setuptools==58.2.0
+    - catkin_pkg
+    - empy==3.3.4
+    - lark
+    - build
+    - colcon-common-extensions
+    - flask
+    - pyserial

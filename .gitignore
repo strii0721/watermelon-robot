@@ -219,12 +219,6 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-resource/
-devel/
-logs/
-build/
-bin/
-lib/
 msg_gen/
 srv_gen/
 msg/*Action.msg
@@ -272,9 +266,17 @@ qtcreator-*
 # Catkin custom files
 CATKIN_IGNORE
 
+resource/datasets
+resource/3rd-party
+resource/resource
+resource/weights*
+devel/
+logs/
 build/
 install/
 log/
 typings/
 runs/
 *.pt
+*.engine
+*.onnx
