@@ -112,13 +112,15 @@ class SubLogicController(Node):
         if self.is_test:
             self.test_timer = self.create_timer(timer_period_sec = 0.01, 
                                                 callback = self.test_send)
-            video_path = "/home/lynchpin/repository/watermelon-robot/resource/datasets/lane-detection/legacy/video-5.mp4"
+            video_path = "/home/lynchpin/repository/watermelon-robot/resource/datasets/lane-detection/legacy/video-7.mp4"
             self.video_capture = cv2.VideoCapture(video_path)
         
     def test_send(self):
         
         rtn, frame = self.video_capture.read()
-        if rtn: self.latest_frame.color_image = frame
+        if rtn: 
+            # frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+            self.latest_frame.color_image = frame
         
     def chassis_start_done(self, 
                            future: rclpy.Future):
@@ -232,7 +234,7 @@ class SubLogicController(Node):
         
         if reach_terminal:
             if self.stop_timer:
-                    if time.time() - self.stop_timer > config.chassis.stop_delay:
+                    if time.time() - self.stop_timer > config.chassis.stop_delay_sec:
                             self.disable_chassis()
             else: 
                 self.stop_timer = time.time()

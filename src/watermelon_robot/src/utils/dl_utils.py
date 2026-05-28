@@ -136,11 +136,13 @@ class DLUtils:
             cv2.addWeighted(overlay_lane, 0.5, source_image, 1.0, 0, dst = source_image)
             cv2.addWeighted(overlay_lane_roi, 0.3, source_image, 1.0, 0, dst = source_image)
             
-            for i in range(len(center_points) - 1):
-                pt1 = center_points[i]
-                pt2 = center_points[i+1]
-                cv2.line(source_image, pt1, pt2, (0, 0, 255), 3)
-                cv2.circle(source_image, pt1, 2, (0, 255, 255), -1)
+            # 预测点连线
+            # for i in range(len(center_points) - 1):
+            #     pt1 = center_points[i]
+            #     pt2 = center_points[i+1]
+            #     cv2.line(source_image, pt1, pt2, (0, 0, 255), 3)
+            #     cv2.circle(source_image, pt1, 2, (0, 255, 255), -1)
+            
             if len(center_points) >= 2:
                 points_arr = np.array(center_points)
                 x = points_arr[:, 0]
@@ -151,6 +153,10 @@ class DLUtils:
                 x1 = int(line_function(y1))
                 y2 = roi_y_min
                 x2 = int(line_function(y2))
+                
+                # 绘制道路中心线
+                cv2.line(source_image, (x1, y1), (x2, y2), (0, 0, 255), 3)
+                
                 reference_point = (int((x1 + x2)/2), int((y1 + y2)/2))
                 reference_direction = (ego_point, reference_point)
                 angle = CVUtils.claculate_direction_error(ego_direction = ego_direction, 
