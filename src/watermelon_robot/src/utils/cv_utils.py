@@ -133,16 +133,33 @@ class CVUtils:
         return dCgCrCb
     
     @classmethod
+    def cut_roi(cls, 
+                binary_image: np.array, 
+                roi_y_min: int, 
+                roi_y_max: int):
+        """原地从二值图中获取 ROI 的部分。
+
+        Args:
+            binary_image (np.array): 源二值图。
+            roi_y_min (int): ROI 顶部 y 坐标。
+            roi_y_max (int): ROI 底部 y 坐标。
+        """      
+        
+        binary_image[0:roi_y_min, :] = 0
+        binary_image[roi_y_max:, :] = 0
+        
+    
+    @classmethod
     def not_maximum_connected_area_suppresion(cls, 
                                               binary_image: np.ndarray, 
-                                              maximum_window_size: int,
-                                              reference_frames: list) -> np.ndarray:
+                                              maximum_window_size: int = 1,
+                                              reference_frames: list = []) -> np.ndarray:    
         """仅保留二值图中面积最大的连通图形。现在采用取 n 个最大面积轮廓，与前 k 帧生成的非极大面积抑制后的结果进行匹配度比较，选择匹配度最高（差异度最低）的。
 
         Args:
             binary_image (np.ndarray): 二值图。
-            maximum_window_size (int): 取窗口大小个最大面积轮廓参与与历史帧匹配度的比较。
-            reference_frames (list): 参与匹配度比较的历史帧数量。
+            maximum_window_size (int): 取窗口大小个最大面积轮廓参与与历史帧匹配度的比较。Defaults to 1.
+            reference_frames (list): 参与匹配度比较的历史帧。Defaults to [].
 
         Returns:
             np.ndarray: 非极大连通抑制后的二值图。
@@ -254,22 +271,19 @@ class CVUtils:
         cv2.line(canvas, reference_line[0], reference_line[1], (255, 0, 0), 2)
 
         center_points = []
-        endpoint = None
-
+        reach_terminal = True
         for y in range(roi_y_max, roi_y_min, -step):
 
             row = source_image[y, :]
-
             reference_pixels = np.where(row == 255)[0]
-
             if len(reference_pixels) > 0:
                 center_x = int(np.mean(reference_pixels))
                 center_points.append((center_x, y))
-
+                if y < (roi_y_min + roi_y_max) / 2: 
+                    reach_terminal = False
+        
+        angle = 0.0
         if len(center_points) > 2:
-
-            endpoint = center_points[-1]
-            
             # 绘制预测航向点
             points_arr = np.array(center_points)
             x = points_arr[:, 0]
@@ -283,8 +297,8 @@ class CVUtils:
             navigate_point = (int((x1 + x2)/2), int((y1 + y2)/2))
             navigate_line = (reference_point, navigate_point)
 
-            angle = CVUtils.claculate_angle(reference_line = reference_line, 
-                                            navigation_line = navigate_line)
+            angle = CVUtils.claculate_direction_error(ego_direction = reference_line, 
+                                                      reference_direction = navigate_line)
 
             # 绘制航向点十字准星
             mark_size = 5
@@ -298,15 +312,12 @@ class CVUtils:
             thickness = 2
             cv2.arrowedLine(canvas, reference_point, navigate_point, arow_color, thickness, tipLength = 0.05)
 
-        else:
-            angle = 0.0
-
-        return [angle, endpoint]
+        return [reach_terminal, angle]
     
     @classmethod
-    def claculate_angle(cls, 
-                        reference_line: tuple, 
-                        navigation_line: tuple) -> float:
+    def claculate_direction_error(cls, 
+                        ego_direction: tuple, 
+                        reference_direction: tuple) -> float:
         """计算两线段的夹角（锐角）。
 
         Args:
@@ -317,8 +328,8 @@ class CVUtils:
             float: 两线段夹角（锐角）。
         """        
         
-        reference_start, reference_end = reference_line
-        navigate_start, navigate_end = navigation_line
+        reference_start, reference_end = ego_direction
+        navigate_start, navigate_end = reference_direction
         vector_feference = (reference_end[0] - reference_start[0], -(reference_end[1] - reference_start[1]))
         vector_navigate = (navigate_end[0] - navigate_start[0], -(navigate_end[1] - navigate_start[1]))
 
@@ -327,5 +338,7 @@ class CVUtils:
 
         angle_diff = angle_navigate - angle_reference
         angle_diff = float((angle_diff + 90) % 180 - 90)
+        
+        angle_diff_rad = math.radians(angle_diff)
 
-        return angle_diff
+        return angle_diff_rad

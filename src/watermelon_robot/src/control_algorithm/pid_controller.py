@@ -61,5 +61,6 @@ class PIDController:
         output = p_term + i_term + d_term
         output = max(-self.maximum_output_abs, min(self.maximum_output_abs, output))
         self.previous_error = error
+        output = output / control_interval
 
         return output

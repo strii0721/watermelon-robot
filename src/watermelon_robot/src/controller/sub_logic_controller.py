@@ -49,6 +49,8 @@ class SubLogicController(Node):
         self.angular_error = 0.0
         self.last_frame_time = time.time()
         self.use_yolo = config.lane_detection.use_yolo
+        self.publish_direction_error_last_triggered = time.time()
+        self.stop_timer = None
         if self.use_yolo:
             self.model = ModelUtils.load_model(model_name = config.lane_detection.model.name, 
                                                task = config.lane_detection.model.task, 
@@ -56,8 +58,7 @@ class SubLogicController(Node):
                                                confidence = config.lane_detection.model.confidence)
         else:
             self.reference_frames = []
-        
-        
+
         self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_interval, 
                                                  callback = self.heartbeat)
         
@@ -209,47 +210,47 @@ class SubLogicController(Node):
                     
         return response
     
-    def correct_direction_error(self) -> None:
+    def publish_direction_error(self) -> None:
         """发布角度误差（角度）。
         """        
         
-        control_msg = IChassisDirectionControl()
-        control_msg.timestamp = time.time()
-        control_msg.angular_error = self.angular_error
-        self.pub_chassis_direction.publish(msg = control_msg)
+        now = time.time()
+        if now - self.publish_direction_error_last_triggered > config.chassis.pid_controller.control_interval:
+            control_msg = IChassisDirectionControl()
+            control_msg.timestamp = time.time()
+            control_msg.angular_error = self.angular_error
+            self.pub_chassis_direction.publish(msg = control_msg)
+            self.publish_direction_error_last_triggered = now
     
     def check_terminal(self, 
-                       test_point: tuple) -> bool:
-        """检查是否抵达终点。
+                       reach_terminal: bool) -> None:
+        """检查是否抵达终点，若是则停止底盘。当且仅当连续时长的帧检测到抵达道路边缘或检测不到道路，判断为抵达终点。
 
         Args:
-            test_point (tuple): 检测点（通常是道路遮罩最靠上的中心点）。
-
-        Returns:
-            bool: 是否抵达终点。
+            reach_terminal (bool): 当前帧是否符合到达终点的条件。
         """        
         
-        distance = CVUtils.calculate_median_depth(depth_image = self.latest_frame.depth_image, 
-                                                  center_pixel = test_point)
-        reach_terminal = (distance <= config.lane_detection.terminal_distance)
-        return reach_terminal
+        if reach_terminal:
+            if self.stop_timer:
+                    if time.time() - self.stop_timer > config.chassis.stop_delay:
+                            self.disable_chassis()
+            else: 
+                self.stop_timer = time.time()
     
     def analysis_latest_frame(self):
         """分析最新帧获取并保存角度误差，并发布附加导航线叠加层的彩色图片消息。
         """      
 
         if vars(self.latest_frame): 
-            color_image = self.latest_frame.color_image
-            canvas = color_image.copy()
+            color_image = self.latest_frame.color_image.copy()
             cv_bridge = CvBridge()
             
-            if self.use_yolo: 
-                self.angular_error, endpoint = DLUtils.predict_lane(model = self.model, 
-                                                                    source_image = color_image, 
-                                                                    canvas = canvas, 
-                                                                    roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
-                                                                    roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
-                                                                    detect_step = config.lane_detection.detect_step)
+            if self.use_yolo:
+                reach_terminal, self.angular_error = DLUtils.predict_lane(model = self.model, 
+                                                                          source_image = color_image, 
+                                                                          roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                                                          roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
+                                                                          detect_step = config.lane_detection.detect_step)
             else:
                 [binary, 
                  binary_suppressed, 
@@ -259,36 +260,31 @@ class SubLogicController(Node):
                                                                   maximum_window_size = config.lane_detection.cv.maximum_window_size,
                                                                   reference_frames = self.reference_frames)
                 self.reference_frames.append(binary_suppressed)
+                canvas = color_image.copy()
                 self.reference_frames = self.reference_frames[-config.lane_detection.cv.reference_depth:]
-                self.angular_error, endpoint = CVUtils.predict_lane(source_image = binary_mask, 
-                                                                    canvas = canvas, 
-                                                                    roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
-                                                                    roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
-                                                                    detect_step = config.lane_detection.detect_step)
-            if not self.is_test and endpoint:
-                if self.check_terminal(test_point = endpoint): 
-                    self.disable_chassis()
+                reach_terminal, self.angular_error= CVUtils.predict_lane(source_image = binary_mask, 
+                                                                         canvas = canvas, 
+                                                                         roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                                                         roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
+                                                                         detect_step = config.lane_detection.detect_step)
+            self.check_terminal(reach_terminal)
                 
-            height, width = canvas.shape[:2]
+            height, width = color_image.shape[:2]
             now_time = time.time()
             real_fps = int(1/(now_time - self.last_frame_time))
             self.last_frame_time = now_time
-            cv2.putText(img = canvas, 
+            cv2.putText(img = color_image, 
                         text = f"FPS {real_fps} | Frame Size {width}x{height}", 
                         org = (5, 20), 
                         fontFace = cv2.FONT_HERSHEY_SIMPLEX, 
                         fontScale = 0.5, 
                         color = (0, 0, 255), 
                         thickness = 2)
-            image_message = cv_bridge.cv2_to_imgmsg(canvas, encoding="bgr8")
+            image_message = cv_bridge.cv2_to_imgmsg(color_image, encoding="bgr8")
             self.pub_eye_on_chassis_direction.publish(msg = image_message)
-            
-            if self.use_yolo:
-                additional = cv_bridge.cv2_to_imgmsg(color_image, encoding = "bgr8")
-                self.pub_eye_on_chassis_binary_morphology.publish(msg = additional)
-            else:
+            if not self.use_yolo:
                 additional = cv_bridge.cv2_to_imgmsg(binary_mask, encoding = "mono8")
-                self.pub_eye_on_chassis_binary_morphology.publish(msg = additional)
+                self.pub_eye_on_chassis_binary_morphology.publish(msg = additional)            
 
     def recieve_latest_frame(self, 
                              color_image_msg: Image, 
@@ -317,14 +313,13 @@ class SubLogicController(Node):
         """节点的核心业务循环，加入了状态机机制。
         """        
         
-        self.analysis_latest_frame()
-        
         match self.state:
             case ST.QUIT:
                 self.wait_quit()
                 
             case ST.ENABLED:
-                self.correct_direction_error()
+                self.analysis_latest_frame()
+                self.publish_direction_error()
                 
             case ST.DISABLED:
                 pass

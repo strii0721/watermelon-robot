@@ -89,7 +89,7 @@ class YOLOCommander:
         model_path = os.path.join("resource", "weights-base", f"{arguments.base_model}.pt")
         dataset_path = os.path.join("resource", "datasets", f"{arguments.project_name}", f"{arguments.dataset}", f"dataset.yaml")
         timestamp = int(time.time())
-        run_name = f"{arguments.project_name}-{arguments.batch_size}-{timestamp}"
+        run_name = f"{arguments.base_model}-{arguments.batch_size}-{timestamp}"
         model = YOLO(model = model_path)
         results = model.train(
             project = arguments.project_name,
@@ -103,7 +103,7 @@ class YOLOCommander:
         )
         
         if results: 
-            result_folder = os.path.join(f"{self.project_name}", f"{run_name}")
+            result_folder = os.path.join(f"{arguments.project_name}", f"{run_name}")
             print(f"训练成功！训练结果保存于 {result_folder}")
         else: 
             print(f"训练失败！")

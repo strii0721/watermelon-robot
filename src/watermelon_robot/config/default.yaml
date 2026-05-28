@@ -36,16 +36,16 @@ robotic_arm_s:
 # 导航线检测相关
 lane_detection: 
   roi: 
-    y_min_portion: 0.7
-    y_max_portion: 0.9
+    y_min_portion: 0.75
+    y_max_portion: 0.99
   detect_step: 10
   terminal_distance: 500
   use_yolo: True
   cv:
-    maximum_window_size: 5
+    maximum_window_size: 3
     reference_depth: 5
   model:  
-    name: "yolo26n-seg-b64-1779671885-fp16.engine"
+    name: "yolo26n-seg-b64-1779873368-fp16.engine"
     task: "lane-detection"
     use_engine: True
     device_no: "0"
@@ -57,11 +57,12 @@ lane_detection:
 
 chassis: 
   pid_controller: 
-    pid_triple: [0.6, 0.0, 0.0]
-    control_interval: 0.01
-    integral_limit: 50
-    output_limit: 100
-  forward_speed: 0.3
+    pid_triple: [0.2, 0.02, 0.01]
+    control_interval: 0.1
+    integral_limit: 99999
+    output_limit: 99999
+  forward_speed: 0.40
+  stop_delay: 3
 
 # -------------------------------------------------------
 # 剪刀控制相关

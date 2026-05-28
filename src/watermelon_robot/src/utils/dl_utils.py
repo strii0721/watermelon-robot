@@ -72,7 +72,6 @@ class DLUtils:
     def predict_lane(cls,
                      model: YOLO, 
                      source_image: np.ndarray, 
-                     canvas: np.ndarray,
                      roi_y_min_portion: float, 
                      roi_y_max_portion: float, 
                      detect_step: int) -> list:
@@ -81,7 +80,6 @@ class DLUtils:
         Args:
             model (YOLO): 应该传入一个模型对象而非模型路径或者名字。
             source_image (np.ndarray): 相机获得的原始图像。
-            canvas (np.ndarray): 用于绘制叠加层的图像。
             roi_y_min_portion (float): 兴趣区域的顶部 y 坐标。
             roi_y_max_portion (float): 兴趣区域的底部 y 坐标。
             detect_step (int): 中心点绘制步长。
@@ -93,41 +91,56 @@ class DLUtils:
         height, width = source_image.shape[:2]
         roi_y_min = int(height * roi_y_min_portion)
         roi_y_max = int(height * roi_y_max_portion)
-        step = detect_step
-        endpoint = None
-        
-        # 绘制当前航向参考点和参考航向线
         results = model.predict(source = source_image, 
                                 verbose = False)
-        reference_point = (int(width/2), roi_y_max)
-        cv2.circle(canvas, reference_point, 5, (255, 0, 0), -1)
-        reference_line = (reference_point, (reference_point[0], int((roi_y_min + roi_y_max)/2)))
-        cv2.line(canvas, reference_line[0], reference_line[1], (255, 0, 0), 2)
         
+        # 绘制当前航向参考点和参考航向线
+        ego_point = (int(width/2), roi_y_max)
+        cv2.circle(source_image, ego_point, 5, (255, 0, 0), -1)
+        ego_direction = (ego_point, (ego_point[0], int((roi_y_min + roi_y_max)/2)))
+        cv2.line(source_image, ego_direction[0], ego_direction[1], (255, 0, 0), 2)
         
+        # 分析当前偏离角度
+        reach_terminal = True
+        angle = 0.0
         if results[0].masks is not None:
             mask_xy = results[0].masks.xy[0]
-            polygon = np.array(mask_xy, dtype=np.int32)
-            binary_mask = np.zeros((height, width), dtype=np.uint8)
-            cv2.fillPoly(binary_mask, [polygon], 255)
+            lane_polygon = np.array(mask_xy, dtype=np.int32)
+            mask_lane = np.zeros((height, width), dtype=np.uint8)
+            cv2.fillPoly(mask_lane, [lane_polygon], 255)
+            kernel_square = np.ones((2, 2), np.uint8)
+            mask_lane = cv2.erode(mask_lane, kernel_square, iterations = 4)
+            mask_lane = CVUtils.not_maximum_connected_area_suppresion(binary_image = mask_lane)
+            mask_lane = cv2.dilate(mask_lane, kernel_square, iterations = 4)
+            mask_lane_roi = mask_lane.copy()
+            CVUtils.cut_roi(binary_image = mask_lane_roi, 
+                            roi_y_min = roi_y_min, 
+                            roi_y_max = roi_y_max)
             center_points = []
-            for y in range(0, height, step):
-                row = binary_mask[y, :]
-                white_pixels = np.where(row == 255)[0]
-                if len(white_pixels) > 0:
-                    x_left = white_pixels[0]
-                    x_right = white_pixels[-1]
+            for y in range(0, height, detect_step):
+                row = mask_lane_roi[y, :]
+                lane_pixels = np.where(row == 255)[0]
+                if len(lane_pixels) > 0:
+                    x_left = lane_pixels[0]
+                    x_right = lane_pixels[-1]
                     x_center = int((x_left + x_right) / 2)
                     center_points.append((x_center, y))
-                    if len(center_points) == 1: endpoint = center_points[0]
-            overlay = canvas.copy()
-            cv2.fillPoly(overlay, [polygon], (0, 255, 0))
-            cv2.addWeighted(overlay, 0.3, canvas, 0.7, 0, dst = canvas)
+                    if y < (roi_y_min + roi_y_max) / 2: 
+                        reach_terminal = False
+                        
+            overlay_lane = np.zeros((height, width, 3), dtype = mask_lane.dtype)
+            overlay_lane_roi = np.zeros((height, width, 3), dtype = mask_lane_roi.dtype)
+            overlay_lane[:, :, 0] = mask_lane
+            overlay_lane_roi[:, :, 1] = mask_lane_roi
+
+            cv2.addWeighted(overlay_lane, 0.5, source_image, 1.0, 0, dst = source_image)
+            cv2.addWeighted(overlay_lane_roi, 0.3, source_image, 1.0, 0, dst = source_image)
+            
             for i in range(len(center_points) - 1):
                 pt1 = center_points[i]
                 pt2 = center_points[i+1]
-                cv2.line(canvas, pt1, pt2, (0, 0, 255), 3)
-                cv2.circle(canvas, pt1, 2, (0, 255, 255), -1)
+                cv2.line(source_image, pt1, pt2, (0, 0, 255), 3)
+                cv2.circle(source_image, pt1, 2, (0, 255, 255), -1)
             if len(center_points) >= 2:
                 points_arr = np.array(center_points)
                 x = points_arr[:, 0]
@@ -138,27 +151,23 @@ class DLUtils:
                 x1 = int(line_function(y1))
                 y2 = roi_y_min
                 x2 = int(line_function(y2))
-                navigate_point = (int((x1 + x2)/2), int((y1 + y2)/2))
-                navigate_line = (reference_point, navigate_point)
-                angle = CVUtils.claculate_angle(reference_line = reference_line, 
-                                                navigation_line = navigate_line)
+                reference_point = (int((x1 + x2)/2), int((y1 + y2)/2))
+                reference_direction = (ego_point, reference_point)
+                angle = CVUtils.claculate_direction_error(ego_direction = ego_direction, 
+                                                          reference_direction = reference_direction)
 
                 # 绘制航向点十字准星
                 mark_size = 5
-                cv2.line(canvas, (navigate_point[0] - mark_size, navigate_point[1]), (navigate_point[0] + mark_size, navigate_point[1]), (0, 0, 255), 2)
-                cv2.line(canvas, (navigate_point[0], navigate_point[1] - mark_size), (navigate_point[0], navigate_point[1] + mark_size), (0, 0, 255), 2)
-            
-            if angle >= 0:
-                arow_color = (39, 127, 255)
-            else: 
-                arow_color = (0, 0, 255)
-            thickness = 2
-            cv2.arrowedLine(canvas, reference_point, navigate_point, arow_color, thickness, tipLength = 0.05)
+                cv2.line(source_image, (reference_point[0] - mark_size, reference_point[1]), (reference_point[0] + mark_size, reference_point[1]), (0, 0, 255), 2)
+                cv2.line(source_image, (reference_point[0], reference_point[1] - mark_size), (reference_point[0], reference_point[1] + mark_size), (0, 0, 255), 2)
+                if angle >= 0:
+                    arow_color = (39, 127, 255)
+                else: 
+                    arow_color = (0, 0, 255)
+                thickness = 2
+                cv2.arrowedLine(source_image, ego_point, reference_point, arow_color, thickness, tipLength = 0.05)
         
-        else:
-            angle = 0.0
-        
-        return [angle, endpoint]
+        return [reach_terminal, angle]
 
     @classmethod
     def check_target_validation(cls, 
