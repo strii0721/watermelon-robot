@@ -152,20 +152,12 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/realsense/on_chassis/color_raw"           # 输入：底盘相机彩色原始画面
-    input_1: "t/realsense/on_chassis/depth_raw"           # 输入：底盘相机深度原始画面
-    input_2: "t/realsense/on_chassis/camera_intrinsics"   # 输入：底盘相机内参
-    output_0: "t/chassis/direction_correction_value"      # 输出：底盘方向修正量
-    output_1: "t/monitor/sub/color_navigation"            # 输出：底盘相机预测轨迹叠加层
-    output_2: "t/monitor/sub/additional"                  # 输出：底盘相机形态学二值图
+    input_0: "t/lane_detector"                            # 输入：航线偏离
     duplex_0: "s/logic_controller/comm"                   # 双工：上/下逻辑控制器
     duplex_1: "s/chassis/start_stop"                      # 双工：底盘启停控制
 
     # 通用配置块 ###################
     ###########
-    ats:                                                  # 近似时序同步器
-      queue_size: 10                                      # 缓存队列大小
-      slop: 0.05                                          # 最大时间差（秒）
     heartbeat_interval: 0.01                              # Heartbeat 循环周期
     is_test: False                                        # 是否为单元测试环境（测试环境会忽略某些上下逻辑控制器响应要求
 
@@ -178,12 +170,13 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/chassis/direction_correction_value"   # 底盘方向控制
-    output_0: "cmd_vel"                               # 轮趣 SDK：底盘控制信号
-    duplex_0: "s/chassis/start_stop"                  # 双工：底盘启停控制
+    input_0: "t/chassis/direction_correction_value"       # 底盘方向控制
+    output_0: "cmd_vel"                                   # 轮趣 SDK：底盘控制信号
+    duplex_0: "s/chassis/start_stop"                      # 双工：底盘启停控制
 
     # 通用配置块 ###################
     ###########
+    heartbeat_period_sec: 0.01
 
 # -------------------------------------------------------
   

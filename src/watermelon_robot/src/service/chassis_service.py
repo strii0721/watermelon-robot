@@ -56,14 +56,12 @@ class ChassisService:
     
     def apply_control_variable(self, 
                                control_variable: float, 
-                               forward_speed: float,
-                               yaw_angle: float) -> Twist:
+                               forward_speed: float) -> Twist:
         """根据控制量生成 Ros2 的控制消息。
 
         Args:
             control_variable (float): 控制量（PID 控制器输出）。
             forward_speed (float): 目标前进线速度。
-            yaw_angle (float): 当前偏航角度。
 
         Returns:
             Twist: Ros2 的速度控制消息。

@@ -21,6 +21,7 @@ from std_msgs.msg import Header
 from sensor_msgs.msg import Image, CameraInfo
 from watermelon_robot_interface.msg import RealSenseFrame, LaneError
 from rclpy.time import Time
+from watermelon_robot_interface.srv import ChassisStartStop
 
 class CommUtils:
     
@@ -64,3 +65,27 @@ class CommUtils:
         lane_error.reach_terminal = reach_terminal
         
         return lane_error
+    
+    @classmethod
+    def create_request_chassis_start_stop(cls, 
+                                          header: Header, 
+                                          target_state: bool) -> ChassisStartStop.Request:
+        
+        request = ChassisStartStop.Request()
+        request.header = header
+        request.target_state = target_state
+        
+        return request
+    
+    @classmethod
+    def create_response_chassis_start_stop(cls, 
+                                           header: Header, 
+                                           is_success: bool, 
+                                           message: str = "") -> ChassisStartStop.Response:
+        
+        response = ChassisStartStop.Response()
+        response.header = header
+        response.is_success = is_success
+        response.message = message
+        
+        return response

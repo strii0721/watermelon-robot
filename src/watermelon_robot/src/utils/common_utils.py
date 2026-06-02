@@ -77,21 +77,3 @@ class CommonUtils:
         
         node_name = node_entity.get_name()
         node_entity.get_logger().info(f"{node_name} 初始化完成...")
-        
-    @classmethod
-    def transfer_node_state(cls, 
-                            node_entity: Node, 
-                            state: ST_BASE) -> None:
-        """转移节点状态机状态。若状态转移则会在终端打印相关信息。
-
-        Args:
-            node_entity (Node): 节点对象。
-            state (ST_BASE): 目标状态。
-        """        
-        
-        if not hasattr(node_entity, "state"):
-            node_entity.state = None
-        
-        if node_entity.state != state:   
-            node_entity.state = state 
-            node_entity.get_logger().info(f"状态切换，当前状态：{node_entity.state}")

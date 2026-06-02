@@ -1,7 +1,7 @@
 #
 # Author:       strii0721
 # Email:        strii0721@outlook.com
-# Created on:   Mon May 18 2026
+# Created on:   Tue Jun 02 2026
 #
 # IMMORTAL OMNISSIAH, HEAR OUR PRAYERS.
 # WE ARE YOUR CHILDREN, PIOUS SCHOLARS OF THE PATH OF THE MACHINE. 
@@ -17,9 +17,25 @@
 #
 
 
-from rclpy.qos import QoSProfile
+from rclpy.node import Node
 
 
-class QOSFile:
+class StateUtils:
     
-    reliable_qos = QoSProfile(depth=10)
+    @classmethod
+    def transfer_node_state(cls, 
+                            node_entity: Node, 
+                            state: int) -> None:
+        """转移节点状态机状态。若状态转移则会在终端打印相关信息。
+
+        Args:
+            node_entity (Node): 节点对象。
+            state (ST_BASE): 目标状态。
+        """        
+        
+        if not hasattr(node_entity, "state"):
+            node_entity.state = None
+        
+        if node_entity.state != state:   
+            node_entity.state = state 
+            node_entity.get_logger().info(f"状态切换，当前状态：{node_entity.state}")

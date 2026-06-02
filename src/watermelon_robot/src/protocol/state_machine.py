@@ -36,10 +36,3 @@ class ST_SUPER_LOGIC_CONTROLLER(ST_BASE):
     PENDING = 1024
     
     
-class ST_SUB_LOGIC_CONTROLLER(ST_BASE):
-    
-    QUIT = 0
-    ENABLED = 101
-    DISABLED = 201
-    
-    PENDING = 1024

@@ -19,11 +19,7 @@
 
 from rclpy.node import Node
 from utils import CommonUtils
-<<<<<<< HEAD
-from watermelon_robot_interface.msg import RealSenseFrame
-=======
 from watermelon_robot_interface.msg import RealSenseFrame, LaneError
->>>>>>> feature/lane_detection
 from rclpy.qos import qos_profile_sensor_data
 from cv_bridge import CvBridge
 from utils import config, DLUtils, ModelUtils, CommUtils
@@ -51,16 +47,11 @@ class LaneDetector(Node):
                                                                           topic = self.input_0, 
                                                                           callback = self.detect_lane, 
                                                                           qos_profile = qos_profile_sensor_data)
-<<<<<<< HEAD
-        self.navigation_color_monitor_publisher = self.create_publisher(msg_type = Image, 
-                                                                        topic = self.output_0, 
-=======
         self.lane_error_publisher = self.create_publisher(msg_type = LaneError, 
                                                           topic = self.output_0, 
                                                           qos_profile = qos_profile_sensor_data)
         self.navigation_color_monitor_publisher = self.create_publisher(msg_type = Image, 
                                                                         topic = self.output_1, 
->>>>>>> feature/lane_detection
                                                                         qos_profile = qos_profile_sensor_data)
         
         CommonUtils.node_initialized()
@@ -114,9 +105,5 @@ class LaneDetector(Node):
                     color = (0, 0, 255), 
                     thickness = 2)
         color_image = self.cv_bridge.cv2_to_imgmsg(color_image, encoding="bgr8")
-<<<<<<< HEAD
-        self.navigation_color_monitor_publisher.publish(msg = lane_error)
-=======
         self.lane_error_publisher.publish(msg = lane_error)
->>>>>>> feature/lane_detection
         self.navigation_color_monitor_publisher.publish(msg = color_image)
