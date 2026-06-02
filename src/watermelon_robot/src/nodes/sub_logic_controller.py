@@ -25,7 +25,7 @@ from sensor_msgs.msg import Image, CameraInfo
 import message_filters
 from utils import CVUtils
 from watermelon_robot_interface.srv import ILogicControllerComm, IChassisStartStopControl
-from watermelon_robot_interface.msg import IChassisDirectionControl
+from watermelon_robot_interface.msg import LaneError
 from utils import config
 import cv2
 import time

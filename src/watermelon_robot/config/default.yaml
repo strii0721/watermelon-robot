@@ -210,7 +210,8 @@ _node_initializer:
     # 标准通信接口配置块 ###################
     ##################
     input_0: "t/realsense/chassis/front_facing"             # 输入：底盘 RealSense 相机帧
-    output_0: "t/monitor/sub/navigation_color"              # 输出：底盘相机预测轨迹叠加层
+    output_0: "t/lane_detector"                             # 输出：航线偏离
+    output_1: "t/monitor/sub/navigation_color"              # 输出：底盘相机预测轨迹叠加层
 
 # -------------------------------------------------------
 
