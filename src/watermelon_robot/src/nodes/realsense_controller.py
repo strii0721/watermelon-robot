@@ -19,11 +19,12 @@
 
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image, CameraInfo
 from rclpy.qos import qos_profile_sensor_data
 from service import RealsenseService
 from utils import CommonUtils
 from cv_bridge import CvBridge
+from watermelon_robot_interface.msg import RealSenseFrame
+from utils import CommUtils
 
 
 class RealsenseController(Node):
@@ -36,41 +37,35 @@ class RealsenseController(Node):
         self.realsense_service = RealsenseService()
         self.cv_bridge = CvBridge()
 
-        self.eye_on_hand_color_raw = self.create_publisher(msg_type = Image, 
-                                                           topic = self.output_0, 
-                                                           qos_profile = qos_profile_sensor_data)
+        self.realsense_frame_publisher = self.create_publisher(msg_type = RealSenseFrame,
+                                                               topic = self.output_0, 
+                                                               qos_profile = qos_profile_sensor_data)
         
-        self.eye_on_hand_depth_raw = self.create_publisher(msg_type = Image, 
-                                                           topic = self.output_1, 
-                                                           qos_profile = qos_profile_sensor_data)
-        
-        self.eye_on_hand_camera_intrinsics = self.create_publisher(msg_type = CameraInfo, 
-                                                                   topic = self.output_2, 
-                                                                   qos_profile = qos_profile_sensor_data)
-        
-        self.tmr_camera_frame = self.create_timer(timer_period_sec = 1/self.fps, 
-                                                  callback = self.output_frames)
+        self.read_frame_timer = self.create_timer(timer_period_sec = 1/self.fps, 
+                                                  callback = self.read_frame)
         
         CommonUtils.node_initialized(self)
 
-    def output_frames(self):
+    def read_frame(self):
         """读取 RealSense 深度相机的一帧，并发布至话题。
         """        
         
-        rtn = self.realsense_service.read_frames()
+        frames = self.realsense_service.read_frames()
 
-        if rtn:       
-            [color_frame, depth_frame, camera_intrinsics] = rtn
-            color_msg = self.cv_bridge.cv2_to_imgmsg(color_frame, encoding = "bgr8")
-            depth_msg = self.cv_bridge.cv2_to_imgmsg(depth_frame, encoding = "16UC1")
-            intrinsics_msg = camera_intrinsics
+        if frames:       
+            [color_frame, depth_frame, intrinsics] = frames
+            color_frame = self.cv_bridge.cv2_to_imgmsg(cvim = color_frame, 
+                                                       encoding = "bgr8")
+            depth_frame = self.cv_bridge.cv2_to_imgmsg(cvim = depth_frame, 
+                                                       encoding = "16UC1")
+            
             timestamp = self.get_clock().now().to_msg()
-            color_msg.header.stamp = timestamp
-            depth_msg.header.stamp = timestamp
-            intrinsics_msg.header.stamp = timestamp
-            self.eye_on_hand_color_raw.publish(msg = color_msg)
-            self.eye_on_hand_depth_raw.publish(msg = depth_msg)
-            self.eye_on_hand_camera_intrinsics.publish(msg = intrinsics_msg)
+            header = CommUtils.create_header(stamp = timestamp)
+            realsense_frame = CommUtils.create_realsense_frame(header = header,
+                                                               color_frame = color_frame, 
+                                                               depth_frame = depth_frame, 
+                                                               intrinsics = intrinsics)
+            self.realsense_frame_publisher.publish(msg = realsense_frame)
         
         
 def main():
