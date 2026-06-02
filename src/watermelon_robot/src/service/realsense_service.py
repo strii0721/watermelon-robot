@@ -17,7 +17,7 @@
 #
 
 
-from mapper import RealsenseMapper
+from intermediates import RealsenseMapper
 from utils import RealsenseUtils
 
 class RealsenseService: 

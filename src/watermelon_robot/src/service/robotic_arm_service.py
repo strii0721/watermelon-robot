@@ -18,7 +18,7 @@
 
 
 import numpy as np
-from mapper import RoboticArmMapper
+from intermediates import RoboticArmMapper
 
 class RoboticArmService:
 

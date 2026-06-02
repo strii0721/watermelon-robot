@@ -18,7 +18,7 @@
 
 
 import cv2
-from mapper import RealsenseMapper
+from intermediates import RealsenseMapper
 import numpy as np
 
 def main():
