@@ -19,7 +19,14 @@
 
 from rclpy.node import Node
 from utils import CommonUtils
-from watermelon_robot_interface.msg import RealSenseFrame
+from watermelon_robot_interface.msg import RealSenseFrame, LaneError
+from rclpy.qos import qos_profile_sensor_data
+from cv_bridge import CvBridge
+from utils import config, DLUtils, ModelUtils, CommUtils
+import cv2
+import time
+from sensor_msgs.msg import Image
+import math
 
 class LaneDetector(Node):
     
@@ -28,8 +35,75 @@ class LaneDetector(Node):
         super().__init__("lane_detector")
         CommonUtils.node_initializer(self)
         
+        self.cv_bridge = CvBridge()
+        self.model = ModelUtils.load_model(model_name = config.lane_detection.model.name, 
+                                           task = config.lane_detection.model.task, 
+                                           use_engine = config.lane_detection.model.use_engine,
+                                           confidence = config.lane_detection.model.confidence)
+        self.reach_terminal_timer = None
+        self.last_frame_time = time.time()
+        
         self.front_facing_realsense_subscriber = self.create_subscription(msg_type = RealSenseFrame, 
                                                                           topic = self.input_0, 
-                                                                          )
+                                                                          callback = self.detect_lane, 
+                                                                          qos_profile = qos_profile_sensor_data)
+        self.lane_error_publisher = self.create_publisher(msg_type = LaneError, 
+                                                          topic = self.output_0, 
+                                                          qos_profile = qos_profile_sensor_data)
+        self.navigation_color_monitor_publisher = self.create_publisher(msg_type = Image, 
+                                                                        topic = self.output_1, 
+                                                                        qos_profile = qos_profile_sensor_data)
         
         CommonUtils.node_initialized()
+        
+    def check_terminal(self, 
+                       reach_terminal: bool) -> None:
+        """检查是否抵达终点，若是则停止底盘。当且仅当连续时长的帧检测到抵达道路边缘或检测不到道路，判断为抵达终点。
+
+        Args:
+            reach_terminal (bool): 当前帧是否符合到达终点的条件。
+        """        
+        
+        if reach_terminal:
+            if self.reach_terminal_timer:
+                    if time.time() - self.reach_terminal_timer > config.chassis.stop_delay_sec:
+                            return True
+            else: 
+                self.reach_terminal_timer = time.time()
+        
+        return False
+    
+    def detect_lane(self, 
+                    realsense_frame: RealSenseFrame) -> None:
+        
+        color_frame = realsense_frame.color_frame
+        color_image = self.cv_bridge.imgmsg_to_cv2(img_msg = color_frame, 
+                                                   desired_encoding = "passthrough").copy()
+        
+        reach_terminal, lane_error_rads = DLUtils.predict_lane(model = self.model, 
+                                                               source_image = color_image, 
+                                                               roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                                               roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
+                                                               detect_step = config.lane_detection.detect_step)
+        reach_terminal = self.check_terminal(reach_terminal)
+        timestamp = self.get_clock().now().to_msg()
+        header = CommUtils.create_header(stamp = timestamp)
+        lane_error_degrees = math.degrees(lane_error_rads)
+        lane_error = CommUtils.create_lane_error(header = header, 
+                                                 error_degrees = lane_error_degrees, 
+                                                 error_rads = lane_error_rads, 
+                                                 reach_terminal = reach_terminal)
+        height, width = color_image.shape[:2]
+        now_time = time.time()
+        real_fps = int(1/(now_time - self.last_frame_time))
+        self.last_frame_time = now_time
+        cv2.putText(img = color_image, 
+                    text = f"FPS {real_fps} | Frame Size {width}x{height}", 
+                    org = (5, 20), 
+                    fontFace = cv2.FONT_HERSHEY_SIMPLEX, 
+                    fontScale = 0.5, 
+                    color = (0, 0, 255), 
+                    thickness = 2)
+        color_image = self.cv_bridge.cv2_to_imgmsg(color_image, encoding="bgr8")
+        self.lane_error_publisher.publish(msg = lane_error)
+        self.navigation_color_monitor_publisher.publish(msg = color_image)
