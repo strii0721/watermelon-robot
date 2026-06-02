@@ -24,13 +24,17 @@ if(BUILD_TESTING)
 endif()
 
 find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/RealSenseFrame.msg"
   "srv/IRoboticArmAction.srv"
   "srv/ILogicControllerComm.srv"
   "msg/IChassisDirectionControl.msg"
   "srv/IChassisStartStopControl.srv"
+  DEPENDENCIES std_msgs sensor_msgs
 )
 
 ament_package()
