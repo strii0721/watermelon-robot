@@ -194,7 +194,7 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    output_0: "t/realsense/chassis/front_facing"        
+    output_0: "t/realsense/chassis/front_facing"            # 输出：底盘 RealSense 相机帧    
 
     # 通用配置块 ###################
     ###########
@@ -209,7 +209,8 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_1: "t/realsense/chassis/front_facing"     
+    input_0: "t/realsense/chassis/front_facing"             # 输入：底盘 RealSense 相机帧
+    output_0: "t/monitor/sub/navigation_color"              # 输出：底盘相机预测轨迹叠加层
 
 # -------------------------------------------------------
 
@@ -220,29 +221,12 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/monitor/sub/color_navigation"  # 输入：底盘相机预测轨迹叠加层
+    input_0: "t/monitor/sub/navigation_color"               # 输入：底盘相机预测轨迹叠加层
 
     # 通用配置块 ###################
     ###########
     fps: 30                           # 监视器显示帧率
     is_livestream: True               # 开启网页推流
     livestream_port: 8080             # 推流端口号
-
-# -------------------------------------------------------
-
-  ##########################
-  # 监视器：底盘相机辅助图像 #
-  ##########################
-  ZERO_ORDER_OIL_TANK_1:
-
-    # 标准通信接口配置块 ###################
-    ##################
-    input_0: "t/monitor/sub/additional"          # 输入：底盘相机预测轨迹叠加层
-
-    # 通用配置块 ###################
-    ###########
-    fps: 30                           # 监视器显示帧率
-    is_livestream: True               # 开启网页推流
-    livestream_port: 8081             # 推流端口号
 
 # -------------------------------------------------------
