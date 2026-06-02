@@ -42,6 +42,13 @@ def generate_launch_description():
         name = "AMA_10",
         output="screen"
     )
+    
+    LONETRAIL = Node(
+        package = "watermelon_robot", 
+        executable = "lane_detector", 
+        name = "LONETRAIL", 
+        output = "screen"
+    )
 
     ZERO_ORDER_OIL_TANK_0 = Node(
         package="watermelon_robot",
@@ -61,6 +68,7 @@ def generate_launch_description():
         LYNCHPIN,
         DWDB_221E,
         AMA_10,
+        LONETRAIL,
         ZERO_ORDER_OIL_TANK_0, 
         ZERO_ORDER_OIL_TANK_1
     ])

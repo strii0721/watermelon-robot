@@ -121,9 +121,7 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    output_0: "t/realsense/on_hand/color_raw"           # 输出：手眼相机彩色原始画面
-    output_1: "t/realsense/on_hand/depth_raw"           # 输出：手眼相机深度原始画面
-    output_2: "t/realsense/on_hand/camera_intrinsics"   # 输出：手眼相机内参
+    output_0: "t/realsense/robotic_arm/in_hand"           # 输出：手眼相机帧
 
     # 通用配置块 ###################
     ###########
@@ -196,13 +194,22 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    output_0: "t/realsense/on_chassis/color_raw"            # 输出：底盘相机彩色原始画面
-    output_1: "t/realsense/on_chassis/depth_raw"            # 输出：底盘相机深度原始画面
-    output_2: "t/realsense/on_chassis/camera_intrinsics"    # 输出：底盘相机内参
+    output_0: "t/realsense/chassis/front_facing"        
 
     # 通用配置块 ###################
     ###########
     fps: 30           # 画面采集帧率
+
+# -------------------------------------------------------
+  
+  ###########
+  # 航线探测 #
+  ###########
+  LONETRAIL:
+
+    # 标准通信接口配置块 ###################
+    ##################
+    input_1: "t/realsense/chassis/front_facing"     
 
 # -------------------------------------------------------
 

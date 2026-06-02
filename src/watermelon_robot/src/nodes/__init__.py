@@ -4,3 +4,4 @@ from .super_logic_controller import SuperLogicController
 from .sub_logic_controller import SubLogicController
 from .chassis_controller import ChassisController
 from .monitor import Monitor
+from .lane_detector import LaneDetector
