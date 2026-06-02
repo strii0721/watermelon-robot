@@ -325,7 +325,7 @@ class CVUtils:
             navigation_line (tuple): 预测导航线线段起点终点坐标对。
 
         Returns:
-            float: 两线段夹角（锐角）。
+            float: 两线段夹角（锐角，以弧度记）。
         """        
         
         reference_start, reference_end = ego_direction
@@ -333,12 +333,10 @@ class CVUtils:
         vector_feference = (reference_end[0] - reference_start[0], -(reference_end[1] - reference_start[1]))
         vector_navigate = (navigate_end[0] - navigate_start[0], -(navigate_end[1] - navigate_start[1]))
 
-        angle_reference = math.degrees(math.atan2(vector_feference[1], vector_feference[0]))
-        angle_navigate = math.degrees(math.atan2(vector_navigate[1], vector_navigate[0]))
+        angle_reference = math.atan2(vector_feference[1], vector_feference[0])
+        angle_navigate = math.atan2(vector_navigate[1], vector_navigate[0])
 
         angle_diff = angle_navigate - angle_reference
-        angle_diff = float((angle_diff + 90) % 180 - 90)
-        
-        angle_diff_rad = math.radians(angle_diff)
+        angle_diff = float((angle_diff + math.pi / 2) % math.pi - math.pi / 2)
 
-        return angle_diff_rad
+        return angle_diff

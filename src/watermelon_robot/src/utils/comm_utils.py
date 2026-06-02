@@ -19,7 +19,7 @@
 
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image, CameraInfo
-from watermelon_robot_interface.msg import RealSenseFrame
+from watermelon_robot_interface.msg import RealSenseFrame, LaneError
 from rclpy.time import Time
 
 class CommUtils:
@@ -49,3 +49,18 @@ class CommUtils:
         realsense_frame.intrinsics = intrinsics
         
         return realsense_frame
+    
+    @classmethod
+    def create_lane_error(cls, 
+                          header: Header, 
+                          error_degrees: float, 
+                          error_rads: float, 
+                          reach_terminal: bool) -> LaneError:
+        
+        lane_error = LaneError()
+        lane_error.header = header
+        lane_error.error_degrees = error_degrees
+        lane_error.error_rads = error_rads
+        lane_error.reach_terminal = reach_terminal
+        
+        return lane_error

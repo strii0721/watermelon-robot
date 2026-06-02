@@ -85,7 +85,7 @@ class DLUtils:
             detect_step (int): 中心点绘制步长。
 
         Returns:
-            list: 关键数据列表 [当前偏移角度, 最远点像素坐标]。
+            list: 关键数据列表 [当前帧是否抵达终点, 角度误差（以弧度记）]。
         """        
         
         height, width = source_image.shape[:2]
@@ -102,7 +102,7 @@ class DLUtils:
         
         # 分析当前偏离角度
         reach_terminal = True
-        angle = 0.0
+        angle_rads = 0.0
         if results[0].masks is not None:
             mask_xy = results[0].masks.xy[0]
             lane_polygon = np.array(mask_xy, dtype=np.int32)
@@ -159,21 +159,21 @@ class DLUtils:
                 
                 reference_point = (int((x1 + x2)/2), int((y1 + y2)/2))
                 reference_direction = (ego_point, reference_point)
-                angle = CVUtils.claculate_direction_error(ego_direction = ego_direction, 
-                                                          reference_direction = reference_direction)
+                angle_rads = CVUtils.claculate_direction_error(ego_direction = ego_direction, 
+                                                               reference_direction = reference_direction)
 
                 # 绘制航向点十字准星
                 mark_size = 5
                 cv2.line(source_image, (reference_point[0] - mark_size, reference_point[1]), (reference_point[0] + mark_size, reference_point[1]), (0, 0, 255), 2)
                 cv2.line(source_image, (reference_point[0], reference_point[1] - mark_size), (reference_point[0], reference_point[1] + mark_size), (0, 0, 255), 2)
-                if angle >= 0:
+                if angle_rads >= 0:
                     arow_color = (39, 127, 255)
                 else: 
                     arow_color = (0, 0, 255)
                 thickness = 2
                 cv2.arrowedLine(source_image, ego_point, reference_point, arow_color, thickness, tipLength = 0.05)
         
-        return [reach_terminal, angle]
+        return [reach_terminal, angle_rads]
 
     @classmethod
     def check_target_validation(cls, 
