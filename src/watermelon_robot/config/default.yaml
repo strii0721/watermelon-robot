@@ -77,11 +77,8 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/realsense/on_hand/color_raw"            # 输入：手眼相机彩色原始画面
-    input_1: "t/realsense/on_hand/depth_raw"            # 输入：手眼相机深度原始画面
-    input_2: "t/realsense/on_hand/camera_intrinsics"    # 输入：手眼相机内参
-    output_0: "t/monitor/sup/color_boxed"               # 输出：手眼相机目标框叠加层
-    duplex_0: "s/robotic_arm/action_once"               # 双工：机械臂控制
+    input_0: "t/target_detector/prediction/target_list"
+    duplex_0: "s/robotic_arm/command"               # 双工：机械臂控制
     duplex_1: "s/logic_controller/command"                 # 双工：上/下逻辑控制器
 
     # 通用配置块 ###################
@@ -96,7 +93,7 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    duplex_0: "s/robotic_arm/action_once"                   # 双工：机械臂控制
+    duplex_0: "s/robotic_arm/command"                   # 双工：机械臂控制
 
     # 通用配置块 ###################
     ###########
