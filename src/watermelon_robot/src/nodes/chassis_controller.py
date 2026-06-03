@@ -17,7 +17,7 @@
 #
 
 
-from control_algorithm import PIDController
+from controller import PIDController
 import rclpy
 from rclpy.node import Node
 from utils import NodeUtils

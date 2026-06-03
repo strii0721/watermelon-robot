@@ -50,10 +50,10 @@ def generate_launch_description():
         output = "screen"
     )
 
-    PRIESTESS_EYES_0 = Node(
+    PRIESTESS_EYES = Node(
         package="watermelon_robot",
         executable="monitor",
-        name = "PRIESTESS_EYES_0",
+        name = "PRIESTESS_EYES",
         output="screen"
     )
     
@@ -62,5 +62,5 @@ def generate_launch_description():
         CAERULA_ARBOR,
         PRESERVATOR,
         LYNCHPIN,
-        PRIESTESS_EYES_0
+        PRIESTESS_EYES
     ])

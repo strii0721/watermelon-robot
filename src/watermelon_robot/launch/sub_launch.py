@@ -50,10 +50,10 @@ def generate_launch_description():
         output = "screen"
     )
 
-    ZERO_ORDER_OIL_TANK_0 = Node(
+    ZERO_ORDER_OIL_TANK = Node(
         package="watermelon_robot",
         executable="monitor",
-        name = "ZERO_ORDER_OIL_TANK_0",
+        name = "ZERO_ORDER_OIL_TANK",
         output="screen"
     )
     
@@ -62,5 +62,5 @@ def generate_launch_description():
         DWDB_221E,
         AMA_10,
         LONETRAIL,
-        ZERO_ORDER_OIL_TANK_0
+        ZERO_ORDER_OIL_TANK
     ])
