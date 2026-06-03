@@ -20,8 +20,10 @@
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image, CameraInfo
 from watermelon_robot_interface.msg import RealSenseFrame, LaneError, TargetList, ChassisControlSequence
+from watermelon_robot_interface.srv import LogicControllerComm, RoboticArmAction
 from rclpy.time import Time
 from watermelon_robot_interface.srv import ChassisStartStop
+from protocol import LogicControllerCommCode
 
 class CommUtils:
     
@@ -115,3 +117,27 @@ class CommUtils:
         chassis_control_sequence.is_enabled = is_enabled
         
         return chassis_control_sequence
+    
+    @classmethod
+    def create_logic_controller_comm_request(cls, 
+                                             header: Header, 
+                                             comm_code: LogicControllerCommCode) -> LogicControllerComm.Request:
+        
+        request = LogicControllerComm.Request()
+        request.header = header
+        request.comm_code = comm_code
+        
+        return request
+    
+    @classmethod
+    def create_logic_controller_comm_response(cls, 
+                                              header: Header, 
+                                              is_success: bool, 
+                                              message: str = "") -> LogicControllerComm.Response:
+        
+        response = LogicControllerComm.Response()
+        response.header = header
+        response.is_success = is_success
+        response.message = message
+        
+        return response
