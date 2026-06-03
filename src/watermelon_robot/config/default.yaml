@@ -94,9 +94,7 @@ _node_initializer:
     ats:                                                # 近似时序同步器
       queue_size: 10                                    # 缓存队列大小
       slop: 0.05                                        # 最大时间差（秒）
-    heartbeat_interval: 0.01                            # Heartbeat 循环周期
-    request_retransmission_limit: 3                     # 控制底盘停止的请求重传次数上限
-    is_test: False                                      # 是否为单元测试环境（测试环境会忽略某些上下逻辑控制器响应要求
+    heartbeat_period_sec: 0.01                            # Heartbeat 循环周期
 
 # -------------------------------------------------------
   
@@ -175,8 +173,7 @@ _node_initializer:
 
     # 通用配置块 ###################
     ###########
-    heartbeat_interval: 0.01                              # Heartbeat 循环周期
-    is_test: False                                        # 是否为单元测试环境（测试环境会忽略某些上下逻辑控制器响应要求
+    heartbeat_period_sec: 0.01                              # Heartbeat 循环周期
 
 # -------------------------------------------------------
   
@@ -193,7 +190,6 @@ _node_initializer:
 
     # 通用配置块 ###################
     ###########
-    heartbeat_period_sec: 0.01
 
 # -------------------------------------------------------
   
