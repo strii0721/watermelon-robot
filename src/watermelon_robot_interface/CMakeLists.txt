@@ -32,6 +32,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RealSenseFrame.msg"
   "msg/LaneError.msg"
   "msg/TargetList.msg"
+  "msg/ChassisControlSequence.msg"
   "srv/IRoboticArmAction.srv"
   "srv/ILogicControllerComm.srv"
   "srv/ChassisStartStop.srv"
