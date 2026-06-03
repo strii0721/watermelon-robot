@@ -26,6 +26,7 @@ import time
 import cv2
 from sensor_msgs.msg import Image
 import json
+import rclpy
 
 
 class TargetDetector(Node):
@@ -90,3 +91,16 @@ class TargetDetector(Node):
             
             self.target_list_publisher.publish(msg = target_list)
             self.overlay_publisher.publish(msg = image_message)
+
+
+def main():
+
+    rclpy.init()
+    target_detector = TargetDetector()
+    rclpy.spin(target_detector)
+    target_detector.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()    
