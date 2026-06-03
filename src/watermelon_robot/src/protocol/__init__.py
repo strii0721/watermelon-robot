@@ -1,3 +1,3 @@
 from .logic_controller_comm_code import LogicControllerCommCode
-from .qos_files import QOSFile
+from .qos_files import QoSFiles
 from .state_machine import ST_BASE, ST_SUB_LOGIC_CONTROLLER, ST_SUPER_LOGIC_CONTROLLER

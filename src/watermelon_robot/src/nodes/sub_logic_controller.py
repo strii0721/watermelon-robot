@@ -21,11 +21,9 @@ import rclpy
 from rclpy.node import Node
 from utils import CommonUtils
 from rclpy.qos import qos_profile_sensor_data
-import message_filters
-from watermelon_robot_interface.srv import ILogicControllerComm, ChassisStartStop
+from watermelon_robot_interface.srv import LogicControllerComm
 from watermelon_robot_interface.msg import LaneError, ChassisControlSequence
 from utils import config
-import time
 from protocol import LogicControllerCommCode
 from typing import cast
 from types import SimpleNamespace
@@ -38,8 +36,6 @@ class STATE(Enum):
     QUIT = 0
     ENABLED = 101
     DISABLED = 201
-    
-    PENDING = 1024
 
 class SubLogicController(Node):
 
@@ -57,28 +53,51 @@ class SubLogicController(Node):
         self.lane_error_subscriber = self.create_subscription(msg_type = LaneError, 
                                                               topic = self.input_0, 
                                                               qos_profile = qos_profile_sensor_data, 
-                                                              callback = self.analysis_lane_error)
+                                                              callback = self.cache_lane_error)
         
         self.chassis_control_sequence_publisher = self.create_publisher(msg_type = ChassisControlSequence, 
                                                                         topic = self.output_0, 
                                                                         qos_profile = qos_profile_sensor_data)
         
-        self.srv_logic_controller_comm = self.create_service(srv_type = ILogicControllerComm, 
+        self.srv_logic_controller_comm = self.create_service(srv_type = LogicControllerComm, 
                                                              srv_name = self.duplex_0, 
                                                              callback = self.answer_super_logic_controller)
-        
-        self.cli_chassis_start_stop = self.create_client(srv_type = ChassisStartStop, 
-                                                         srv_name = self.duplex_1)
-
 
         CommonUtils.node_initialized(self)
         StateUtils.transfer_node_state(self, STATE.ENABLED)
+        
+    def cache_lane_error(self, 
+                         lane_error: LaneError) -> None:
+        """缓存航线误差。
 
-    def enable_chassis(self) -> rclpy.Future:
+        Args:
+            lane_error (LaneError): 频道接收到的航线误差。
+        """        
+        
+        reach_terminal = lane_error.reach_terminal
+        if reach_terminal: 
+            self.disable_chassis()   
+        else:
+            self.history.lane_error_rads = lane_error.error_rads 
+            
+    def forward_lane_error(self) -> None:
+        """发布缓存的航线误差。（这个函数是被 heartbeat() 调用的，调用频率可能与误差接收频率不一致，后者是航线预测话题的回调函数，故接收频率与前视相机的帧率一致。）
+        """          
+        
+        timestamp = self.get_clock().now().to_msg()
+        header = CommUtils.create_header(stamp = timestamp)
+        forward_speed = config.chassis.forward_speed
+        chassis_control_sequence = CommUtils.create_chassis_control_sequence(header = header, 
+                                                                             error_rads = self.history.lane_error_rads, 
+                                                                             forward_speed = forward_speed)
+        
+        self.chassis_control_sequence_publisher.publish(msg = chassis_control_sequence)
+
+    def enable_chassis(self) -> None:
         """启动底盘。
         """        
 
-        timestamp = time.time()
+        timestamp = self.get_clock().now().to_msg()
         header = CommUtils.create_header(stamp = timestamp)
         forward_speed = config.chassis.forward_speed
         chassis_control_sequence = CommUtils.create_chassis_control_sequence(header = header, 
@@ -88,11 +107,11 @@ class SubLogicController(Node):
         
         StateUtils.transfer_node_state(self, STATE.ENABLED)
         
-    def disable_chassis(self):
+    def disable_chassis(self) -> None:
         """关闭底盘。
         """        
         
-        timestamp = time.time()
+        timestamp = self.get_clock().now().to_msg()
         header = CommUtils.create_header(stamp = timestamp)
         chassis_control_sequence = CommUtils.create_chassis_control_sequence(header = header, 
                                                                              error_rads = 0, 
@@ -103,8 +122,8 @@ class SubLogicController(Node):
         StateUtils.transfer_node_state(self, STATE.DISABLED)
 
     def answer_super_logic_controller(self, 
-                                      request: ILogicControllerComm.Request, 
-                                      response: ILogicControllerComm.Response) -> ILogicControllerComm.Response:
+                                      request: LogicControllerComm.Request, 
+                                      response: LogicControllerComm.Response) -> LogicControllerComm.Response:
         """响应上逻辑控制器发来的逻辑控制器命令。此处应用重传机制，至少一次重传才会请求成功。
 
         Args:
@@ -116,34 +135,18 @@ class SubLogicController(Node):
         """        
         
         comm_code = request.comm_code
-        retransmission = request.retransmission
         self.get_logger().info(f"收到上逻辑控制器通信，通信码 {comm_code}")
-        response.is_success = False
-        response.retransmission = retransmission
         
         match comm_code:
             case LogicControllerCommCode.DISABLE_CHASSIS:
-                if self.state == STATE.DISABLED:
-                    response.is_success = True
-                else:
-                    self.disable_chassis()
+                self.disable_chassis()
+                response.is_success = True
 
             case LogicControllerCommCode.ENABLE_CHASSIS: 
-                if self.state == STATE.ENABLED:
-                    response.is_success = True
-                else:
-                    self.enable_chassis()
+                self.enable_chassis()
+                response.is_success = True
                     
         return response
-    
-    def analysis_lane_error(self, 
-                            lane_error: LaneError) -> None:     
-        
-        reach_terminal = lane_error.reach_terminal
-        if reach_terminal: 
-            self.disable_chassis()   
-        else:
-            self.history.lane_error_rads = lane_error.error_rads       
         
     def wait_quit(self) -> None:
         """等待退出。
@@ -160,7 +163,7 @@ class SubLogicController(Node):
                 self.wait_quit()
                 
             case STATE.ENABLED:
-                pass
+                self.forward_lane_error()
                 
             case STATE.DISABLED:
                 pass

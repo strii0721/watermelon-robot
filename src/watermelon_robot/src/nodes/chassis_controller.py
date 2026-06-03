@@ -22,14 +22,14 @@ import rclpy
 from rclpy.node import Node
 from utils import CommonUtils
 from geometry_msgs.msg import Twist
-from watermelon_robot_interface.srv import ChassisStartStop
 from watermelon_robot_interface.msg import ChassisControlSequence
-from protocol import QOSFile
+from protocol import QoSFiles
 from utils import config
 from service import ChassisService
 import time
 from types import SimpleNamespace
 import math
+from rclpy.qos import qos_profile_sensor_data
 
 
 class ChassisController(Node):
@@ -50,22 +50,14 @@ class ChassisController(Node):
                                         integral_limit = integral_limit,
                                         output_limit = output_limit)
 
-
         self.chassis_control_sequence_subscriber = self.create_subscription(msg_type = ChassisControlSequence, 
                                                                             topic = self.input_0,
-                                                                            qos_profile = QOSFile.reliable_qos, 
+                                                                            qos_profile = qos_profile_sensor_data, 
                                                                             callback = self.correct_error)
 
         self.pub_cmd_vel = self.create_publisher(msg_type = Twist, 
                                                  topic = self.output_0,
-                                                 qos_profile = QOSFile.reliable_qos)
-        
-        self.srv_chassis_start_stop = self.create_service(srv_type = ChassisStartStop, 
-                                                          srv_name = self.duplex_0, 
-                                                          callback = self.chassis_start_stop)
-        
-        self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_period_sec, 
-                                                 callback = self.heartbeat)
+                                                 qos_profile = QoSFiles.chassis_control)
 
         CommonUtils.node_initialized(self)
         
@@ -81,7 +73,7 @@ class ChassisController(Node):
             control_variable = self.controller.update_control_variable(error = error_rads, 
                                                                        control_interval = control_interval)
             error_degrees = math.degrees(error_rads)
-            self.get_logger().info(f"当前角度误差：{error_degrees} | 弧度误差：{error_rads} | 产生控制变量：{control_variable}")
+            self.get_logger().info(f"当前弧度误差：{error_rads} | 角度误差：{error_degrees} | 产生控制变量：{control_variable}")
             
         else:
             control_variable = 0
