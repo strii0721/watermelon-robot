@@ -19,7 +19,7 @@
 
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image, CameraInfo
-from watermelon_robot_interface.msg import RealSenseFrame, LaneError, TargetList, ChassisControlSequence
+from watermelon_robot_interface.msg import LaneError, TargetList, ChassisControlSequence
 from watermelon_robot_interface.srv import LogicControllerComm, RoboticArmAction
 from rclpy.time import Time
 from protocol import LogicControllerCommCode
@@ -36,21 +36,6 @@ class CommUtils:
         header.frame_id = frame_id
         
         return header
-    
-    @classmethod
-    def create_realsense_frame(cls, 
-                               header: Header, 
-                               color_frame: Image,
-                               depth_frame: Image = Image(), 
-                               intrinsics: CameraInfo = CameraInfo()) -> RealSenseFrame:
-        
-        realsense_frame = RealSenseFrame()
-        realsense_frame.header = header
-        realsense_frame.color_frame = color_frame
-        realsense_frame.depth_frame = depth_frame
-        realsense_frame.intrinsics = intrinsics
-        
-        return realsense_frame
     
     @classmethod
     def create_lane_error(cls, 
@@ -87,8 +72,8 @@ class CommUtils:
         
         chassis_control_sequence = ChassisControlSequence()
         chassis_control_sequence.header = header
-        chassis_control_sequence.forward_speed = forward_speed
-        chassis_control_sequence.error_rads = error_rads
+        chassis_control_sequence.forward_speed = float(forward_speed)
+        chassis_control_sequence.error_rads = float(error_rads)
         chassis_control_sequence.is_enabled = is_enabled
         
         return chassis_control_sequence

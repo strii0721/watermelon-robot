@@ -29,7 +29,6 @@ find_package(sensor_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/RealSenseFrame.msg"
   "msg/LaneError.msg"
   "msg/TargetList.msg"
   "msg/ChassisControlSequence.msg"

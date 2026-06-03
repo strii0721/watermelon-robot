@@ -22,9 +22,9 @@ from utils import NodeUtils
 import rclpy
 from cv_bridge import CvBridge
 from rclpy.qos import qos_profile_sensor_data
-from watermelon_robot_interface.msg import RealSenseFrame
 from utils import CommUtils
 import cv2
+from sensor_msgs.msg import Image
 
 class SubTest(Node):
     
@@ -34,7 +34,7 @@ class SubTest(Node):
         NodeUtils.node_initializer(self)
         
         self.cv_bridge = CvBridge()
-        self.realsense_frame_publisher = self.create_publisher(msg_type = RealSenseFrame,
+        self.realsense_color_frame_publisher = self.create_publisher(msg_type = Image,
                                                                topic = self.output_0, 
                                                                qos_profile = qos_profile_sensor_data)
         self.read_frame_timer = self.create_timer(timer_period_sec = 1/self.fps, 
@@ -51,12 +51,12 @@ class SubTest(Node):
         if rtn:       
             timestamp = self.get_clock().now().to_msg()
             header = CommUtils.create_header(stamp = timestamp)
-            color_frame = self.cv_bridge.cv2_to_imgmsg(cvim = frame, 
-                                                       encoding = "bgr8")
-            realsense_frame = CommUtils.create_realsense_frame(header = header,
-                                                               color_frame = color_frame)
+            # frame = cv2.rotate(src = frame, rotateCode = cv2.ROTATE_90_CLOCKWISE)
+            color_frame_message = self.cv_bridge.cv2_to_imgmsg(cvim = frame, 
+                                                               encoding = "bgr8", 
+                                                               header = header)
             
-            self.realsense_frame_publisher.publish(msg = realsense_frame)
+            self.realsense_color_frame_publisher.publish(msg = color_frame_message)
         
         
 def main():

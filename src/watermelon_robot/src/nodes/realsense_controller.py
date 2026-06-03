@@ -23,8 +23,9 @@ from rclpy.qos import qos_profile_sensor_data
 from service import RealsenseService
 from utils import NodeUtils
 from cv_bridge import CvBridge
-from watermelon_robot_interface.msg import RealSenseFrame
 from utils import CommUtils
+from sensor_msgs.msg import Image, CameraInfo
+from typing import cast
 
 
 class RealsenseController(Node):
@@ -37,9 +38,17 @@ class RealsenseController(Node):
         self.realsense_service = RealsenseService()
         self.cv_bridge = CvBridge()
 
-        self.realsense_frame_publisher = self.create_publisher(msg_type = RealSenseFrame,
-                                                               topic = self.output_0, 
-                                                               qos_profile = qos_profile_sensor_data)
+        self.realsense_frame_color_publisher = self.create_publisher(msg_type = Image,
+                                                                     topic = self.output_0, 
+                                                                     qos_profile = qos_profile_sensor_data)
+        
+        self.realsense_frame_depth_publisher = self.create_publisher(msg_type = Image,
+                                                                     topic = self.output_1, 
+                                                                     qos_profile = qos_profile_sensor_data)
+        
+        self.realsense_frame_intrinsics_publisher = self.create_publisher(msg_type = CameraInfo,
+                                                                          topic = self.output_2, 
+                                                                          qos_profile = qos_profile_sensor_data)
         
         self.read_frame_timer = self.create_timer(timer_period_sec = 1/self.fps, 
                                                   callback = self.read_frame)
@@ -52,20 +61,23 @@ class RealsenseController(Node):
         
         frames = self.realsense_service.read_frames()
 
-        if frames:       
-            [color_frame, depth_frame, intrinsics] = frames
-            color_frame = self.cv_bridge.cv2_to_imgmsg(cvim = color_frame, 
-                                                       encoding = "bgr8")
-            depth_frame = self.cv_bridge.cv2_to_imgmsg(cvim = depth_frame, 
-                                                       encoding = "16UC1")
+        if frames:
             timestamp = self.get_clock().now().to_msg()
-            header = CommUtils.create_header(stamp = timestamp)
-            realsense_frame = CommUtils.create_realsense_frame(header = header,
-                                                               color_frame = color_frame, 
-                                                               depth_frame = depth_frame, 
-                                                               intrinsics = intrinsics)
+            header = CommUtils.create_header(stamp = timestamp)   
+            [color_frame, depth_frame, intrinsics] = frames
             
-            self.realsense_frame_publisher.publish(msg = realsense_frame)
+            color_frame = self.cv_bridge.cv2_to_imgmsg(cvim = color_frame, 
+                                                       encoding = "bgr8", 
+                                                       header = header)
+            depth_frame = self.cv_bridge.cv2_to_imgmsg(cvim = depth_frame, 
+                                                       encoding = "16UC1", 
+                                                       header = header)
+            intrinsics = cast(CameraInfo, intrinsics)
+            intrinsics.header = header
+            
+            self.realsense_frame_color_publisher.publish(msg = color_frame)
+            self.realsense_frame_depth_publisher.publish(msg = depth_frame)
+            self.realsense_frame_intrinsics_publisher.publish(msg = intrinsics)
         
         
 def main():
