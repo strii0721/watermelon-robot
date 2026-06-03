@@ -23,7 +23,7 @@ from utils import CommonUtils
 from rclpy.qos import qos_profile_sensor_data
 import message_filters
 from watermelon_robot_interface.srv import ILogicControllerComm, ChassisStartStop
-from watermelon_robot_interface.msg import LaneError
+from watermelon_robot_interface.msg import LaneError, ChassisControlSequence
 from utils import config
 import time
 from protocol import LogicControllerCommCode
@@ -48,10 +48,8 @@ class SubLogicController(Node):
         super().__init__("sub_logic_controller")
         CommonUtils.node_initializer(self)
 
-        self.latest_frame = SimpleNamespace()
-        self.last_frame_time = time.time()
-        self.publish_direction_error_last_triggered = time.time()
-        self.stop_timer = None
+        self.history = SimpleNamespace()
+        self.history.lane_error_rads = 0.0
 
         self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_interval, 
                                                  callback = self.heartbeat)
@@ -59,7 +57,11 @@ class SubLogicController(Node):
         self.lane_error_subscriber = self.create_subscription(msg_type = LaneError, 
                                                               topic = self.input_0, 
                                                               qos_profile = qos_profile_sensor_data, 
-                                                              callback = self.check_terminal)
+                                                              callback = self.analysis_lane_error)
+        
+        self.chassis_control_sequence_publisher = self.create_publisher(msg_type = ChassisControlSequence, 
+                                                                        topic = self.output_0, 
+                                                                        qos_profile = qos_profile_sensor_data)
         
         self.srv_logic_controller_comm = self.create_service(srv_type = ILogicControllerComm, 
                                                              srv_name = self.duplex_0, 
@@ -71,52 +73,20 @@ class SubLogicController(Node):
 
         CommonUtils.node_initialized(self)
         StateUtils.transfer_node_state(self, STATE.ENABLED)
-        
-    def chassis_start_done(self, 
-                           future: rclpy.Future):
-        """启动底盘响应的回调函数。
-
-        Args:
-            future (rclpy.Future): 底盘响应的 Future 对象。
-        """        
-        
-        response = cast(ChassisStartStop.Response, future.result())
-        if response.is_success:
-            self.get_logger().info(f"底盘启动成功！")
-            StateUtils.transfer_node_state(self, STATE.ENABLED)
-            
-        else:
-            self.get_logger().warn(f"底盘启动失败！")
-            StateUtils.transfer_node_state(self, STATE.QUIT)
 
     def enable_chassis(self) -> rclpy.Future:
         """启动底盘。
         """        
-        
+
         timestamp = time.time()
         header = CommUtils.create_header(stamp = timestamp)
-        request = CommUtils.create_request_chassis_start_stop(header = header, 
-                                                              target_state = True)
-        future = self.cli_chassis_start_stop.call_async(request = request)
-        future.add_done_callback(callback = self.x)
-        StateUtils.transfer_node_state(self, STATE.PENDING)
+        forward_speed = config.chassis.forward_speed
+        chassis_control_sequence = CommUtils.create_chassis_control_sequence(header = header, 
+                                                                             error_rads = 0, 
+                                                                             forward_speed = forward_speed)
+        self.chassis_control_sequence_publisher.publish(msg = chassis_control_sequence)
         
-    def chassis_stop_done(self, 
-                          future: rclpy.Future):
-        """关闭底盘响应的回调函数。
-
-        Args:
-            future (rclpy.Future): 底盘响应的 Future 对象。
-        """        
-        
-        response = cast(ChassisStartStop.Response, future.result())
-        if response.is_success:
-            self.get_logger().info(f"底盘已停止！")
-            StateUtils.transfer_node_state(self, STATE.DISABLED)
-            
-        else:
-            self.get_logger().warn(f"底盘停止失败！")
-            StateUtils.transfer_node_state(self, STATE.QUIT)
+        StateUtils.transfer_node_state(self, STATE.ENABLED)
         
     def disable_chassis(self):
         """关闭底盘。
@@ -124,11 +94,13 @@ class SubLogicController(Node):
         
         timestamp = time.time()
         header = CommUtils.create_header(stamp = timestamp)
-        request = CommUtils.create_request_chassis_start_stop(header = header, 
-                                                              target_state = False)
-        future = self.cli_chassis_start_stop.call_async(request = request)
-        future.add_done_callback(callback = self.chassis_stop_done)
-        StateUtils.transfer_node_state(self, STATE.PENDING)
+        chassis_control_sequence = CommUtils.create_chassis_control_sequence(header = header, 
+                                                                             error_rads = 0, 
+                                                                             forward_speed = 0,
+                                                                             is_enabled = False)
+        self.chassis_control_sequence_publisher.publish(msg = chassis_control_sequence)
+        
+        StateUtils.transfer_node_state(self, STATE.DISABLED)
 
     def answer_super_logic_controller(self, 
                                       request: ILogicControllerComm.Request, 
@@ -164,17 +136,14 @@ class SubLogicController(Node):
                     
         return response
     
-    def check_terminal(self, 
-                       lane_error: LaneError) -> None:
-        """检查是否抵达终点，若是则停止底盘。
-
-        Args:
-            lane_error (LaneError): 当前帧的航线偏移。
-        """        
+    def analysis_lane_error(self, 
+                            lane_error: LaneError) -> None:     
         
         reach_terminal = lane_error.reach_terminal
         if reach_terminal: 
-            self.disable_chassis()           
+            self.disable_chassis()   
+        else:
+            self.history.lane_error_rads = lane_error.error_rads       
         
     def wait_quit(self) -> None:
         """等待退出。

@@ -19,7 +19,7 @@
 
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image, CameraInfo
-from watermelon_robot_interface.msg import RealSenseFrame, LaneError, TargetList
+from watermelon_robot_interface.msg import RealSenseFrame, LaneError, TargetList, ChassisControlSequence
 from rclpy.time import Time
 from watermelon_robot_interface.srv import ChassisStartStop
 
@@ -100,3 +100,18 @@ class CommUtils:
         target_list.target_list_json = target_list_json
         
         return target_list
+    
+    @classmethod
+    def create_chassis_control_sequence(cls, 
+                                        header: Header,
+                                        forward_speed: float,
+                                        error_rads: float, 
+                                        is_enabled: bool = True) -> ChassisControlSequence:
+        
+        chassis_control_sequence = ChassisControlSequence()
+        chassis_control_sequence.header = header
+        chassis_control_sequence.forward_speed = forward_speed
+        chassis_control_sequence.error_rads = error_rads
+        chassis_control_sequence.is_enabled = is_enabled
+        
+        return chassis_control_sequence
