@@ -25,7 +25,6 @@ from watermelon_robot_interface.srv import LogicControllerComm
 from watermelon_robot_interface.msg import LaneError, ChassisControlSequence
 from utils import config
 from protocol import LogicControllerCommCode
-from typing import cast
 from types import SimpleNamespace
 from utils import StateUtils, CommUtils
 from enum import Enum
