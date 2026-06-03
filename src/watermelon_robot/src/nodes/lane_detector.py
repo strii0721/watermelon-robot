@@ -78,6 +78,8 @@ class LaneDetector(Node):
                             return True
             else: 
                 self.history.reach_terminal_timer = time.time()
+        else: 
+            self.history.reach_terminal_timer = None
         
         return False
     

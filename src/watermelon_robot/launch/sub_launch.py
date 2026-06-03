@@ -20,6 +20,8 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
+TEST = True
+
 def generate_launch_description():
 
     ORACLE = Node(
@@ -64,8 +66,14 @@ def generate_launch_description():
         output = "screen"
     )
     
-    return LaunchDescription([ORACLE, 
-                              DWDB_221E, 
-                              LONETRAIL, 
-                              ZERO_ORDER_OIL_TANK, 
-                              YAN])
+    node_list = [ORACLE, 
+                 DWDB_221E, 
+                 LONETRAIL, 
+                 ZERO_ORDER_OIL_TANK]
+    
+    if not TEST: 
+        node_list.append(AMA_10)
+    else: 
+        node_list.append(YAN)
+    
+    return LaunchDescription(node_list)

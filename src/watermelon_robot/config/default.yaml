@@ -54,8 +54,8 @@ chassis:
   pid_controller: 
     pid_triple: [0.2, 0.02, 0.01]
     control_interval: 0.1
-    integral_limit: 99999
-    output_limit: 99999
+    integral_limit: 10
+    output_limit: 10
   forward_speed: 0.40                                       # 底盘前进速度（m/s)
   stop_delay_sec: 3                                         # 当前版本底盘停止方案用来控制底盘停止的延迟。相关函数注释里有说明。
 
@@ -65,10 +65,6 @@ scissors:
   tool_id: 8                # 剪刀在机械臂中的工具编号
   close_flag: 1             # 0/1 哪一个控制剪刀闭合
   open_delay_sec: 2         # 剪刀张开、闭合结束等待时间
-
-# -------------------------------------------------------
-# 测试相关
-is_test: True
 
 ######################################## 以下是节点初始化器配置 ########################################
 _node_initializer:
@@ -260,4 +256,4 @@ _node_initializer:
     # 通用配置块 ###################
     ###########
     fps: 30           # 画面采集帧率
-    video_path: "/home/lynchpin/repository/watermelon-robot/resource/datasets/lane-detection/legacy/video-5.mp4"
+    video_path: "/home/lynchpin/repository/watermelon-robot/resource/datasets/lane-detection/legacy/video-7.mp4"

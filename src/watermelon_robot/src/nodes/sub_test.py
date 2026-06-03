@@ -35,16 +35,14 @@ class SubTest(Node):
         
         self.cv_bridge = CvBridge()
         self.realsense_color_frame_publisher = self.create_publisher(msg_type = Image,
-                                                               topic = self.output_0, 
-                                                               qos_profile = qos_profile_sensor_data)
+                                                                     topic = self.output_0, 
+                                                                     qos_profile = qos_profile_sensor_data)
         self.read_frame_timer = self.create_timer(timer_period_sec = 1/self.fps, 
                                                   callback = self.read_frame)
         self.video_capture = cv2.VideoCapture(self.video_path)
         NodeUtils.node_initialized(self)
 
-    def read_frame(self):
-        """读取 RealSense 深度相机的一帧，并发布至话题。
-        """        
+    def read_frame(self):     
         
         rtn, frame = self.video_capture.read()
 
