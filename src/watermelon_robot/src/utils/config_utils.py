@@ -1,7 +1,7 @@
 #
 # Author:       strii0721
 # Email:        strii0721@outlook.com
-# Created on:   Mon May 11 2026
+# Created on:   Wed Jun 03 2026
 #
 # IMMORTAL OMNISSIAH, HEAR OUR PRAYERS.
 # WE ARE YOUR CHILDREN, PIOUS SCHOLARS OF THE PATH OF THE MACHINE. 
@@ -17,17 +17,15 @@
 #
 
 
-import yaml
 from ament_index_python.packages import get_package_share_directory
+import yaml
 import os
 import json
 from types import SimpleNamespace
-from rclpy.node import Node
-from protocol import ST_BASE
 
 
-class CommonUtils: 
-
+class ConfigUtils:
+    
     @classmethod
     def get_config(cls, 
                    config_profile: str = "default") -> SimpleNamespace: 
@@ -48,32 +46,3 @@ class CommonUtils:
         config._config_dictionary = config_dictionary
 
         return config
-
-    @classmethod
-    def node_initializer(cls, 
-                         node_entity: Node) -> None:
-        """初始化节点对象，为其绑定属性，同时向终端打印初始化信息。
-
-        Args:
-            node_entity (Node): 初始化节点对象。
-        """        
-        
-        node_name = node_entity.get_name()
-        node_entity.get_logger().info(f"{node_name} 已上线，正在初始化...")
-        from utils import config
-        node_config = getattr(config._node_initializer, node_name)
-        attribute_dictionary = vars(node_config)
-        for attribute_name in attribute_dictionary.keys():
-            setattr(node_entity, attribute_name, getattr(node_config, attribute_name))
-
-    @classmethod
-    def node_initialized(cls, 
-                         node_entity: Node) -> None:
-        """节点对象初始化结束后行为。
-
-        Args:
-            node_entity (Node): 初始化节点对象。
-        """        
-        
-        node_name = node_entity.get_name()
-        node_entity.get_logger().info(f"{node_name} 初始化完成...")

@@ -21,7 +21,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from service import RealsenseService
-from utils import CommonUtils
+from utils import NodeUtils
 from cv_bridge import CvBridge
 from watermelon_robot_interface.msg import RealSenseFrame
 from utils import CommUtils
@@ -32,7 +32,7 @@ class RealsenseController(Node):
     def __init__(self):
 
         super().__init__("realsense_controller")
-        CommonUtils.node_initializer(self)
+        NodeUtils.node_initializer(self)
 
         self.realsense_service = RealsenseService()
         self.cv_bridge = CvBridge()
@@ -44,7 +44,7 @@ class RealsenseController(Node):
         self.read_frame_timer = self.create_timer(timer_period_sec = 1/self.fps, 
                                                   callback = self.read_frame)
         
-        CommonUtils.node_initialized(self)
+        NodeUtils.node_initialized(self)
 
     def read_frame(self):
         """读取 RealSense 深度相机的一帧，并发布至话题。

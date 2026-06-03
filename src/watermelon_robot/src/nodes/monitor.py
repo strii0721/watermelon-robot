@@ -27,14 +27,14 @@ from cv_bridge import CvBridge
 import cv2
 import time
 import threading
-from utils import CommonUtils
+from utils import NodeUtils
 
 class Monitor(Node):
 
     def __init__(self): 
 
         super().__init__("monitor")
-        CommonUtils.node_initializer(self)
+        NodeUtils.node_initializer(self)
 
         self.render_interval = int((1/self.fps) * 1000)
         self.cv_bridge = CvBridge()
@@ -55,10 +55,10 @@ class Monitor(Node):
             self.app.add_url_rule('/video_feed', 'video_feed', self.video_feed)
             self.flask_thread = threading.Thread(target=self.flask_server_start, daemon=True)
             self.flask_thread.start()
-            CommonUtils.node_initialized(self)
+            NodeUtils.node_initialized(self)
             self.get_logger().info(f"{self.get_name()} 运行模式：网络推流 | 访问端口：{self.livestream_port}")
         else: 
-            CommonUtils.node_initialized(self)
+            NodeUtils.node_initialized(self)
             self.get_logger().info(f"{self.get_name()} 运行模式：终端")
 
     def render(self, 

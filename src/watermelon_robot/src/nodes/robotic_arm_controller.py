@@ -23,7 +23,7 @@ from service import RoboticArmService
 from watermelon_robot_interface.srv import IRoboticArmAction
 import time
 from utils import config
-from utils import CommonUtils
+from utils import NodeUtils
 import numpy as np
 
 
@@ -32,7 +32,7 @@ class RoboticArmController(Node):
     def __init__(self):
         
         super().__init__('robotic_arm_controller')
-        CommonUtils.node_initializer(self)
+        NodeUtils.node_initializer(self)
         
         # robotic_arm = config.robotic_arm
         self.robotic_arm = config.robotic_arm_s
@@ -51,7 +51,7 @@ class RoboticArmController(Node):
                                                                srv_name = self.duplex_0, 
                                                                callback = self.robotic_arm_act_once)
         
-        CommonUtils.node_initialized(self)
+        NodeUtils.node_initialized(self)
         
     def robotic_arm_act_once(self, 
                              request: IRoboticArmAction.Request, 

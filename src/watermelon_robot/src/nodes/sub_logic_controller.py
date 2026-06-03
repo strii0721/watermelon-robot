@@ -19,7 +19,7 @@
 
 import rclpy
 from rclpy.node import Node
-from utils import CommonUtils
+from utils import NodeUtils
 from rclpy.qos import qos_profile_sensor_data
 from watermelon_robot_interface.srv import LogicControllerComm
 from watermelon_robot_interface.msg import LaneError, ChassisControlSequence
@@ -41,7 +41,7 @@ class SubLogicController(Node):
     def __init__(self):
 
         super().__init__("sub_logic_controller")
-        CommonUtils.node_initializer(self)
+        NodeUtils.node_initializer(self)
 
         self.history = SimpleNamespace()
         self.history.lane_error_rads = 0.0
@@ -62,7 +62,7 @@ class SubLogicController(Node):
                                                              srv_name = self.duplex_0, 
                                                              callback = self.answer_super_logic_controller)
 
-        CommonUtils.node_initialized(self)
+        NodeUtils.node_initialized(self)
         StateUtils.transfer_node_state(self, STATE.ENABLED)
         
     def cache_lane_error(self, 

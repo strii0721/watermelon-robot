@@ -20,7 +20,7 @@
 from control_algorithm import PIDController
 import rclpy
 from rclpy.node import Node
-from utils import CommonUtils
+from utils import NodeUtils
 from geometry_msgs.msg import Twist
 from watermelon_robot_interface.msg import ChassisControlSequence
 from protocol import QoSFiles
@@ -37,7 +37,7 @@ class ChassisController(Node):
     def __init__(self):
 
         super().__init__("chassis_controller")
-        CommonUtils.node_initializer(self)
+        NodeUtils.node_initializer(self)
 
         self.chassis_service = ChassisService()
         self.history = SimpleNamespace()
@@ -59,7 +59,7 @@ class ChassisController(Node):
                                                        topic = self.output_0,
                                                        qos_profile = QoSFiles.chassis_control)
 
-        CommonUtils.node_initialized(self)
+        NodeUtils.node_initialized(self)
         
     def correct_error(self, 
                       chassis_control_sequence: ChassisControlSequence):   

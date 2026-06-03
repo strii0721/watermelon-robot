@@ -1,6 +1,7 @@
-from .common_utils import CommonUtils
-config = CommonUtils.get_config(config_profile = "default")
+from .config_utils import ConfigUtils
+config = ConfigUtils.get_config(config_profile = "default")
 
+from .node_utils import NodeUtils
 from .cv_utils import CVUtils
 from .dl_utils import DLUtils
 from .kinematics_utils import KinematicsUtils

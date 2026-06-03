@@ -18,7 +18,7 @@
 
 
 from rclpy.node import Node
-from utils import CommonUtils
+from utils import NodeUtils
 from watermelon_robot_interface.msg import RealSenseFrame, LaneError
 from rclpy.qos import qos_profile_sensor_data
 from cv_bridge import CvBridge
@@ -36,7 +36,7 @@ class LaneDetector(Node):
     def __init__(self):
         
         super().__init__("lane_detector")
-        CommonUtils.node_initializer(self)
+        NodeUtils.node_initializer(self)
         
         self.cv_bridge = CvBridge()
         self.model = ModelUtils.load_model(model_name = config.lane_detection.model.name, 
@@ -59,7 +59,7 @@ class LaneDetector(Node):
                                                                         topic = self.output_1, 
                                                                         qos_profile = qos_profile_sensor_data)
         
-        CommonUtils.node_initialized()
+        NodeUtils.node_initialized()
         
     def check_terminal(self, 
                        reach_terminal: bool) -> None:
