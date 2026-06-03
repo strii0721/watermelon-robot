@@ -27,6 +27,7 @@ import cv2
 import time
 from sensor_msgs.msg import Image
 import math
+import rclpy
 
 
 class LaneDetector(Node):
@@ -110,3 +111,16 @@ class LaneDetector(Node):
         
         self.lane_error_publisher.publish(msg = lane_error)
         self.navigation_color_monitor_publisher.publish(msg = color_frame)
+        
+        
+def main():
+
+    rclpy.init()
+    lane_detector = LaneDetector()
+    rclpy.spin(lane_detector)
+    lane_detector.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()        
