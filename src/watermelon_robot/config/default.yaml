@@ -96,7 +96,7 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    duplex_0: "s/robotic_arm/action_once"               # 双工：机械臂控制
+    duplex_0: "s/robotic_arm/action_once"                   # 双工：机械臂控制
 
     # 通用配置块 ###################
     ###########
@@ -110,11 +110,11 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    output_0: "t/realsense/robotic_arm/in_hand"           # 输出：手眼相机帧
+    output_0: "t/realsense/robotic_arm/in_hand/frame"       # 输出：手眼相机帧
 
     # 通用配置块 ###################
     ###########
-    fps: 30           # 画面采集帧率
+    fps: 30                                                 # 画面采集帧率
 
 # -------------------------------------------------------
 
@@ -125,13 +125,9 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/realsense/robotic_arm/in_hand"             # 输入：手眼相机目标框叠加层
-
-    # 通用配置块 ###################
-    ###########
-    fps: 30                           # 监视器显示帧率
-    is_livestream: True               # 开启网页推流
-    livestream_port: 8080             # 推流端口号
+    input_0: "t/realsense/robotic_arm/in_hand/frame"        # 输入：手眼相机目标框叠加层
+    output_0: "t/target_detector/prediction/target_list"    # 输出：目标队列
+    output_1: "t/target_detector/visualization/overlay"     # 输出：手眼相机目标框叠加层
 
 # -------------------------------------------------------
 
@@ -142,7 +138,7 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/monitor/sup/color_boxed"             # 输入：手眼相机目标框叠加层
+    input_0: "t/target_detector/visualization/overlay"       # 输入：手眼相机目标框叠加层
 
     # 通用配置块 ###################
     ###########
@@ -175,8 +171,8 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/chassis/control_sequence"                 # 底盘方向控制
-    output_0: "cmd_vel"                                   # 轮趣 SDK：底盘控制信号
+    input_0: "t/chassis/control_sequence"                   # 底盘方向控制
+    output_0: "cmd_vel"                                     # 轮趣 SDK：底盘控制信号
 
     # 通用配置块 ###################
     ###########
@@ -190,7 +186,7 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    output_0: "t/realsense/chassis/front_facing"            # 输出：底盘 RealSense 相机帧    
+    output_0: "t/realsense/chassis/front_facing/frame"       # 输出：底盘 RealSense 相机帧    
 
     # 通用配置块 ###################
     ###########
@@ -205,7 +201,7 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/realsense/chassis/front_facing"               # 输入：底盘 RealSense 相机帧
+    input_0: "t/realsense/chassis/front_facing/frame"         # 输入：底盘 RealSense 相机帧
     output_0: "t/lane_detector/prediction/lane_error"         # 输出：航线偏离
     output_1: "t/lane_detector/visualization/overlay"         # 输出：底盘相机预测轨迹叠加层
 
