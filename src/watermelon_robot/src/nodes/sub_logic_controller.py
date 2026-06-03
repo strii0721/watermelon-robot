@@ -47,7 +47,7 @@ class SubLogicController(Node):
         self.history = SimpleNamespace()
         self.history.lane_error_rads = 0.0
 
-        self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_interval, 
+        self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_period_sec, 
                                                  callback = self.heartbeat)
         
         self.lane_error_subscriber = self.create_subscription(msg_type = LaneError, 

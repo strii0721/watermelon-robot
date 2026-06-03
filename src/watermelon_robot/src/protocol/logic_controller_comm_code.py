@@ -17,7 +17,10 @@
 #
 
 
-class LogicControllerCommCode:
+from enum import Enum
+
+
+class LogicControllerCommCode(Enum):
     """上下逻辑控制器通信的命令码。
     """    
 
