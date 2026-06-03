@@ -20,7 +20,7 @@
 import rclpy
 from rclpy.node import Node
 from service import RoboticArmService
-from watermelon_robot_interface.srv import IRoboticArmAction
+from watermelon_robot_interface.srv import RoboticArmAction
 import time
 from utils import config
 from utils import NodeUtils
@@ -47,15 +47,15 @@ class RoboticArmController(Node):
         else:
             self.get_logger().warn(f"机械臂复位失败，状态码{state_code}")
 
-        self.srv_robotic_arm_action_once = self.create_service(srv_type = IRoboticArmAction, 
+        self.srv_robotic_arm_action_once = self.create_service(srv_type = RoboticArmAction, 
                                                                srv_name = self.duplex_0, 
                                                                callback = self.robotic_arm_act_once)
         
         NodeUtils.node_initialized(self)
         
     def robotic_arm_act_once(self, 
-                             request: IRoboticArmAction.Request, 
-                             response: IRoboticArmAction.Response) -> IRoboticArmAction.Response:
+                             request: RoboticArmAction.Request, 
+                             response: RoboticArmAction.Response) -> RoboticArmAction.Response:
         """机械臂的一次完整动作，包括移动至目标位置、剪切、复位等。若无法移动至目标位置则会尝试复位。当剪刀控制失效/复位失败时返回 is_success = False。
 
         Args:

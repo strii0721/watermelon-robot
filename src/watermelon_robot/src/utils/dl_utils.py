@@ -155,7 +155,7 @@ class DLUtils:
                 x2 = int(line_function(y2))
                 
                 # 绘制道路中心线
-                cv2.line(source_image, (x1, y1), (x2, y2), (0, 0, 255), 3)
+                cv2.line(source_image, (x1, y1), (x2, y2), (0, 0, 255), 2)
                 
                 reference_point = (int((x1 + x2)/2), int((y1 + y2)/2))
                 reference_direction = (ego_point, reference_point)

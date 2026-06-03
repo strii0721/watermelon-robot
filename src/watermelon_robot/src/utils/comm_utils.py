@@ -19,10 +19,9 @@
 
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image, CameraInfo
-from watermelon_robot_interface.msg import RealSenseFrame, LaneError, TargetList, ChassisControlSequence
+from watermelon_robot_interface.msg import LaneError, TargetList, ChassisControlSequence
 from watermelon_robot_interface.srv import LogicControllerComm, RoboticArmAction
 from rclpy.time import Time
-from watermelon_robot_interface.srv import ChassisStartStop
 from protocol import LogicControllerCommCode
 
 class CommUtils:
@@ -39,21 +38,6 @@ class CommUtils:
         return header
     
     @classmethod
-    def create_realsense_frame(cls, 
-                               header: Header, 
-                               color_frame: Image,
-                               depth_frame: Image, 
-                               intrinsics: CameraInfo) -> RealSenseFrame:
-        
-        realsense_frame = RealSenseFrame()
-        realsense_frame.header = header
-        realsense_frame.color_frame = color_frame
-        realsense_frame.depth_frame = depth_frame
-        realsense_frame.intrinsics = intrinsics
-        
-        return realsense_frame
-    
-    @classmethod
     def create_lane_error(cls, 
                           header: Header, 
                           error_degrees: float, 
@@ -67,30 +51,6 @@ class CommUtils:
         lane_error.reach_terminal = reach_terminal
         
         return lane_error
-    
-    @classmethod
-    def create_request_chassis_start_stop(cls, 
-                                          header: Header, 
-                                          target_state: bool) -> ChassisStartStop.Request:
-        
-        request = ChassisStartStop.Request()
-        request.header = header
-        request.target_state = target_state
-        
-        return request
-    
-    @classmethod
-    def create_response_chassis_start_stop(cls, 
-                                           header: Header, 
-                                           is_success: bool, 
-                                           message: str = "") -> ChassisStartStop.Response:
-        
-        response = ChassisStartStop.Response()
-        response.header = header
-        response.is_success = is_success
-        response.message = message
-        
-        return response
     
     @classmethod
     def create_target_list(cls, 
@@ -112,8 +72,8 @@ class CommUtils:
         
         chassis_control_sequence = ChassisControlSequence()
         chassis_control_sequence.header = header
-        chassis_control_sequence.forward_speed = forward_speed
-        chassis_control_sequence.error_rads = error_rads
+        chassis_control_sequence.forward_speed = float(forward_speed)
+        chassis_control_sequence.error_rads = float(error_rads)
         chassis_control_sequence.is_enabled = is_enabled
         
         return chassis_control_sequence

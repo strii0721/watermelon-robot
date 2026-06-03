@@ -67,8 +67,8 @@ class ChassisService:
             Twist: Ros2 的速度控制消息。
         """        
         
-        linear_x = forward_speed
-        angular_z = control_variable
+        linear_x = float(forward_speed)
+        angular_z = float(control_variable)
         twist_msg = self.generate_twist_msg(sextuple = [linear_x, 0, 0, 0, 0, angular_z])
         
         return twist_msg

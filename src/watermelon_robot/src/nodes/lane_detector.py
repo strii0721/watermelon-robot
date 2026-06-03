@@ -19,7 +19,7 @@
 
 from rclpy.node import Node
 from utils import NodeUtils
-from watermelon_robot_interface.msg import RealSenseFrame, LaneError
+from watermelon_robot_interface.msg import LaneError
 from rclpy.qos import qos_profile_sensor_data
 from cv_bridge import CvBridge
 from utils import config, DLUtils, ModelUtils, CommUtils
@@ -29,7 +29,6 @@ from sensor_msgs.msg import Image
 import math
 import rclpy
 from types import SimpleNamespace
-
 
 class LaneDetector(Node):
     
@@ -48,18 +47,22 @@ class LaneDetector(Node):
         self.history.reach_terminal_timer = None
         self.history.last_frame_time = time.time()
         
-        self.front_facing_realsense_subscriber = self.create_subscription(msg_type = RealSenseFrame, 
-                                                                          topic = self.input_0, 
-                                                                          callback = self.detect_lane, 
-                                                                          qos_profile = qos_profile_sensor_data)
+        self.realsense_frame_color_subscriber = self.create_subscription(msg_type = Image, 
+                                                                         topic = self.input_0, 
+                                                                         callback = self.detect_lane, 
+                                                                         qos_profile = qos_profile_sensor_data)
+        
         self.lane_error_publisher = self.create_publisher(msg_type = LaneError, 
                                                           topic = self.output_0, 
                                                           qos_profile = qos_profile_sensor_data)
+        
         self.navigation_color_monitor_publisher = self.create_publisher(msg_type = Image, 
                                                                         topic = self.output_1, 
                                                                         qos_profile = qos_profile_sensor_data)
         
-        NodeUtils.node_initialized()
+        
+        
+        NodeUtils.node_initialized(self)
         
     def check_terminal(self, 
                        reach_terminal: bool) -> None:
@@ -75,13 +78,15 @@ class LaneDetector(Node):
                             return True
             else: 
                 self.history.reach_terminal_timer = time.time()
+        else: 
+            self.history.reach_terminal_timer = None
         
         return False
     
     def detect_lane(self, 
-                    realsense_frame: RealSenseFrame) -> None:
+                    color_frame_message: Image) -> None:
         
-        color_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = realsense_frame.color_frame, 
+        color_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = color_frame_message, 
                                                    desired_encoding = "passthrough")
         timestamp = self.get_clock().now().to_msg()
         header = CommUtils.create_header(stamp = timestamp)
@@ -108,12 +113,12 @@ class LaneDetector(Node):
                     fontScale = 0.5, 
                     color = (0, 0, 255), 
                     thickness = 2)
-        color_frame = self.cv_bridge.cv2_to_imgmsg(cvim = color_frame, 
-                                                   encoding="bgr8", 
-                                                   header = header)
+        color_frame_message = self.cv_bridge.cv2_to_imgmsg(cvim = color_frame, 
+                                                           encoding="bgr8", 
+                                                           header = header)
         
         self.lane_error_publisher.publish(msg = lane_error)
-        self.navigation_color_monitor_publisher.publish(msg = color_frame)
+        self.navigation_color_monitor_publisher.publish(msg = color_frame_message)
         
         
 def main():

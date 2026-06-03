@@ -29,8 +29,8 @@ from rclpy.qos import (
 class QoSFiles:
     
     chassis_control = QoSProfile(
-        history=QoSHistoryPolicy.KEEP_LAST,
+        # history=QoSHistoryPolicy.KEEP_LAST,
         depth=10,
-        reliability=QoSReliabilityPolicy.RELIABLE,
-        durability=QoSDurabilityPolicy.TRANSIENT_LOCAL
+        # reliability=QoSReliabilityPolicy.RELIABLE,
+        # durability=QoSDurabilityPolicy.TRANSIENT_LOCAL
     )

@@ -19,14 +19,14 @@
 
 from rclpy.node import Node
 from utils import config, NodeUtils, ModelUtils, DLUtils, CommUtils
-from watermelon_robot_interface.msg import RealSenseFrame
 from rclpy.qos import qos_profile_sensor_data
 from cv_bridge import CvBridge
 import time
 import cv2
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CameraInfo
 import json
 import rclpy
+import message_filters
 
 
 class TargetDetector(Node):
@@ -46,10 +46,26 @@ class TargetDetector(Node):
                                            iou = config.target_detection.model.iou)
         self.cv_bridge = CvBridge()
         
-        self.in_hand_realsense_subsciber = self.create_subscription(msg_type = RealSenseFrame, 
-                                                                    topic = self.input_0, 
-                                                                    callback = self.detect_targets, 
-                                                                    qos_profile = qos_profile_sensor_data)
+        self.realsense_frame_color_subscriber = message_filters.Subscriber(node = self,
+                                                                           msg_type = Image, 
+                                                                           topic = self.input_0)
+        
+        self.realsense_frame_depth_subscriber = message_filters.Subscriber(node = self,
+                                                                           msg_type = Image, 
+                                                                           topic = self.input_1)
+        
+        self.realsense_frame_intrinsics_subscriber = message_filters.Subscriber(node = self,
+                                                                                msg_type = CameraInfo, 
+                                                                                topic = self.input_2)
+        
+        self.approxiamate_time_synchronizer = message_filters.ApproximateTimeSynchronizer(
+            fs = [self.realsense_frame_color_subscriber, 
+                  self.realsense_frame_depth_subscriber, 
+                  self.realsense_frame_intrinsics_subscriber],
+            queue_size = self.ats.queue_size,
+            slop = self.ats.slop
+        )
+        self.approxiamate_time_synchronizer.registerCallback(self.detect_targets)
         
         self.target_list_publisher = self.create_publisher(msg_type = Image, 
                                                        topic = self.output_0, 
@@ -59,19 +75,20 @@ class TargetDetector(Node):
                                                        topic = self.output_1, 
                                                        qos_profile = qos_profile_sensor_data)
         
-        NodeUtils.node_initialized()
+        NodeUtils.node_initialized(self)
         
     def detect_targets(self, 
-                       realsense_frame: RealSenseFrame) -> None:
+                       color_frame: Image, 
+                       depth_frame: Image, 
+                       intrinsics: CameraInfo) -> None:
             
             timestamp = time.time()
             header = CommUtils.create_header(stamp = timestamp)
             
-            color_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = realsense_frame.color_frame, 
+            color_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = color_frame, 
                                                        desired_encoding = "passthrough")
-            depth_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = realsense_frame.depth_frame, 
+            depth_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = depth_frame, 
                                                        desired_encoding = "passthrough")
-            intrinsics = realsense_frame.intrinsics
         
             targets = DLUtils.predict_targets(model = self.model, 
                                               color_image = color_frame, 

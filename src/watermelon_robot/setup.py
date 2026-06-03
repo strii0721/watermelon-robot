@@ -36,14 +36,15 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "super_logic_controller = controller.super_logic_controller:main", 
-            "sub_logic_controller = controller.sub_logic_controller:main",
-            "robotic_arm_controller = controller.robotic_arm_controller:main", 
-            "chassis_controller = controller.chassis_controller:main",
-            "realsense_controller = controller.realsense_controller:main",
-            "monitor = tools.monitor:main", 
+            "super_logic_controller = nodes.super_logic_controller:main", 
+            "sub_logic_controller = nodes.sub_logic_controller:main",
+            "robotic_arm_controller = nodes.robotic_arm_controller:main", 
+            "chassis_controller = nodes.chassis_controller:main",
+            "realsense_controller = nodes.realsense_controller:main",
+            "monitor = nodes.monitor:main", 
             "lane_detector = nodes.lane_detector:main",
-            "target_detector = nodes.target_detector:main"
+            "target_detector = nodes.target_detector:main",
+            "sub_test = nodes.sub_test:main"
         ],
     },
 )

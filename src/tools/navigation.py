@@ -1,4 +1,4 @@
-import cv2
+mport cv2
 from utils import CVUtils
 import time
 

@@ -54,14 +54,13 @@ chassis:
   pid_controller: 
     pid_triple: [0.2, 0.02, 0.01]
     control_interval: 0.1
-    integral_limit: 99999
-    output_limit: 99999
+    integral_limit: 10
+    output_limit: 10
   forward_speed: 0.40                                       # 底盘前进速度（m/s)
   stop_delay_sec: 3                                         # 当前版本底盘停止方案用来控制底盘停止的延迟。相关函数注释里有说明。
 
 # -------------------------------------------------------
 # 剪刀控制相关
-
 scissors:
   tool_id: 8                # 剪刀在机械臂中的工具编号
   close_flag: 1             # 0/1 哪一个控制剪刀闭合
@@ -78,8 +77,8 @@ _node_initializer:
     # 标准通信接口配置块 ###################
     ##################
     input_0: "t/target_detector/prediction/target_list"
-    duplex_0: "s/robotic_arm/command"               # 双工：机械臂控制
-    duplex_1: "s/logic_controller/command"                 # 双工：上/下逻辑控制器
+    duplex_0: "s/robotic_arm/command"                       # 双工：机械臂控制
+    duplex_1: "s/logic_controller/command"                  # 双工：上/下逻辑控制器
 
 # -------------------------------------------------------
   
@@ -101,7 +100,9 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    output_0: "t/realsense/robotic_arm/in_hand/frame"       # 输出：手眼相机帧
+    output_0: "t/realsense/robotic_arm/in_hand/color"      
+    output_1: "t/realsense/robotic_arm/in_hand/depth"      
+    output_2: "t/realsense/robotic_arm/in_hand/intrinsics" 
 
     # 通用配置块 ###################
     ###########
@@ -116,16 +117,24 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/realsense/robotic_arm/in_hand/frame"        # 输入：手眼相机目标框叠加层
-    output_0: "t/target_detector/prediction/target_list"    # 输出：目标队列
-    output_1: "t/target_detector/visualization/overlay"     # 输出：手眼相机目标框叠加层
+    input_0: "t/realsense/robotic_arm/in_hand/color"          # 输入：
+    input_1: "t/realsense/robotic_arm/in_hand/depth"          # 输入：
+    input_2: "t/realsense/robotic_arm/in_hand/intrinsics"     # 输入：
+    output_0: "t/target_detector/prediction/target_list"      # 输出：目标队列
+    output_1: "t/target_detector/visualization/overlay"       # 输出：手眼相机目标框叠加层
+
+    # 通用配置块 ###################
+    ###########
+    ats:
+      queue_size: 10
+      slop: 0.05
 
 # -------------------------------------------------------
 
   ###############################################
   # 机械臂手眼 RealSense 相机画面目标预测框叠加层 #
   ###############################################
-  PRIESTESS_EYES_0:
+  PRIESTESS_EYES:
 
     # 标准通信接口配置块 ###################
     ##################
@@ -174,7 +183,9 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    output_0: "t/realsense/chassis/front_facing/frame"       # 输出：底盘 RealSense 相机帧    
+    output_0: "t/realsense/chassis/front_facing/color"            # 输出：    
+    output_1: "t/realsense/chassis/front_facing/depth"            # 输出： 
+    output_2: "t/realsense/chassis/front_facing/intrinsics"       # 输出： 
 
     # 通用配置块 ###################
     ###########
@@ -189,16 +200,22 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/realsense/chassis/front_facing/frame"         # 输入：底盘 RealSense 相机帧
+    input_0: "t/realsense/chassis/front_facing/color"     
     output_0: "t/lane_detector/prediction/lane_error"         # 输出：航线偏离
     output_1: "t/lane_detector/visualization/overlay"         # 输出：底盘相机预测轨迹叠加层
+
+    # 通用配置块 ###################
+    ###########
+    ats:
+      queue_size: 10
+      slop: 0.05
 
 # -------------------------------------------------------
 
   ###########################################
   # 底盘前视 RealSense 相机画面预测轨迹叠加层 #
   ###########################################
-  ZERO_ORDER_OIL_TANK_0:
+  ZERO_ORDER_OIL_TANK:
 
     # 标准通信接口配置块 ###################
     ##################
@@ -211,3 +228,32 @@ _node_initializer:
     livestream_port: 8080             # 推流端口号
 
 # -------------------------------------------------------
+
+  ##################
+  # Super 测试节点 #
+  ##################
+  COLUMBIA:
+
+    # 标准通信接口配置块 ###################
+    ##################
+    output_0: "t/realsense/chassis/front_facing/frame" 
+
+    # 通用配置块 ###################
+    ###########
+    fps: 30           # 画面采集帧率
+
+# -------------------------------------------------------
+
+  ################
+  # Sub 测试节点 #
+  ################
+  YAN:
+
+    # 标准通信接口配置块 ###################
+    ##################
+    output_0: "t/realsense/chassis/front_facing/color" 
+
+    # 通用配置块 ###################
+    ###########
+    fps: 30           # 画面采集帧率
+    video_path: "/home/lynchpin/repository/watermelon-robot/resource/datasets/lane-detection/legacy/video-7.mp4"
