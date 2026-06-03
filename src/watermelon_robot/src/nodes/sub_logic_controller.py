@@ -25,7 +25,6 @@ from watermelon_robot_interface.srv import LogicControllerComm
 from watermelon_robot_interface.msg import LaneError, ChassisControlSequence
 from utils import config
 from protocol import LogicControllerCommCode
-from typing import cast
 from types import SimpleNamespace
 from utils import StateUtils, CommUtils
 from enum import Enum
@@ -136,14 +135,17 @@ class SubLogicController(Node):
         
         comm_code = request.comm_code
         self.get_logger().info(f"收到上逻辑控制器通信，通信码 {comm_code}")
-        
+        timestamp = self.get_clock().now().to_msg()
+        header = CommUtils.create_header(stamp = timestamp)
         match comm_code:
             case LogicControllerCommCode.DISABLE_CHASSIS:
                 self.disable_chassis()
+                response.header = header
                 response.is_success = True
 
             case LogicControllerCommCode.ENABLE_CHASSIS: 
                 self.enable_chassis()
+                response.header = header
                 response.is_success = True
                     
         return response

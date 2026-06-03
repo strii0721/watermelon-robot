@@ -55,9 +55,9 @@ class ChassisController(Node):
                                                                             qos_profile = qos_profile_sensor_data, 
                                                                             callback = self.correct_error)
 
-        self.pub_cmd_vel = self.create_publisher(msg_type = Twist, 
-                                                 topic = self.output_0,
-                                                 qos_profile = QoSFiles.chassis_control)
+        self.cmd_vel_publisher = self.create_publisher(msg_type = Twist, 
+                                                       topic = self.output_0,
+                                                       qos_profile = QoSFiles.chassis_control)
 
         CommonUtils.node_initialized(self)
         
@@ -81,7 +81,7 @@ class ChassisController(Node):
             
         twist_msg = self.chassis_service.apply_control_variable(control_variable = control_variable,
                                                                 forward_speed = forward_speed)
-        self.pub_cmd_vel.publish(msg = twist_msg)
+        self.cmd_vel_publisher.publish(msg = twist_msg)
         self.history.last_control_time = now_time
             
 

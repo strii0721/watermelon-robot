@@ -58,13 +58,13 @@ class RealsenseController(Node):
                                                        encoding = "bgr8")
             depth_frame = self.cv_bridge.cv2_to_imgmsg(cvim = depth_frame, 
                                                        encoding = "16UC1")
-            
             timestamp = self.get_clock().now().to_msg()
             header = CommUtils.create_header(stamp = timestamp)
             realsense_frame = CommUtils.create_realsense_frame(header = header,
                                                                color_frame = color_frame, 
                                                                depth_frame = depth_frame, 
                                                                intrinsics = intrinsics)
+            
             self.realsense_frame_publisher.publish(msg = realsense_frame)
         
         

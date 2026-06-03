@@ -128,16 +128,3 @@ class CommUtils:
         request.comm_code = comm_code
         
         return request
-    
-    @classmethod
-    def create_logic_controller_comm_response(cls, 
-                                              header: Header, 
-                                              is_success: bool, 
-                                              message: str = "") -> LogicControllerComm.Response:
-        
-        response = LogicControllerComm.Response()
-        response.header = header
-        response.is_success = is_success
-        response.message = message
-        
-        return response
