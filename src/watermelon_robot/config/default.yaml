@@ -14,15 +14,6 @@ target_detection:
 # -------------------------------------------------------
 # 导航线检测相关
 lane_detection: 
-  roi:
-    y_min_portion: 0.75                                     # 兴趣区域上界占图片高度比例
-    y_max_portion: 0.99                                     # 兴趣区域下界占图片高度比例
-  detect_step: 10
-  terminal_distance: 500                                    # 这个配置项被弃用了，是上一版底盘停止的配置项
-  use_yolo: True                                            # 底盘导航的方式，建议用 yolo
-  cv:                                                       # 这两个配置项和形态学导航方案的滤波有关，但是如果用 yolo 方案就用不到了
-    maximum_window_size: 3
-    reference_depth: 5
   model:  
     name: "yolo26n-seg-b64-1779873368-fp16.engine"
     task: "lane-detection"
@@ -30,7 +21,11 @@ lane_detection:
     device_no: "0"
     use_half: True
     confidence: 0.8
-
+  roi:
+    y_min_portion: 0.75                                     # 兴趣区域上界占图片高度比例
+    y_max_portion: 0.99                                     # 兴趣区域下界占图片高度比例
+  detect_step: 10
+  
 # -------------------------------------------------------
 # 机械臂配置相关
 robotic_arm_s: 
@@ -87,16 +82,10 @@ _node_initializer:
     input_2: "t/realsense/on_hand/camera_intrinsics"    # 输入：手眼相机内参
     output_0: "t/monitor/sup/color_boxed"               # 输出：手眼相机目标框叠加层
     duplex_0: "s/robotic_arm/action_once"               # 双工：机械臂控制
-    duplex_1: "s/logic_controller/comm"                 # 双工：上/下逻辑控制器
+    duplex_1: "s/logic_controller/command"                 # 双工：上/下逻辑控制器
 
     # 通用配置块 ###################
     ###########
-    ats:                                                # 近似时序同步器
-      queue_size: 10                                    # 缓存队列大小
-      slop: 0.05                                        # 最大时间差（秒）
-    heartbeat_interval: 0.01                            # Heartbeat 循环周期
-    request_retransmission_limit: 3                     # 控制底盘停止的请求重传次数上限
-    is_test: False                                      # 是否为单元测试环境（测试环境会忽略某些上下逻辑控制器响应要求
 
 # -------------------------------------------------------
   
@@ -169,14 +158,13 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/lane_detector"                            # 输入：航线偏离
-    duplex_0: "s/logic_controller/comm"                   # 双工：上/下逻辑控制器
-    duplex_1: "s/chassis/start_stop"                      # 双工：底盘启停控制
+    input_0: "t/lane_detector/prediction/lane_error"        # 输入：航线偏离
+    output_0: "t/chassis/control_sequence"                  # 输入：航线偏离
+    duplex_0: "s/logic_controller/command"                  # 双工：上/下逻辑控制器
 
     # 通用配置块 ###################
     ###########
-    heartbeat_interval: 0.01                              # Heartbeat 循环周期
-    is_test: False                                        # 是否为单元测试环境（测试环境会忽略某些上下逻辑控制器响应要求
+    heartbeat_period_sec: 0.01                              # Heartbeat 循环周期
 
 # -------------------------------------------------------
   
@@ -187,13 +175,11 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/chassis/direction_correction_value"       # 底盘方向控制
+    input_0: "t/chassis/control_sequence"                 # 底盘方向控制
     output_0: "cmd_vel"                                   # 轮趣 SDK：底盘控制信号
-    duplex_0: "s/chassis/start_stop"                      # 双工：底盘启停控制
 
     # 通用配置块 ###################
     ###########
-    heartbeat_period_sec: 0.01
 
 # -------------------------------------------------------
   
@@ -219,9 +205,9 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/realsense/chassis/front_facing"             # 输入：底盘 RealSense 相机帧
-    output_0: "t/lane_detector"                             # 输出：航线偏离
-    output_1: "t/monitor/sub/navigation_color"              # 输出：底盘相机预测轨迹叠加层
+    input_0: "t/realsense/chassis/front_facing"               # 输入：底盘 RealSense 相机帧
+    output_0: "t/lane_detector/prediction/lane_error"         # 输出：航线偏离
+    output_1: "t/lane_detector/visualization/overlay"         # 输出：底盘相机预测轨迹叠加层
 
 # -------------------------------------------------------
 
@@ -232,7 +218,7 @@ _node_initializer:
 
     # 标准通信接口配置块 ###################
     ##################
-    input_0: "t/monitor/sub/navigation_color"               # 输入：底盘相机预测轨迹叠加层
+    input_0: "t/lane_detector/visualization/overlay"               # 输入：底盘相机预测轨迹叠加层
 
     # 通用配置块 ###################
     ###########

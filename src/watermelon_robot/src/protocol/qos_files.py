@@ -1,7 +1,7 @@
 #
 # Author:       strii0721
 # Email:        strii0721@outlook.com
-# Created on:   Wed May 20 2026
+# Created on:   Wed Jun 03 2026
 #
 # IMMORTAL OMNISSIAH, HEAR OUR PRAYERS.
 # WE ARE YOUR CHILDREN, PIOUS SCHOLARS OF THE PATH OF THE MACHINE. 
@@ -17,22 +17,20 @@
 #
 
 
-from enum import Enum
+from rclpy.qos import (
+    QoSProfile,
+    QoSReliabilityPolicy,
+    QoSDurabilityPolicy,
+    QoSHistoryPolicy,
+    QoSLivelinessPolicy
+)
 
 
-class ST_BASE(Enum):
-    pass
-
-
-class ST_SUPER_LOGIC_CONTROLLER(ST_BASE):
+class QoSFiles:
     
-    QUIT = 0
-    
-    DETECTING = 101
-    
-    TARGET_LOCKED = 201
-    READY_TO_OPERATE = 202
-    
-    PENDING = 1024
-    
-    
+    chassis_control = QoSProfile(
+        history=QoSHistoryPolicy.KEEP_LAST,
+        depth=10,
+        reliability=QoSReliabilityPolicy.RELIABLE,
+        durability=QoSDurabilityPolicy.TRANSIENT_LOCAL
+    )

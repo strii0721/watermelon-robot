@@ -21,13 +21,10 @@ import rclpy
 from rclpy.node import Node
 from utils import CommonUtils
 from rclpy.qos import qos_profile_sensor_data
-import message_filters
-from watermelon_robot_interface.srv import ILogicControllerComm, ChassisStartStop
-from watermelon_robot_interface.msg import LaneError
+from watermelon_robot_interface.srv import LogicControllerComm
+from watermelon_robot_interface.msg import LaneError, ChassisControlSequence
 from utils import config
-import time
 from protocol import LogicControllerCommCode
-from typing import cast
 from types import SimpleNamespace
 from utils import StateUtils, CommUtils
 from enum import Enum
@@ -38,8 +35,6 @@ class STATE(Enum):
     QUIT = 0
     ENABLED = 101
     DISABLED = 201
-    
-    PENDING = 1024
 
 class SubLogicController(Node):
 
@@ -48,91 +43,86 @@ class SubLogicController(Node):
         super().__init__("sub_logic_controller")
         CommonUtils.node_initializer(self)
 
-        self.latest_frame = SimpleNamespace()
-        self.last_frame_time = time.time()
-        self.publish_direction_error_last_triggered = time.time()
-        self.stop_timer = None
+        self.history = SimpleNamespace()
+        self.history.lane_error_rads = 0.0
 
-        self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_interval, 
+        self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_period_sec, 
                                                  callback = self.heartbeat)
         
         self.lane_error_subscriber = self.create_subscription(msg_type = LaneError, 
                                                               topic = self.input_0, 
                                                               qos_profile = qos_profile_sensor_data, 
-                                                              callback = self.check_terminal)
+                                                              callback = self.cache_lane_error)
         
-        self.srv_logic_controller_comm = self.create_service(srv_type = ILogicControllerComm, 
+        self.chassis_control_sequence_publisher = self.create_publisher(msg_type = ChassisControlSequence, 
+                                                                        topic = self.output_0, 
+                                                                        qos_profile = qos_profile_sensor_data)
+        
+        self.srv_logic_controller_comm = self.create_service(srv_type = LogicControllerComm, 
                                                              srv_name = self.duplex_0, 
                                                              callback = self.answer_super_logic_controller)
-        
-        self.cli_chassis_start_stop = self.create_client(srv_type = ChassisStartStop, 
-                                                         srv_name = self.duplex_1)
-
 
         CommonUtils.node_initialized(self)
         StateUtils.transfer_node_state(self, STATE.ENABLED)
         
-    def chassis_start_done(self, 
-                           future: rclpy.Future):
-        """启动底盘响应的回调函数。
+    def cache_lane_error(self, 
+                         lane_error: LaneError) -> None:
+        """缓存航线误差。
 
         Args:
-            future (rclpy.Future): 底盘响应的 Future 对象。
+            lane_error (LaneError): 频道接收到的航线误差。
         """        
         
-        response = cast(ChassisStartStop.Response, future.result())
-        if response.is_success:
-            self.get_logger().info(f"底盘启动成功！")
-            StateUtils.transfer_node_state(self, STATE.ENABLED)
-            
+        reach_terminal = lane_error.reach_terminal
+        if reach_terminal: 
+            self.disable_chassis()   
         else:
-            self.get_logger().warn(f"底盘启动失败！")
-            StateUtils.transfer_node_state(self, STATE.QUIT)
+            self.history.lane_error_rads = lane_error.error_rads 
+            
+    def forward_lane_error(self) -> None:
+        """发布缓存的航线误差。（这个函数是被 heartbeat() 调用的，调用频率可能与误差接收频率不一致，后者是航线预测话题的回调函数，故接收频率与前视相机的帧率一致。）
+        """          
+        
+        timestamp = self.get_clock().now().to_msg()
+        header = CommUtils.create_header(stamp = timestamp)
+        forward_speed = config.chassis.forward_speed
+        chassis_control_sequence = CommUtils.create_chassis_control_sequence(header = header, 
+                                                                             error_rads = self.history.lane_error_rads, 
+                                                                             forward_speed = forward_speed)
+        
+        self.chassis_control_sequence_publisher.publish(msg = chassis_control_sequence)
 
-    def enable_chassis(self) -> rclpy.Future:
+    def enable_chassis(self) -> None:
         """启动底盘。
         """        
-        
-        timestamp = time.time()
-        header = CommUtils.create_header(stamp = timestamp)
-        request = CommUtils.create_request_chassis_start_stop(header = header, 
-                                                              target_state = True)
-        future = self.cli_chassis_start_stop.call_async(request = request)
-        future.add_done_callback(callback = self.x)
-        StateUtils.transfer_node_state(self, STATE.PENDING)
-        
-    def chassis_stop_done(self, 
-                          future: rclpy.Future):
-        """关闭底盘响应的回调函数。
 
-        Args:
-            future (rclpy.Future): 底盘响应的 Future 对象。
-        """        
+        timestamp = self.get_clock().now().to_msg()
+        header = CommUtils.create_header(stamp = timestamp)
+        forward_speed = config.chassis.forward_speed
+        chassis_control_sequence = CommUtils.create_chassis_control_sequence(header = header, 
+                                                                             error_rads = 0, 
+                                                                             forward_speed = forward_speed)
+        self.chassis_control_sequence_publisher.publish(msg = chassis_control_sequence)
         
-        response = cast(ChassisStartStop.Response, future.result())
-        if response.is_success:
-            self.get_logger().info(f"底盘已停止！")
-            StateUtils.transfer_node_state(self, STATE.DISABLED)
-            
-        else:
-            self.get_logger().warn(f"底盘停止失败！")
-            StateUtils.transfer_node_state(self, STATE.QUIT)
+        StateUtils.transfer_node_state(self, STATE.ENABLED)
         
-    def disable_chassis(self):
+    def disable_chassis(self) -> None:
         """关闭底盘。
         """        
         
-        timestamp = time.time()
+        timestamp = self.get_clock().now().to_msg()
         header = CommUtils.create_header(stamp = timestamp)
-        request = CommUtils.create_request_chassis_start_stop(header = header, 
-                                                              target_state = False)
-        future = self.cli_chassis_start_stop.call_async(request = request)
-        future.add_done_callback(callback = self.chassis_stop_done)
-        StateUtils.transfer_node_state(self, STATE.PENDING)
+        chassis_control_sequence = CommUtils.create_chassis_control_sequence(header = header, 
+                                                                             error_rads = 0, 
+                                                                             forward_speed = 0,
+                                                                             is_enabled = False)
+        self.chassis_control_sequence_publisher.publish(msg = chassis_control_sequence)
+        
+        StateUtils.transfer_node_state(self, STATE.DISABLED)
 
     def answer_super_logic_controller(self, 
-                                      request: ILogicControllerComm.Request, 
-                                      response: ILogicControllerComm.Response) -> ILogicControllerComm.Response:
+                                      request: LogicControllerComm.Request, 
+                                      response: LogicControllerComm.Response) -> LogicControllerComm.Response:
         """响应上逻辑控制器发来的逻辑控制器命令。此处应用重传机制，至少一次重传才会请求成功。
 
         Args:
@@ -144,37 +134,21 @@ class SubLogicController(Node):
         """        
         
         comm_code = request.comm_code
-        retransmission = request.retransmission
         self.get_logger().info(f"收到上逻辑控制器通信，通信码 {comm_code}")
-        response.is_success = False
-        response.retransmission = retransmission
-        
+        timestamp = self.get_clock().now().to_msg()
+        header = CommUtils.create_header(stamp = timestamp)
         match comm_code:
             case LogicControllerCommCode.DISABLE_CHASSIS:
-                if self.state == STATE.DISABLED:
-                    response.is_success = True
-                else:
-                    self.disable_chassis()
+                self.disable_chassis()
+                response.header = header
+                response.is_success = True
 
             case LogicControllerCommCode.ENABLE_CHASSIS: 
-                if self.state == STATE.ENABLED:
-                    response.is_success = True
-                else:
-                    self.enable_chassis()
+                self.enable_chassis()
+                response.header = header
+                response.is_success = True
                     
         return response
-    
-    def check_terminal(self, 
-                       lane_error: LaneError) -> None:
-        """检查是否抵达终点，若是则停止底盘。
-
-        Args:
-            lane_error (LaneError): 当前帧的航线偏移。
-        """        
-        
-        reach_terminal = lane_error.reach_terminal
-        if reach_terminal: 
-            self.disable_chassis()           
         
     def wait_quit(self) -> None:
         """等待退出。
@@ -191,7 +165,7 @@ class SubLogicController(Node):
                 self.wait_quit()
                 
             case STATE.ENABLED:
-                pass
+                self.forward_lane_error()
                 
             case STATE.DISABLED:
                 pass

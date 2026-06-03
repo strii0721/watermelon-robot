@@ -1,6 +1,6 @@
 # Request
 std_msgs/Header header
-bool target_state
+int64 comm_code
 ---
 # Response
 std_msgs/Header header

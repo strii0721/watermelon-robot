@@ -1,8 +1,8 @@
 # Request
-float64 timestamp
+std_msgs/Header header
 float64[3] position_on_camera
 ---
 # Response
-float64 timestamp
+std_msgs/Header header
 bool is_success
 string message

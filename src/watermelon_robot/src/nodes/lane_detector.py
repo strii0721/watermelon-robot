@@ -27,6 +27,8 @@ import cv2
 import time
 from sensor_msgs.msg import Image
 import math
+import rclpy
+from types import SimpleNamespace
 
 
 class LaneDetector(Node):
@@ -41,8 +43,10 @@ class LaneDetector(Node):
                                            task = config.lane_detection.model.task, 
                                            use_engine = config.lane_detection.model.use_engine,
                                            confidence = config.lane_detection.model.confidence)
-        self.reach_terminal_timer = None
-        self.last_frame_time = time.time()
+
+        self.history = SimpleNamespace()
+        self.history.reach_terminal_timer = None
+        self.history.last_frame_time = time.time()
         
         self.front_facing_realsense_subscriber = self.create_subscription(msg_type = RealSenseFrame, 
                                                                           topic = self.input_0, 
@@ -66,11 +70,11 @@ class LaneDetector(Node):
         """        
         
         if reach_terminal:
-            if self.reach_terminal_timer:
-                    if time.time() - self.reach_terminal_timer > config.chassis.stop_delay_sec:
+            if self.history.reach_terminal_timer:
+                    if time.time() - self.history.reach_terminal_timer > config.chassis.stop_delay_sec:
                             return True
             else: 
-                self.reach_terminal_timer = time.time()
+                self.history.reach_terminal_timer = time.time()
         
         return False
     
@@ -95,8 +99,8 @@ class LaneDetector(Node):
                                                  reach_terminal = reach_terminal)
         height, width = color_frame.shape[:2]
         now_time = time.time()
-        real_fps = int(1/(now_time - self.last_frame_time))
-        self.last_frame_time = now_time
+        real_fps = int(1/(now_time - self.history.last_frame_time))
+        self.history.last_frame_time = now_time
         cv2.putText(img = color_frame, 
                     text = f"FPS {real_fps} | Frame Size {width}x{height}", 
                     org = (5, 20), 
@@ -110,3 +114,16 @@ class LaneDetector(Node):
         
         self.lane_error_publisher.publish(msg = lane_error)
         self.navigation_color_monitor_publisher.publish(msg = color_frame)
+        
+        
+def main():
+
+    rclpy.init()
+    lane_detector = LaneDetector()
+    rclpy.spin(lane_detector)
+    lane_detector.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()        
