@@ -55,16 +55,6 @@ class SuperLogicController(Node):
         self.current_target = None
         self.history = SimpleNamespace()
         self.history.target_list = []
-        self.fa_on = ModelUtils.check_flash_attention()
-        self.last_frame_time = time.time()
-        self.model = ModelUtils.load_model(model_name = config.model.name, 
-                                           task = config.model.task,
-                                           use_engine = config.model.use_engine,
-                                           use_half = config.model.use_half, 
-                                           device_no = config.model.device_no, 
-                                           image_size = config.model.image_size, 
-                                           confidence = config.model.confidence, 
-                                           iou = config.model.iou)
         
         self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_period_sec, 
                                                  callback = self.heartbeat)
@@ -80,15 +70,6 @@ class SuperLogicController(Node):
         self.command_sub_logic_controller_client = self.create_client(srv_type = LogicControllerComm, 
                                                                       srv_name = self.duplex_1)
         
-        self.approximate_time_synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs = [self.sub_eye_on_hand_color_raw, 
-                  self.sub_eye_on_hand_depth_raw, 
-                  self.sub_eye_on_hand_camera_intrinsics],
-            queue_size = self.ats.queue_size,
-            slop = self.ats.slop
-        )
-        self.approximate_time_synchronizer.registerCallback(self.recieve_latest_frame)
-        
         CommonUtils.node_initialized(self)
         CommonUtils.transfer_node_state(self, STATE.DETECTING)
         
@@ -97,7 +78,7 @@ class SuperLogicController(Node):
         """缓存目标列表。
 
         Args:
-            target_list (TargetList): _description_
+            target_list (TargetList): 目标检测器回传的目标列表。
         """        
         
         target_list_json = target_list.target_list_json
@@ -110,7 +91,6 @@ class SuperLogicController(Node):
 
         Args:
             comm_code (LogicControllerCommCode): 命令码。
-            retransmission (int, optional): 请求重传次数. Defaults to 0.
 
         Returns:
             rclpy.Future: 下逻辑控制器响应的 Futrue 对象。
