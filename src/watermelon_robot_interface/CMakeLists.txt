@@ -33,9 +33,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/LaneError.msg"
   "msg/TargetList.msg"
   "msg/ChassisControlSequence.msg"
-  "srv/IRoboticArmAction.srv"
-  "srv/ILogicControllerComm.srv"
-  "srv/ChassisStartStop.srv"
+  "srv/RoboticArmAction.srv"
+  "srv/LogicControllerComm.srv"
   DEPENDENCIES std_msgs sensor_msgs
 )
 
