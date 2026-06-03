@@ -5,3 +5,4 @@ from .sub_logic_controller import SubLogicController
 from .chassis_controller import ChassisController
 from .monitor import Monitor
 from .lane_detector import LaneDetector
+from .target_detector import TargetDetector
