@@ -63,13 +63,13 @@ class CVUtils:
     def calculate_camera_coordinate(cls,
                                     center_pixel: tuple,
                                     depth_image: np.ndarray,
-                                    camera_intrinsics: CameraInfo) -> tuple:
+                                    intrinsics: CameraInfo) -> tuple:
         """计算目标像素点在相机参考系下的坐标。
 
         Args:
             center_pixel (tuple): 目标像素点坐标。
             depth_image (np.ndarray): 深度图片。
-            camera_intrinsics (CameraInfo): 相机内参。
+            intrinsics (CameraInfo): 相机内参。
 
         Returns:
             tuple: 相机参考系下坐标。
@@ -79,10 +79,10 @@ class CVUtils:
         Z = CVUtils.calculate_median_depth(depth_image = depth_image, 
                                            center_pixel = center_pixel)
         
-        fx = camera_intrinsics.k[0]
-        cx = camera_intrinsics.k[2]
-        fy = camera_intrinsics.k[4]
-        cy = camera_intrinsics.k[5]
+        fx = intrinsics.k[0]
+        cx = intrinsics.k[2]
+        fy = intrinsics.k[4]
+        cy = intrinsics.k[5]
 
         X = (x_pixel - cx) * Z / fx
         Y = (y_pixel - cy) * Z / fy

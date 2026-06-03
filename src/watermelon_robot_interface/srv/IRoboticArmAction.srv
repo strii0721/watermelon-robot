@@ -1,8 +1,0 @@
-# Request
-float64 timestamp
-float64[3] position_on_camera
----
-# Response
-float64 timestamp
-bool is_success
-string message

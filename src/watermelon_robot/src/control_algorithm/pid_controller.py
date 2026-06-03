@@ -39,7 +39,7 @@ class PIDController:
         self.previous_error = 0
 
     def update_control_variable(self,
-                                error_degrees: float, 
+                                error: float, 
                                 control_interval: float) -> float:        
         """根据误差应用 PID 控制器输出控制量。
 
@@ -51,16 +51,16 @@ class PIDController:
         """
         
         dt = control_interval
-        p_term = self.kp * error_degrees
-        integral = self.integral + error_degrees * dt
+        p_term = self.kp * error
+        integral = self.integral + error * dt
         self.integral = max(-self.integral_limit, min(self.integral_limit, integral))
         i_term = self.ki * self.integral
-        derivative = (error_degrees - self.previous_error) / dt
+        derivative = (error - self.previous_error) / dt
         d_term = self.kd * derivative
         
         output = p_term + i_term + d_term
         output = max(-self.maximum_output_abs, min(self.maximum_output_abs, output))
-        self.previous_error = error_degrees
+        self.previous_error = error
         output = output / control_interval
 
         return output

@@ -42,6 +42,13 @@ def generate_launch_description():
         name = "PRESERVATOR",
         output="screen"
     )
+    
+    LYNCHPIN = Node(
+        package = "watermelon_robot",
+        executable = "target_detector", 
+        name = "LYNCHPIN", 
+        output = "screen"
+    )
 
     PRIESTESS_EYES_0 = Node(
         package="watermelon_robot",
@@ -54,5 +61,6 @@ def generate_launch_description():
         CELESTIAL_FULCRUM,
         CAERULA_ARBOR,
         PRESERVATOR,
+        LYNCHPIN,
         PRIESTESS_EYES_0
     ])

@@ -42,7 +42,8 @@ setup(
             "chassis_controller = controller.chassis_controller:main",
             "realsense_controller = controller.realsense_controller:main",
             "monitor = tools.monitor:main", 
-            "lane_detector = nodes.lane_detector"
+            "lane_detector = nodes.lane_detector:main",
+            "target_detector = nodes.target_detector:main"
         ],
     },
 )

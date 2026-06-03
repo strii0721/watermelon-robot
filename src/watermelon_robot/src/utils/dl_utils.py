@@ -30,7 +30,7 @@ class DLUtils:
                         model: YOLO, 
                         color_image, 
                         depth_image, 
-                        camera_intrinsics) -> list:
+                        intrinsics) -> list:
 
         rtn = model.predict(source = color_image, 
                             verbose = False)
@@ -53,7 +53,7 @@ class DLUtils:
                     
                     target = CVUtils.calculate_camera_coordinate(center_pixel = (crosshair_pixel_x, crosshair_pixel_y), 
                                                                  depth_image = depth_image, 
-                                                                 camera_intrinsics = camera_intrinsics)
+                                                                 intrinsics = intrinsics)
                     label = f'{name} {confidence:.2f}'
                     mark_size = 5
                     cv2.rectangle(color_image, (int(box_pixel_x1), int(box_pixel_y1)), (int(box_pixel_x2), int(box_pixel_y2)), (0, 255, 0), 2)

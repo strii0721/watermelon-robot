@@ -22,10 +22,10 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
-    LYNCHPIN = Node(
+    ORACLE = Node(
         package = "watermelon_robot", 
         executable = "sub_logic_controller", 
-        name = "LYNCHPIN", 
+        name = "ORACLE", 
         output = "screen"
     )
 
@@ -56,19 +56,11 @@ def generate_launch_description():
         name = "ZERO_ORDER_OIL_TANK_0",
         output="screen"
     )
-
-    ZERO_ORDER_OIL_TANK_1 = Node(
-        package="watermelon_robot",
-        executable="monitor",
-        name = "ZERO_ORDER_OIL_TANK_1",
-        output="screen"
-    )
     
     return LaunchDescription([
-        LYNCHPIN,
+        ORACLE,
         DWDB_221E,
         AMA_10,
         LONETRAIL,
-        ZERO_ORDER_OIL_TANK_0, 
-        ZERO_ORDER_OIL_TANK_1
+        ZERO_ORDER_OIL_TANK_0
     ])
