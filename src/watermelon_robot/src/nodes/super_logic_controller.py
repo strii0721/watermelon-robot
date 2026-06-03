@@ -238,7 +238,7 @@ class SuperLogicController(Node):
             self.target_list = DLUtils.predict_targets(model = self.model, 
                                                        color_image = self.latest_frame.color_image, 
                                                        depth_image = self.latest_frame.depth_image, 
-                                                       camera_intrinsics = self.latest_frame.camera_intrinsics)
+                                                       intrinsics = self.latest_frame.camera_intrinsics)
             
             now_time = time.time()
             fps = 1.0 / (now_time - self.last_frame_time)
