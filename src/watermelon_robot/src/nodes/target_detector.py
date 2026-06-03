@@ -59,7 +59,7 @@ class TargetDetector(Node):
                                                        topic = self.output_1, 
                                                        qos_profile = qos_profile_sensor_data)
         
-        NodeUtils.node_initialized()
+        NodeUtils.node_initialized(self)
         
     def detect_targets(self, 
                        realsense_frame: RealSenseFrame) -> None:

@@ -22,7 +22,6 @@ from sensor_msgs.msg import Image, CameraInfo
 from watermelon_robot_interface.msg import RealSenseFrame, LaneError, TargetList, ChassisControlSequence
 from watermelon_robot_interface.srv import LogicControllerComm, RoboticArmAction
 from rclpy.time import Time
-from watermelon_robot_interface.srv import ChassisStartStop
 from protocol import LogicControllerCommCode
 
 class CommUtils:
@@ -42,8 +41,8 @@ class CommUtils:
     def create_realsense_frame(cls, 
                                header: Header, 
                                color_frame: Image,
-                               depth_frame: Image, 
-                               intrinsics: CameraInfo) -> RealSenseFrame:
+                               depth_frame: Image = Image(), 
+                               intrinsics: CameraInfo = CameraInfo()) -> RealSenseFrame:
         
         realsense_frame = RealSenseFrame()
         realsense_frame.header = header
@@ -67,30 +66,6 @@ class CommUtils:
         lane_error.reach_terminal = reach_terminal
         
         return lane_error
-    
-    @classmethod
-    def create_request_chassis_start_stop(cls, 
-                                          header: Header, 
-                                          target_state: bool) -> ChassisStartStop.Request:
-        
-        request = ChassisStartStop.Request()
-        request.header = header
-        request.target_state = target_state
-        
-        return request
-    
-    @classmethod
-    def create_response_chassis_start_stop(cls, 
-                                           header: Header, 
-                                           is_success: bool, 
-                                           message: str = "") -> ChassisStartStop.Response:
-        
-        response = ChassisStartStop.Response()
-        response.header = header
-        response.is_success = is_success
-        response.message = message
-        
-        return response
     
     @classmethod
     def create_target_list(cls, 

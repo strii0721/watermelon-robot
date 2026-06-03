@@ -30,17 +30,17 @@ def generate_launch_description():
     )
 
     DWDB_221E = Node(
-        package="watermelon_robot",
-        executable="chassis_controller",
+        package = "watermelon_robot",
+        executable = "chassis_controller",
         name = "DWDB_221E",
-        output="screen"
+        output = "screen"
     )
 
     AMA_10 = Node(
-        package="watermelon_robot",
-        executable="realsense_controller",
+        package = "watermelon_robot",
+        executable = "realsense_controller",
         name = "AMA_10",
-        output="screen"
+        output = "screen",
     )
     
     LONETRAIL = Node(
@@ -51,16 +51,21 @@ def generate_launch_description():
     )
 
     ZERO_ORDER_OIL_TANK = Node(
-        package="watermelon_robot",
-        executable="monitor",
+        package = "watermelon_robot",
+        executable = "monitor",
         name = "ZERO_ORDER_OIL_TANK",
-        output="screen"
+        output = "screen"
     )
     
-    return LaunchDescription([
-        ORACLE,
-        DWDB_221E,
-        AMA_10,
-        LONETRAIL,
-        ZERO_ORDER_OIL_TANK
-    ])
+    YAN = Node(
+        package = "watermelon_robot",
+        executable = "sub_test",
+        name = "YAN",
+        output = "screen"
+    )
+    
+    return LaunchDescription([ORACLE, 
+                              DWDB_221E, 
+                              LONETRAIL, 
+                              ZERO_ORDER_OIL_TANK, 
+                              YAN])

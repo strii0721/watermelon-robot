@@ -59,7 +59,7 @@ class LaneDetector(Node):
                                                                         topic = self.output_1, 
                                                                         qos_profile = qos_profile_sensor_data)
         
-        NodeUtils.node_initialized()
+        NodeUtils.node_initialized(self)
         
     def check_terminal(self, 
                        reach_terminal: bool) -> None:
