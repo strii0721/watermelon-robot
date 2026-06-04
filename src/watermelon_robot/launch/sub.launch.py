@@ -20,47 +20,52 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
+TEST = True
+
 def generate_launch_description():
 
-    CELESTIAL_FULCRUM = Node(
+    ORACLE = Node(
         package = "watermelon_robot", 
-        executable = "super_logic_controller", 
-        name = "CELESTIAL_FULCRUM", 
+        executable = "sub_logic_controller", 
+        name = "ORACLE", 
         output = "screen"
     )
 
-    CAERULA_ARBOR = Node(
-        package="watermelon_robot",
-        executable="robotic_arm_controller",
-        name = "CAERULA_ARBOR",
-        output="screen"
-    )
-
-    PRESERVATOR = Node(
-        package="watermelon_robot",
-        executable="realsense_controller",
-        name = "PRESERVATOR",
-        output="screen"
-    )
-    
-    LYNCHPIN = Node(
+    DWDB_221E = Node(
         package = "watermelon_robot",
-        executable = "target_detector", 
-        name = "LYNCHPIN", 
+        executable = "chassis_controller",
+        name = "DWDB_221E",
         output = "screen"
     )
 
-    PRIESTESS_EYES = Node(
-        package="watermelon_robot",
-        executable="monitor",
-        name = "PRIESTESS_EYES",
-        output="screen"
+    AMA_10 = Node(
+        package = "watermelon_robot",
+        executable = "realsense_controller",
+        name = "AMA_10",
+        output = "screen",
     )
     
-    return LaunchDescription([
-        CELESTIAL_FULCRUM,
-        CAERULA_ARBOR,
-        PRESERVATOR,
-        LYNCHPIN,
-        PRIESTESS_EYES
-    ])
+    LONETRAIL = Node(
+        package = "watermelon_robot", 
+        executable = "lane_detector", 
+        name = "LONETRAIL", 
+        output = "screen"
+    )
+    
+    YAN = Node(
+        package = "watermelon_robot",
+        executable = "sub_test",
+        name = "YAN",
+        output = "screen"
+    )
+    
+    node_list = [ORACLE, 
+                 DWDB_221E, 
+                 LONETRAIL]
+    
+    if not TEST: 
+        node_list.append(AMA_10)
+    else: 
+        node_list.append(YAN)
+    
+    return LaunchDescription(node_list)

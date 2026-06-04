@@ -1,0 +1,330 @@
+/* ================= 基础重置 ================= */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+body, html {
+    height: 100%;
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f1f5f9; /* 外部深灰色背景 */
+    color: #334155;
+}
+/* ================= 整体布局 ================= */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+}
+/* ================= 顶部控制栏 ================= */
+.top-bar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    z-index: 10;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.brand h1 {
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #1e293b;
+    letter-spacing: -0.025em;
+}
+.brand p {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+    font-family: monospace;
+}
+.global-controls {
+    display: flex;
+    gap: 1rem;
+}
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.5rem;
+    border-radius: 0.5rem;
+    font-weight: 700;
+    font-size: 0.875rem;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+.btn:active {
+    transform: scale(0.95);
+}
+.btn-start {
+    background-color: #10b981;
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+}
+.btn-start:hover {
+    background-color: #059669;
+}
+.btn-stop {
+    background-color: #f43f5e;
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(244, 63, 94, 0.3);
+}
+.btn-stop:hover {
+    background-color: #e11d48;
+}
+/* ================= 主体内容区 ================= */
+.main-content {
+    flex: 1;
+    padding: 1.5rem;
+    /* 改为 auto，允许在小屏幕时上下滚动，防止视频被截断 */
+    overflow-y: auto; 
+}
+.camera-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    /* 取消了 height: 100%，让高度由内容（4:3的视频）自动撑开 */
+    align-items: start; 
+}
+/* ================= 相机面板 ================= */
+.camera-panel {
+    background-color: #ffffff;
+    border-radius: 1rem;
+    border: 1px solid #e2e8f0;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem; /* 使用 gap 控制内部间距 */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.panel-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.panel-title i {
+    color: #3b82f6;
+}
+.panel-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.input-group {
+    position: relative;
+    width: 200px;
+}
+.input-group i {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 0.875rem;
+}
+.input-group input {
+    width: 100%;
+    padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    outline: none;
+    transition: all 0.2s;
+}
+.input-group input:focus {
+    background-color: #ffffff;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+.btn-monitor {
+    background-color: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+.btn-monitor:hover {
+    background-color: #2563eb;
+    color: white;
+}
+/* ================= 视频区域 ================= */
+img::after {
+    content: attr(alt);
+    
+    /* 绝对定位，铺满整个 img 区域，盖住默认的破裂图标 */
+    position: absolute;
+    top: 40%;
+    left: 40%;
+    width: 20%;
+    height: 20%;
+    
+    /* 美化样式（贴合您的深色主题） */
+    background-color: #0f172a;  /* 背景色 */
+    color: #64748b;             /* 文字颜色 */
+    font-size: 28px;
+    
+    /* 使用 Flexbox 让文字完美水平垂直居中 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.video-wrapper {
+    width: 100%;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.05) inset;
+}
+.video-area {
+    aspect-ratio: 4 / 3; /* 严格保持 640:480 比例 */
+    width: 100%;
+    background-color: #0f172a;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+/* 装饰性十字线 */
+.video-area::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+.video-area::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 1px;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+.video-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    color: #64748b;
+    z-index: 2;
+}
+.video-placeholder i {
+    font-size: 3rem;
+    opacity: 0.5;
+}
+.video-placeholder span {
+    font-size: 0.875rem;
+    letter-spacing: 0.1em;
+}
+.status-indicator {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 2;
+    background: rgba(0,0,0,0.4);
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    backdrop-filter: blur(4px);
+}
+.status-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    background-color: #ef4444;
+    border-radius: 50%;
+    position: relative;
+}
+.status-dot::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #ef4444;
+    border-radius: 50%;
+    animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes ping {
+    75%, 100% {
+        transform: scale(2.5);
+        opacity: 0;
+    }
+}
+.status-text {
+    color: #e2e8f0;
+    font-size: 0.75rem;
+    font-family: monospace;
+    font-weight: 600;
+}
+/* ================= 底部状态栏 (新增美化) ================= */
+.panel-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.75rem;
+    border-top: 1px dashed #e2e8f0;
+    font-size: 0.75rem;
+    color: #64748b;
+}
+.footer-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.footer-stat i {
+    color: #94a3b8;
+}
+.footer-banner {
+    background-color: #0f172a; /* 深色背景 */
+    color: #ffffff; /* 白色字体 */
+    text-align: center;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    font-family: monospace;
+    width: 100%;
+    flex-shrink: 0; /* 配合 app-container 的 flex 布局，防止被压缩 */
+    box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10rem; 
+}
+/* ================= 响应式适配 ================= */
+@media (max-width: 1024px) {
+    .camera-grid {
+        grid-template-columns: 1fr;
+    }
+    .panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .panel-controls {
+        width: 100%;
+    }
+    .input-group {
+        flex: 1;
+    }
+}

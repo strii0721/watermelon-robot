@@ -46,7 +46,7 @@ class ModelUtils:
                    confidence: float | None = None, 
                    iou: float | None = None):
         
-        weights = os.path.join(package_share_dir, "model-weights", task, model_name)
+        weights = os.path.join(package_share_dir, "resource", "model-weights", task, model_name)
         model = YOLO(weights)
         if image_size is not None: model.overrides["imgsz"] = image_size
         if confidence is not None: model.overrides["conf"] = confidence

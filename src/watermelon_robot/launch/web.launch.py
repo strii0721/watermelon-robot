@@ -1,7 +1,7 @@
 #
 # Author:       strii0721
 # Email:        strii0721@outlook.com
-# Created on:   Wed May 20 2026
+# Created on:   Thu Jun 04 2026
 #
 # IMMORTAL OMNISSIAH, HEAR OUR PRAYERS.
 # WE ARE YOUR CHILDREN, PIOUS SCHOLARS OF THE PATH OF THE MACHINE. 
@@ -16,13 +16,19 @@
 # Copyright (c) 2026 Streich Interstellar Corp.
 #
 
+from launch import LaunchDescription
+from launch_ros.actions import Node
 
-from enum import Enum
 
-
-class LogicControllerCommCode(Enum):
-    """上下逻辑控制器通信的命令码。
-    """    
-
-    START_CHASSIS = 400    # 启动底盘。
-    STOP_CHASSIS = 401   # 停止底盘。
+def generate_launch_description():
+    
+    PRIESTESS_EYES = Node(
+        package = "watermelon_robot",
+        executable = "web_app",
+        name = "PRIESTESS_EYES",
+        output = "screen"
+    )
+    
+    node_list = [PRIESTESS_EYES]
+    
+    return LaunchDescription(node_list)

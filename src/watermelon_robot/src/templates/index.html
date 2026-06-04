@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css">
+    <link rel="stylesheet" type="text/css" href="{{url_for("static", filename="css/style.css")}}">
+    <script type="module" src="{{url_for("static", filename="js/index.js")}}"></script>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- 顶部全局控制栏 -->
+        <header class="top-bar">
+            <div class="brand">
+                <h1>{{title}}</h1>
+                <p>{{subtitle}}</p>
+            </div>
+            <div class="global-controls">
+                <button class="btn btn-start" id="start-chassis-btn"><i class="fas fa-play"></i>启动底盘</button>
+                <button class="btn btn-stop" id="stop-chassis-btn"><i class="fas fa-play"></i>紧急停止</button>
+            </div>
+        </header>
+
+        <!-- 主体内容区 -->
+        <main class="main-content">
+            <div class="camera-grid">
+                
+                <!-- 相机面板 1 -->
+                <div class="camera-panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">
+                            {{default_channel_0}} 实时画面
+                        </h2>
+                        <div class="panel-controls">
+                            <div class="input-group">
+                                <input type="text" id="video-slot-0-channel-input" value={{default_channel_0}}>
+                            </div>
+                            <button class="btn btn-monitor" id="video-slot-0-channel-confirm">监视</button>
+                        </div>
+                    </div>
+                    
+                    <div class="video-wrapper">
+                        <div class="video-area">
+                            <!-- <div class="status-indicator">
+                                <div class="status-dot"></div>
+                                <span class="status-text">OFFLINE</span>
+                            </div> -->
+                            <div class="video-placeholder">
+                                <span><img src={{url_for("video_slot_0")}} alt="等待视频信号" class="camera-img" id="video-slot-0"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 新增：底部数据状态栏 -->
+                    <div class="panel-footer">
+                        <div class="footer-stat">比例: 640x480 (4:3)</div>
+                        <div class="footer-stat">帧率: -- FPS</div>
+                        <div class="footer-stat">延迟: -- ms</div>
+                    </div>
+                </div>
+
+                <!-- 相机面板 2 -->
+                <div class="camera-panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">
+                            {{default_channel_1}} 实时画面
+                        </h2>
+                        <div class="panel-controls">
+                            <div class="input-group">
+                                <input type="text" id="video-slot-1-channel-input" value={{default_channel_1}}>
+                            </div>
+                            <button class="btn btn-monitor" id="video-slot-1-channel-confirm">监视</button>
+                        </div>
+                    </div>
+                    
+                    <div class="video-wrapper">
+                        <div class="video-area">
+                            <!-- <div class="status-indicator">
+                                <div class="status-dot"></div>
+                                <span class="status-text">OFFLINE</span>
+                            </div> -->
+                            <div class="video-placeholder">
+                                <span><img src={{url_for("video_slot_1")}} alt="等待视频信号" class="camera-img" id="video-slot-1"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 新增：底部数据状态栏 -->
+                    <div class="panel-footer">
+                        <div class="footer-stat">比例: 640x480 (4:3)</div>
+                        <div class="footer-stat">帧率: -- FPS</div>
+                        <div class="footer-stat">延迟: -- ms</div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+        <div class="footer-banner">
+            <span>powered by Streich Interstellar Corp.&reg;</span><span>&copy; All rights reserved 2002-2026</span>
+        </div>
+    </div>
+</body>
+</html>

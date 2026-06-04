@@ -85,6 +85,6 @@ class CommUtils:
         
         request = LogicControllerComm.Request()
         request.header = header
-        request.comm_code = comm_code
+        request.comm_code = comm_code.value
         
         return request
