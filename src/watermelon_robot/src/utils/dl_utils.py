@@ -74,7 +74,8 @@ class DLUtils:
                      source_image: np.ndarray, 
                      roi_y_min_portion: float, 
                      roi_y_max_portion: float, 
-                     detect_step: int) -> list:
+                     detect_step: int, 
+                     lane_offset: int) -> list:
         """使用 YOLO 检测道路。
 
         Args:
@@ -83,6 +84,7 @@ class DLUtils:
             roi_y_min_portion (float): 兴趣区域的顶部 y 坐标。
             roi_y_max_portion (float): 兴趣区域的底部 y 坐标。
             detect_step (int): 中心点绘制步长。
+            lane_offset (int): 预测航线横向偏移量（以像素记）。
 
         Returns:
             list: 关键数据列表 [当前帧是否抵达终点, 角度误差（以弧度记）]。
@@ -154,10 +156,11 @@ class DLUtils:
                 y2 = roi_y_min
                 x2 = int(line_function(y2))
                 
-                # 绘制道路中心线
-                cv2.line(source_image, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                # 绘制预测航线和偏移航线
+                cv2.line(source_image, (x1, y1), (x2, y2), (190, 71, 159), 2)
+                cv2.line(source_image, (x1 + lane_offset, y1), (x2 + lane_offset, y2), (0, 0, 255), 2)
                 
-                reference_point = (int((x1 + x2)/2), int((y1 + y2)/2))
+                reference_point = (int((x1 + x2)/2) + lane_offset, int((y1 + y2)/2))
                 reference_direction = (ego_point, reference_point)
                 angle_rads = CVUtils.claculate_direction_error(ego_direction = ego_direction, 
                                                                reference_direction = reference_direction)

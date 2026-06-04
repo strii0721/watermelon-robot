@@ -20,7 +20,7 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
-TEST = True
+TEST = False
 
 def generate_launch_description():
 

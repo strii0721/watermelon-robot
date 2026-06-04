@@ -95,7 +95,8 @@ class LaneDetector(Node):
                                                                source_image = color_frame, 
                                                                roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
                                                                roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
-                                                               detect_step = config.lane_detection.detect_step)
+                                                               detect_step = config.lane_detection.detect_step, 
+                                                               lane_offset = config.lane_detection.lane_offset)
         reach_terminal = self.check_terminal(reach_terminal)
         lane_error_degrees = math.degrees(lane_error_rads)
         lane_error = CommUtils.create_lane_error(header = header, 
