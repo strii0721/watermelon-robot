@@ -73,7 +73,7 @@ class ChassisController(Node):
             control_variable = self.controller.update_control_variable(error = error_rads, 
                                                                        control_interval = control_interval)
             error_degrees = math.degrees(error_rads)
-            self.get_logger().info(f"当前弧度误差：{error_rads} | 角度误差：{error_degrees} | 产生控制变量：{control_variable}")
+            # self.get_logger().info(f"当前弧度误差：{error_rads} | 角度误差：{error_degrees} | 产生控制变量：{control_variable}")
             
         else:
             control_variable = 0

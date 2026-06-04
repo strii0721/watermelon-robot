@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="{{url_for("static", filename="css/style.css")}}">
+</head>
+<body>
+    <div class="container">
+
+        <section class="camera-panel">
+            <button class="btn">启动</button>
+            <h4 class="title">手眼相机</h4>
+            <input class="input" type="text" placeholder="请输入参数" readonly>
+            <div class="img-box">
+                <img src={{url_for("video_slot_0")}} alt="手眼相机画面" class="camera-img" id="video-slot-0">
+            </div>
+        </section>
+
+        <!-- 右侧：底盘前视相机 -->
+        <section class="camera-panel">
+            <button class="btn">急停</button>
+            <h4 class="title">底盘前视相机</h4>
+            <div><input class="input" type="text" placeholder="请输入参数"> <button>监视</button></div>
+            <div class="img-box">
+                <img src={{url_for("video_slot_1")}} alt="底盘前视相机画面" class="camera-img" id="video-slot-1">
+            </div>
+        </section>
+
+    </div>
+</body>
+</html>

@@ -20,7 +20,7 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
-TEST = False
+TEST = True
 
 def generate_launch_description():
 
@@ -66,10 +66,17 @@ def generate_launch_description():
         output = "screen"
     )
     
+    DUBLIN = Node(
+        package = "watermelon_robot",
+        executable = "web_app",
+        name = "DUBLIN",
+        output = "screen"
+    )
+    
     node_list = [ORACLE, 
                  DWDB_221E, 
-                 LONETRAIL, 
-                 ZERO_ORDER_OIL_TANK]
+                 LONETRAIL,
+                 DUBLIN]
     
     if not TEST: 
         node_list.append(AMA_10)

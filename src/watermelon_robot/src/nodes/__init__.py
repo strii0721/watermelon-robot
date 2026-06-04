@@ -7,3 +7,4 @@ from .monitor import Monitor
 from .lane_detector import LaneDetector
 from .target_detector import TargetDetector
 from .sub_test import SubTest
+from .web_app import WebApp

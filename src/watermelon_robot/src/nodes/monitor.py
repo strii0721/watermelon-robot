@@ -36,7 +36,7 @@ class Monitor(Node):
         super().__init__("monitor")
         NodeUtils.node_initializer(self)
 
-        self.render_interval = int((1/self.fps) * 1000)
+        self.render_period = int((1/self.fps) * 1000)
         self.cv_bridge = CvBridge()
         self.latest_frame = None
         
@@ -75,10 +75,10 @@ class Monitor(Node):
             if self.is_livestream:
                 flag = True
         if flag:
-            cv2.waitKey(self.render_interval)
+            cv2.waitKey(self.render_period)
         else:
             cv2.imshow(f"{self.get_name()}", self.latest_frame)
-            cv2.waitKey(self.render_interval)
+            cv2.waitKey(self.render_period)
 
     def flask_server_start(self):
 

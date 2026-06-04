@@ -67,6 +67,10 @@ scissors:
   close_flag: 1             # 0/1 哪一个控制剪刀闭合
   open_delay_sec: 2         # 剪刀张开、闭合结束等待时间
 
+# -------------------------------------------------------
+# WebUI 相关
+
+
 ######################################## 以下是节点初始化器配置 ########################################
 _node_initializer:
 
@@ -230,23 +234,8 @@ _node_initializer:
 
 # -------------------------------------------------------
 
-  ##################
-  # Super 测试节点 #
-  ##################
-  COLUMBIA:
-
-    # 标准通信接口配置块 ###################
-    ##################
-    output_0: "t/realsense/chassis/front_facing/frame" 
-
-    # 通用配置块 ###################
-    ###########
-    fps: 30           # 画面采集帧率
-
-# -------------------------------------------------------
-
   ################
-  # Sub 测试节点 #
+  # Sub 测试辅助节点 #
   ################
   YAN:
 
@@ -258,3 +247,22 @@ _node_initializer:
     ###########
     fps: 30           # 画面采集帧率
     video_path: "/home/lynchpin/repository/watermelon-robot/resource/datasets/lane-detection/legacy/video-7.mp4"
+
+# -------------------------------------------------------
+
+  ###############
+  # Web UI 节点 #
+  ###############
+  DUBLIN:
+
+    # 标准通信接口配置块 ###################
+    ##################
+    input_0: "t/target_detector/visualization/overlay"
+    # input_0: "t/lane_detector/visualization/overlay"
+    input_1: "t/lane_detector/visualization/overlay"
+    output_0: "s/logic_controller/command"
+
+    # 通用配置块 ###################
+    ###########
+    fps: 30           # 画面渲染帧率
+    port: 8081

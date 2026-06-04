@@ -1,0 +1,109 @@
+/* 全局重置 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+    background-color: #f0f2f5;
+    color: #333;
+    padding: 30px;
+}
+
+/* 外层容器：两栏布局 */
+.container {
+    display: flex;
+    /* gap: 40px; */
+    justify-content: center;
+    flex-wrap: wrap;
+    /* max-width: 1400px; */
+    margin: 0 auto;
+    background: #fff;
+    border: 2px solid #1a1a1a;
+    border-radius: 8px;
+    padding: 40px;
+}
+
+/* 每个相机面板 */
+.camera-panel {
+    flex: 1;
+    min-width: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 顶部按钮 */
+.btn {
+    padding: 12px 40px;
+    font-size: 18px;
+    border: 2px solid #1a1a1a;
+    border-radius: 25px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    margin-bottom: 30px;
+}
+
+.btn:hover {
+    background-color: #1a1a1a;
+    color: #fff;
+}
+
+.btn:active {
+    transform: scale(0.96);
+}
+
+/* 标题 */
+.title {
+    font-size: 22px;
+    font-weight: bold;
+    align-self: flex-start;
+    margin-left: 5%;
+}
+
+/* 输入框 */
+.input {
+    width: 90%;
+    padding: 12px 15px;
+    font-size: 16px;
+    border: 2px solid #1a1a1a;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.25s ease;
+}
+
+.input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.4);
+}
+
+/* 图片容器 */
+.img-box {
+    width: 90%;
+    aspect-ratio: 4 / 3;          /* 保持画面比例 */
+    border: 2px solid #1a1a1a;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background-color: #fafafa;
+}
+
+/* 图片本身 */
+.camera-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 响应式：屏幕较窄时改为上下排列 */
+@media (max-width: 850px) {
+    .container {
+        flex-direction: column;
+    }
+}
