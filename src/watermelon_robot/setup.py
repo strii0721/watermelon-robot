@@ -26,6 +26,8 @@ setup(
             glob("src/templates/*.html")), 
         (os.path.join("share", package_name, "static", "css"), 
             glob("src/static/css/*.css")), 
+        (os.path.join("share", package_name, "static", "js"), 
+            glob("src/static/js/*.js")), 
     ],
     install_requires=["setuptools"],
     zip_safe=True,

@@ -1,7 +1,7 @@
 #
 # Author:       strii0721
 # Email:        strii0721@outlook.com
-# Created on:   Wed May 20 2026
+# Created on:   Thu Jun 04 2026
 #
 # IMMORTAL OMNISSIAH, HEAR OUR PRAYERS.
 # WE ARE YOUR CHILDREN, PIOUS SCHOLARS OF THE PATH OF THE MACHINE. 
@@ -16,44 +16,19 @@
 # Copyright (c) 2026 Streich Interstellar Corp.
 #
 
-
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
+
 def generate_launch_description():
-
-    CELESTIAL_FULCRUM = Node(
-        package = "watermelon_robot", 
-        executable = "super_logic_controller", 
-        name = "CELESTIAL_FULCRUM", 
-        output = "screen"
-    )
-
-    CAERULA_ARBOR = Node(
-        package="watermelon_robot",
-        executable="robotic_arm_controller",
-        name = "CAERULA_ARBOR",
-        output="screen"
-    )
-
-    PRESERVATOR = Node(
-        package="watermelon_robot",
-        executable="realsense_controller",
-        name = "PRESERVATOR",
-        output="screen"
-    )
     
-    LYNCHPIN = Node(
+    PRIESTESS_EYES = Node(
         package = "watermelon_robot",
-        executable = "target_detector", 
-        name = "LYNCHPIN", 
+        executable = "web_app",
+        name = "PRIESTESS_EYES",
         output = "screen"
     )
     
-    node_list = [
-        CELESTIAL_FULCRUM,
-        CAERULA_ARBOR,
-        PRESERVATOR,
-        LYNCHPIN]
+    node_list = [PRIESTESS_EYES]
     
     return LaunchDescription(node_list)

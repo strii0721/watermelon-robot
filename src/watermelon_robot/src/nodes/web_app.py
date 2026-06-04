@@ -17,7 +17,7 @@
 #
 
 
-from flask import Flask, Response, render_template_string
+from flask import Flask, Response, render_template_string, request, jsonify
 from rclpy.node import Node
 from utils import NodeUtils
 from sensor_msgs.msg import Image
@@ -37,10 +37,11 @@ import time
 class VideoSlot:
 
     def __init__(self):
-        self.channel_name: str
-        self.subscriber: Subscription
-        self.data: bytes
-        self.url: str
+        self.subscriber_callback: callable = None
+        self.channel_name: str = None
+        self.subscriber: Subscription = None
+        self.data: bytes = None
+        self.url: str = None
 
 
 class VideoSlotList:
@@ -58,22 +59,22 @@ class VideoSlotList:
         self.url:str = url
         self.video_slot_list:list[VideoSlot] = [VideoSlot() for _ in range(slot_number)]
         
-    def register_slot(self,
-                      caller: Node,
-                      video_slot_nomeric: int,
-                      channel_name: str, 
-                      cache_function: callable, 
-                      flask_app: Flask, 
-                      url: str, 
-                      endpoint_name: str,
-                      response_function: callable) -> bool:
+    def register_video_slot(self,
+                            caller: Node,
+                            video_slot_nomeric: int,
+                            channel_name: str, 
+                            subscriber_callback: callable, 
+                            flask_app: Flask, 
+                            url: str, 
+                            endpoint_name: str,
+                            response_function: callable) -> bool:
         """注册一个坑位。一个页面上的视频坑位总数在一开始的时候就是固定的，如果注册的视频坑位编号不存在则会注册失败。
 
         Args:
             caller (Node): 函数调用对象，应当是一个 ROS2 的 Node，主要为了创建 subscriber。
             slot_nomeric (int): 视频坑位编号。
             channel_name (str): 频道编号，就是 ROS2 的 topic 名称。
-            cache_function (callable): 用于接收视频流的处理函数。由于是从 ROS2 中接收的视频流，然后通过 Flask发布，所以采用了 Cache 机制。
+            subscriber_callback (callable): 用于接收视频流的处理函数。由于是从 ROS2 中接收的视频流，然后通过 Flask发布，所以采用了 Cache 机制。
             flask_app (Flask): 注册路由用的 Flask App 对象。
             url (str): Flask 路由。
             endpoint_name (str): Flask endpoint 名称。
@@ -88,13 +89,10 @@ class VideoSlotList:
         if video_slot_nomeric in range(len(self.video_slot_list)):
             
             video_slot = self.video_slot_list[video_slot_nomeric]
-            video_slot.channel_name = channel_name
-            video_slot.subscriber = caller.create_subscription(msg_type = Image, 
-                                                         topic = channel_name, 
-                                                         callback = partial(cache_function, 
-                                                                            video_slot_list = self,
-                                                                            video_slot_nomeric = video_slot_nomeric) ,
-                                                         qos_profile = qos_profile_sensor_data)
+            video_slot.subscriber_callback = subscriber_callback
+            self.set_video_slot_channel_name(caller = caller, 
+                                             video_slot_nomeric = video_slot_nomeric, 
+                                             channel_name = channel_name)
             video_slot.data = None
         
             video_slot.url = url
@@ -123,6 +121,22 @@ class VideoSlotList:
             return self.video_slot_list[slot_nomeric]
         else:
             return None
+        
+    def set_video_slot_channel_name(self, 
+                                    caller: Node,
+                                    video_slot_nomeric: int, 
+                                    channel_name: str) -> None:
+        
+        video_slot = self.video_slot_list[video_slot_nomeric]
+        video_slot.channel_name = channel_name
+        if video_slot.subscriber is not None:
+            caller.destroy_subscription(video_slot.subscriber)
+        video_slot.subscriber = caller.create_subscription(msg_type = Image, 
+                                                           topic = channel_name, 
+                                                           callback = partial(video_slot.subscriber_callback, 
+                                                                              video_slot_list = self,
+                                                                              video_slot_nomeric = video_slot_nomeric) ,
+                                                           qos_profile = qos_profile_sensor_data)
     
     
 class WebApp(Node):
@@ -142,25 +156,38 @@ class WebApp(Node):
         self.app:Flask = Flask(__name__, 
                                static_folder = static_dir,  )
         
-        self.video_slot_list.register_slot(caller = self, 
+        self.video_slot_list.register_video_slot(caller = self, 
                                            video_slot_nomeric = 0,
                                            channel_name = self.input_0, 
-                                           cache_function = self.cache_frame_data, 
+                                           subscriber_callback = self.cache_frame_data, 
                                            flask_app = self.app, 
-                                           url = self.generate_url(type = "api", url = "/stream/index/video/0"), 
+                                           url = self.generate_url(type = "api", url = "/streaming/0"), 
                                            endpoint_name = "video_slot_0",
                                            response_function = self.response_video)
         
-        self.video_slot_list.register_slot(caller = self, 
+        self.video_slot_list.register_video_slot(caller = self, 
                                            video_slot_nomeric = 1,
                                            channel_name = self.input_1, 
-                                           cache_function = self.cache_frame_data, 
+                                           subscriber_callback = self.cache_frame_data, 
                                            flask_app = self.app, 
-                                           url = self.generate_url(type = "api", url = "/stream/index/video/1"), 
+                                           url = self.generate_url(type = "api", url = "/streaming/1"), 
                                            endpoint_name = "video_slot_1",
                                            response_function = self.response_video)
         
-        self.app.add_url_rule("/", "index", self.index)
+        self.app.add_url_rule(rule = "/", 
+                              endpoint = "index", 
+                              view_func = self.to_index)
+        
+        self.app.add_url_rule(rule = self.generate_url(type = "api", url = "/chassis"), 
+                              endpoint = "chassis", 
+                              view_func = self.toggle_chassis, 
+                              methods = ["POST"])
+        
+        self.app.add_url_rule(rule = self.generate_url(type = "api", url = "/channel-name"), 
+                              endpoint = "channel_name", 
+                              view_func = self.change_channel_name, 
+                              methods = ["POST"])
+        
         flask_thread = threading.Thread(
             target=self.app.run, 
             kwargs={"host": "0.0.0.0", "port": self.port, "threaded": True, "use_reloader": False},
@@ -194,33 +221,67 @@ class WebApp(Node):
         rtn, buffer = cv2.imencode('.jpg', frame)
         if rtn:
             video_slot_list.get_video_slot(slot_nomeric = video_slot_nomeric).data = buffer.tobytes()
-        
-    def push_stream(self, 
-                    video_slot_list: VideoSlotList,
-                    video_slot_nomeric: int):
-        
-        while True:
-            if video_slot_list.get_video_slot(slot_nomeric = video_slot_nomeric).data is not None:
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + video_slot_list.get_video_slot(slot_nomeric = video_slot_nomeric).data + b'\r\n')
-            time.sleep(1 / self.fps)
-        
+    
     def response_video(self, 
                        video_slot_list: VideoSlotList,
                        video_slot_nomeric: int):
         
-        return Response(self.push_stream(video_slot_list = video_slot_list, 
-                                         video_slot_nomeric = video_slot_nomeric), 
+        def generate_data():
+            while True:
+                if video_slot_list.get_video_slot(slot_nomeric = video_slot_nomeric).data is not None:
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + video_slot_list.get_video_slot(slot_nomeric = video_slot_nomeric).data +   b'\r\n')
+                time.sleep(1 / self.fps)
+        
+        return Response(generate_data(), 
                         mimetype='multipart/x-mixed-replace; boundary=frame')
         
-    def index(self):
+    def to_index(self):
         
         template_path = os.path.join(package_share_dir, "templates", "index.html")
         with open(template_path, 'r', encoding='utf-8') as f:
             html_string = f.read()
-        return render_template_string(html_string, 
-                                      title = f"{self.get_name()} 监控面板")
+            
+        context = {
+            "title": f"{self.get_name()} 监控面板",
+            "default_channel_0": f"{self.input_0}",
+            "default_channel_1": f"{self.input_1}",
+            "subtitle": "SURVEILLANCE SYSTEM v1.0"
+            }
+        return render_template_string(source = html_string, 
+                                      **context)
         
+    def toggle_chassis(self):
+        
+        data = request.get_json()
+        action = data.get("action")
+        
+        match action:
+            
+            case "start":
+                self.get_logger().info(f"start chassis...")
+            case "stop":
+                self.get_logger().info(f"stop chassis...")
+                
+        return jsonify({
+            "status": "success", 
+            "message": ""
+        })
+        
+    def change_channel_name(self):
+        
+        data = request.get_json()
+        channel_name = data.get("channel_name")
+        video_slot_nomeric = data.get("video_slot_nomeric")
+        
+        self.video_slot_list.set_video_slot_channel_name(caller = self, 
+                                                         video_slot_nomeric = video_slot_nomeric,
+                                                         channel_name = channel_name)
+        
+        return jsonify({
+            "status": "success", 
+            "message": ""
+        })
         
 def main():
 

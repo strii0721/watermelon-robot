@@ -51,13 +51,6 @@ def generate_launch_description():
         name = "LONETRAIL", 
         output = "screen"
     )
-
-    ZERO_ORDER_OIL_TANK = Node(
-        package = "watermelon_robot",
-        executable = "monitor",
-        name = "ZERO_ORDER_OIL_TANK",
-        output = "screen"
-    )
     
     YAN = Node(
         package = "watermelon_robot",
@@ -66,17 +59,9 @@ def generate_launch_description():
         output = "screen"
     )
     
-    DUBLIN = Node(
-        package = "watermelon_robot",
-        executable = "web_app",
-        name = "DUBLIN",
-        output = "screen"
-    )
-    
     node_list = [ORACLE, 
                  DWDB_221E, 
-                 LONETRAIL,
-                 DUBLIN]
+                 LONETRAIL]
     
     if not TEST: 
         node_list.append(AMA_10)
