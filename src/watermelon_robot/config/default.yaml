@@ -225,7 +225,7 @@ _node_initializer:
     ##################
     input_0: "t/target_detector/visualization/overlay"
     input_1: "t/lane_detector/visualization/overlay"
-    output_0: "s/logic_controller/command"
+    duplex_0: "s/logic_controller/command"
 
     # 通用配置块 ###################
     ###########

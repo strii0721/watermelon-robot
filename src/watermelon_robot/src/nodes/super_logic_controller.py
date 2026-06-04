@@ -102,7 +102,7 @@ class SuperLogicController(Node):
         future = self.command_sub_logic_controller_client.call_async(request)
         return future
         
-    def enable_chassis_done(self, 
+    def start_chassis_done(self, 
                             future: rclpy.Future) -> None:
         """启动底盘请求的回调函数。此处应用重传机制，若一次请求失败则会在回调中重传请求，直到成功或超过重传次数限制。
 
@@ -119,12 +119,12 @@ class SuperLogicController(Node):
             self.get_logger().info(f"底盘启动失败！")
             NodeUtils.transfer_node_state(self, STATE.QUIT)
             
-    def enable_chassis(self) -> None:
+    def start_chassis(self) -> None:
         """发布启动底盘的请求。
         """        
 
-        future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.ENABLE_CHASSIS)
-        future.add_done_callback(callback = self.enable_chassis_done)
+        future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.START_CHASSIS)
+        future.add_done_callback(callback = self.start_chassis_done)
         NodeUtils.transfer_node_state(self, STATE.PENDING)
     
     def command_robotic_arm_done(self, 
@@ -139,7 +139,7 @@ class SuperLogicController(Node):
         
         if response.is_success: 
             self.get_logger().info(f"机械臂执行完成")
-            self.enable_chassis()
+            self.start_chassis()
         else:
             self.get_logger().warn(f"机械臂执行异常，异常信息：{response.message}")
             NodeUtils.transfer_node_state(self, STATE.QUIT)
@@ -158,7 +158,7 @@ class SuperLogicController(Node):
         future.add_done_callback(callback = self.command_robotic_arm_done)
         NodeUtils.transfer_node_state(self, STATE.PENDING)
         
-    def disable_chassis_done(self, 
+    def stop_chassis_done(self, 
                              future: rclpy.Future) -> None:
         """停止底盘请求的回调函数。此处应用重传机制，若一次请求失败则会在回调中重传请求，直到成功或超过重传次数限制。
 
@@ -175,12 +175,12 @@ class SuperLogicController(Node):
             self.get_logger().info(f"底盘停止失败！")
             NodeUtils.transfer_node_state(self, STATE.QUIT)
             
-    def diable_chassis(self) -> None:
+    def stop_chassis(self) -> None:
         """发布停止底盘的请求。
         """        
         
-        future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.DISABLE_CHASSIS)
-        future.add_done_callback(callback = self.disable_chassis_done)
+        future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.STOP_CHASSIS)
+        future.add_done_callback(callback = self.stop_chassis_done)
         NodeUtils.transfer_node_state(self, STATE.PENDING)
             
     def lock_target(self) -> None: 
@@ -214,7 +214,7 @@ class SuperLogicController(Node):
                 self.lock_target()
                     
             case STATE.TARGET_LOCKED:
-                self.diable_chassis()
+                self.stop_chassis()
             
             case STATE.READY_TO_OPERATE:
                 self.command_robotic_arm()

@@ -24,5 +24,5 @@ class LogicControllerCommCode(Enum):
     """上下逻辑控制器通信的命令码。
     """    
 
-    ENABLE_CHASSIS = 400    # 启动底盘。
-    DISABLE_CHASSIS = 401   # 关闭底盘。
+    START_CHASSIS = 400    # 启动底盘。
+    STOP_CHASSIS = 401   # 停止底盘。

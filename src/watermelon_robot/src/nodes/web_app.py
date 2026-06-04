@@ -33,6 +33,10 @@ package_share_dir = get_package_share_directory('watermelon_robot')
 import os
 import threading
 import time
+from watermelon_robot_interface.srv import LogicControllerComm
+from protocol import LogicControllerCommCode
+from utils import CommUtils
+
 
 class VideoSlot:
 
@@ -174,6 +178,9 @@ class WebApp(Node):
                                            endpoint_name = "video_slot_1",
                                            response_function = self.response_video)
         
+        self.command_sub_logic_controller_client = self.create_client(srv_type = LogicControllerComm, 
+                                                                      srv_name = self.duplex_0)
+        
         self.app.add_url_rule(rule = "/", 
                               endpoint = "index", 
                               view_func = self.to_index)
@@ -254,14 +261,21 @@ class WebApp(Node):
     def toggle_chassis(self):
         
         data = request.get_json()
-        action = data.get("action")
+        action = data.get("action") 
+        
+        timestamp = self.get_clock().now().to_msg()
+        header = CommUtils.create_header(stamp = timestamp)
         
         match action:
             
             case "start":
-                self.get_logger().info(f"start chassis...")
+                comm_request = CommUtils.create_logic_controller_comm_request(header = header, 
+                                                                              comm_code = LogicControllerCommCode.START_CHASSIS)
+                future = self.command_sub_logic_controller_client.call_async(comm_request)
             case "stop":
-                self.get_logger().info(f"stop chassis...")
+                comm_request = CommUtils.create_logic_controller_comm_request(header = header, 
+                                                                              comm_code = LogicControllerCommCode.STOP_CHASSIS)
+                future = self.command_sub_logic_controller_client.call_async(comm_request)
                 
         return jsonify({
             "status": "success", 

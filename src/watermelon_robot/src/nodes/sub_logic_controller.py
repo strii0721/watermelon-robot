@@ -33,8 +33,8 @@ from enum import Enum
 class STATE(Enum):
     
     QUIT = 0
-    ENABLED = 101
-    DISABLED = 201
+    START = 101
+    STOP = 201
 
 class SubLogicController(Node):
 
@@ -63,7 +63,7 @@ class SubLogicController(Node):
                                                              callback = self.answer_super_logic_controller)
 
         NodeUtils.node_initialized(self)
-        StateUtils.transfer_node_state(self, STATE.ENABLED)
+        StateUtils.transfer_node_state(self, STATE.STOP)
         
     def cache_lane_error(self, 
                          lane_error: LaneError) -> None:
@@ -75,7 +75,7 @@ class SubLogicController(Node):
         
         reach_terminal = lane_error.reach_terminal
         if reach_terminal: 
-            self.disable_chassis()   
+            self.stop_chassis()   
         else:
             self.history.lane_error_rads = lane_error.error_rads 
             
@@ -92,7 +92,7 @@ class SubLogicController(Node):
         
         self.chassis_control_sequence_publisher.publish(msg = chassis_control_sequence)
 
-    def enable_chassis(self) -> None:
+    def start_chassis(self) -> None:
         """启动底盘。
         """        
 
@@ -104,9 +104,9 @@ class SubLogicController(Node):
                                                                              forward_speed = forward_speed)
         self.chassis_control_sequence_publisher.publish(msg = chassis_control_sequence)
         
-        StateUtils.transfer_node_state(self, STATE.ENABLED)
+        StateUtils.transfer_node_state(self, STATE.START)
         
-    def disable_chassis(self) -> None:
+    def stop_chassis(self) -> None:
         """关闭底盘。
         """        
         
@@ -118,7 +118,7 @@ class SubLogicController(Node):
                                                                              is_enabled = False)
         self.chassis_control_sequence_publisher.publish(msg = chassis_control_sequence)
         
-        StateUtils.transfer_node_state(self, STATE.DISABLED)
+        StateUtils.transfer_node_state(self, STATE.STOP)
 
     def answer_super_logic_controller(self, 
                                       request: LogicControllerComm.Request, 
@@ -138,13 +138,13 @@ class SubLogicController(Node):
         timestamp = self.get_clock().now().to_msg()
         header = CommUtils.create_header(stamp = timestamp)
         match comm_code:
-            case LogicControllerCommCode.DISABLE_CHASSIS:
-                self.disable_chassis()
+            case LogicControllerCommCode.STOP_CHASSIS.value:
+                self.stop_chassis()
                 response.header = header
                 response.is_success = True
 
-            case LogicControllerCommCode.ENABLE_CHASSIS: 
-                self.enable_chassis()
+            case LogicControllerCommCode.START_CHASSIS.value: 
+                self.start_chassis()
                 response.header = header
                 response.is_success = True
                     
@@ -164,10 +164,10 @@ class SubLogicController(Node):
             case STATE.QUIT:
                 self.wait_quit()
                 
-            case STATE.ENABLED:
+            case STATE.START:
                 self.forward_lane_error()
                 
-            case STATE.DISABLED:
+            case STATE.STOP:
                 pass
             
             case STATE.PENDING:
