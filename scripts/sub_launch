@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-ros2 launch watermelon_robot sub.launch.py&
-ros2 launch watermelon_robot web.launch.py
-wait
