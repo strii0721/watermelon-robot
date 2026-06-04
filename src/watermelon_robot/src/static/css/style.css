@@ -21,13 +21,14 @@ body, html {
 .top-bar {
     background-color: #ffffff;
     border-bottom: 1px solid #e2e8f0;
-    padding: 1rem 1.5rem;
+    padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-shrink: 0;
     z-index: 10;
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    position: relative;
 }
 .brand h1 {
     font-size: 1.25rem;
@@ -40,6 +41,18 @@ body, html {
     color: #64748b;
     margin-top: 0.25rem;
     font-family: monospace;
+}
+.emergency-controls {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%); /* 完美的水平垂直居中 */
+    
+    /* 在这里调整你想要的宽度，例如 300px，或者 20vw 等 */
+    width: 300px; 
+    
+    display: flex;
+    justify-content: center;
 }
 .global-controls {
     display: flex;
@@ -61,6 +74,8 @@ body, html {
     transform: scale(0.95);
 }
 .btn-start {
+    padding-left: 1.5em;
+    padding-right: 1.5em;
     background-color: #10b981;
     color: white;
     box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
@@ -69,9 +84,12 @@ body, html {
     background-color: #059669;
 }
 .btn-stop {
+    width: 100%; 
+    justify-content: center;
     background-color: #f43f5e;
     color: white;
     box-shadow: 0 4px 6px -1px rgba(244, 63, 94, 0.3);
+    font-size: 1.3rem;
 }
 .btn-stop:hover {
     background-color: #e11d48;
@@ -301,7 +319,7 @@ img::after {
     text-align: center;
     padding: 0.75rem 1rem;
     font-size: 1rem;
-    font-family: monospace;
+    /* font-family: monospace; */
     width: 100%;
     flex-shrink: 0; /* 配合 app-container 的 flex 布局，防止被压缩 */
     box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
