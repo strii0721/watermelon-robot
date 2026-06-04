@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+if [ $# -eq 0 ]; then
+    echo "用法: scripts/launch <启动模块1> <启动模块2> ..."
+    echo "示例: scripts/launch web sub"
+    exit 1
+fi
+
+PACKAGE_NAME="watermelon_robot"
+
+echo "启动模块列表: $@"
+echo "------------------------"
+
+for launcher in "$@"
+do
+    launch_file="${launcher}.launch.py"
+    
+    echo "正在启动: $launch_file ..."
+    
+    ros2 launch $PACKAGE_NAME $launch_file &
+    
+    sleep 1
+done
+
+echo "------------------------"
+echo "所有模块已发送启动指令！按 Ctrl+C 可以结束所有后台进程。"
+
+wait
