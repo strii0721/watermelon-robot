@@ -20,6 +20,3 @@ rsync -avz \
     \
     --exclude "src/watermelon_robot/resource/model_weights" \
     $HOME/repository/watermelon-robot wheeltec@$target_ip:~/fr_ws
-
-rsync -avz \
-    $HOME/repository/watermelon-robot/resource/resource/ wheeltec@$target_ip:~/fr_ws/watermelon-robot/src/watermelon_robot/resource/

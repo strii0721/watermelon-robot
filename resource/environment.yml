@@ -19,3 +19,5 @@ dependencies:
     - colcon-common-extensions
     - flask
     - pyserial
+    - setuptools==65.6.3
+    - more_itertools

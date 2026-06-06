@@ -49,11 +49,16 @@ class DLUtils:
                     center_pixel_x = int((box_pixel_x1 + box_pixel_x2) / 2)
                     center_pixel_y = int((box_pixel_y1 + box_pixel_y2) / 2)
                     crosshair_pixel_x = center_pixel_x
-                    crosshair_pixel_y = int(box_pixel_y1) - int((box_pixel_y1 - box_pixel_y2) / 8)
+                    crosshair_pixel_y = int(box_pixel_y1)
                     
-                    target = CVUtils.calculate_camera_coordinate(center_pixel = (crosshair_pixel_x, crosshair_pixel_y), 
-                                                                 depth_image = depth_image, 
-                                                                 intrinsics = intrinsics)
+                    # 由于识别西瓜顶部的深度太不稳定了，改为识别中心的深度。
+                    # target = CVUtils.calculate_camera_coordinate(center_pixel = (center_pixel_x, center_pixel_y), 
+                    #                                              depth_image = depth_image, 
+                    #                                              intrinsics = intrinsics)
+                    center_pixel_z = CVUtils.calculate_median_depth(depth_image = depth_image, 
+                                                                    center_pixel = (center_pixel_x, center_pixel_y))
+                    
+                    target = (crosshair_pixel_x, crosshair_pixel_y, center_pixel_z)
                     label = f'{name} {confidence:.2f}'
                     mark_size = 5
                     cv2.rectangle(color_image, (int(box_pixel_x1), int(box_pixel_y1)), (int(box_pixel_x2), int(box_pixel_y2)), (0, 255, 0), 2)

@@ -1,7 +1,7 @@
 #
 # Author:       strii0721
 # Email:        strii0721@outlook.com
-# Created on:   Wed May 20 2026
+# Created on:   Sat Jun 06 2026
 #
 # IMMORTAL OMNISSIAH, HEAR OUR PRAYERS.
 # WE ARE YOUR CHILDREN, PIOUS SCHOLARS OF THE PATH OF THE MACHINE. 
@@ -20,13 +20,23 @@
 from launch import LaunchDescription
 from watermelon_robot.utils import NodeUtils
 
+
 def generate_launch_description():
     
     node_list = [
-        "CELESTIAL_FULCRUM", 
-        "CAERULA_ARBOR", 
-        "PRESERVATOR", 
-        "LYNCHPIN"
-        ]
+        "PRIESTESS_EYES",       # Web UI
+        
+        "CELESTIAL_FULCRUM",    # 上逻辑控制器
+        # "PRESERVATOR",          # 手眼相机
+        # "LYNCHPIN",             # 目标检测器
+        # "CAERULA_ARBOR",        # 机械臂
+        
+        # "ORACLE",               # 下逻辑控制器
+        # "AMA_10",               # 巡线相机
+        # "DWDB_221E",            # 底盘控制器
+        # "LONETRAIL",            # 航线检测器
+        # "YAN"                   # 测试辅助节点
+    ]
+        
     
     return LaunchDescription(NodeUtils.assemble_nodes(node_list))

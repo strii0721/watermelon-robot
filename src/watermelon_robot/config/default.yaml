@@ -2,10 +2,9 @@
 # 目标检测模型相关
 target_detection:
   model: 
-    # name: "yolov26-best-fp16.engine"
-    name: "yolov26-best.pt"
+    name: "yolov26-best-fp16.engine"
     task: "target-detection"
-    use_engine: False
+    use_engine: True
     device_no: "0"
     use_half: True
     image_size: [480, 640]
@@ -16,7 +15,7 @@ target_detection:
 # 导航线检测相关
 lane_detection: 
   model:  
-    name: "yolo26n-seg-b64-1779873368-fp16.engine"
+    name: "yolo26n-seg-b64-1780713028-fp16.engine"
     task: "lane-detection"
     use_engine: True
     device_no: "0"
@@ -96,6 +95,9 @@ _node_initializer:
     duplex_0: "s/robotic_arm/command"                       # 双工：机械臂控制
     duplex_1: "s/logic_controller/command"                  # 双工：上/下逻辑控制器
 
+    # 通用配置块 ###################
+    ###########
+    heartbeat_period_sec: 0.01                              # Heartbeat 循环周期
 # -------------------------------------------------------
   
   ###############
@@ -146,7 +148,7 @@ _node_initializer:
     ###########
     ats:
       queue_size: 10
-      slop: 2
+      slop: 0.05
 
 # -------------------------------------------------------
   ################
@@ -202,7 +204,7 @@ _node_initializer:
   # 航线检测器 #
   #############
   LONETRAIL:
-    executable: "sub_test"
+    executable: "lane_detector"
 
     # 标准通信接口配置块 ###################
     ##################
@@ -231,7 +233,7 @@ _node_initializer:
     # 通用配置块 ###################
     ###########
     fps: 30           # 画面采集帧率
-    video_path: "/home/lynchpin/repository/watermelon-robot/resource/datasets/lane-detection/legacy/video-7.mp4"
+    video_path: "/home/lynchpin/repository/watermelon-robot/resource/datasets/lane-detection/legacy/video-5.mp4"
 
 # -------------------------------------------------------
 

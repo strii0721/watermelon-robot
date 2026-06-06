@@ -61,14 +61,14 @@ class CVUtils:
 
     @classmethod
     def calculate_camera_coordinate(cls,
-                                    center_pixel: tuple,
                                     depth_image: np.ndarray,
+                                    center_pixel: tuple,
                                     intrinsics: CameraInfo) -> tuple:
         """计算目标像素点在相机参考系下的坐标。
 
         Args:
-            center_pixel (tuple): 目标像素点坐标。
             depth_image (np.ndarray): 深度图片。
+            center_pixel (tuple): 目标像素点坐标。
             intrinsics (CameraInfo): 相机内参。
 
         Returns:

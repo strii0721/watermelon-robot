@@ -59,7 +59,7 @@ setup(
             "lane_detector = watermelon_robot.nodes.lane_detector:main",
             "target_detector = watermelon_robot.nodes.target_detector:main",
             "sub_test = watermelon_robot.nodes.sub_test:main",
-            "web_app = watermelon_robot.nodes.web_app:main"
+            "web_app = watermelon_robot.nodes.web_app:main",
         ],
     },
 )

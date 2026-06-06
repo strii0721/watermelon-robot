@@ -19,7 +19,7 @@
 
 import rclpy
 from rclpy.node import Node
-from watermelon_robot.utils import NodeUtils
+from watermelon_robot.utils import NodeUtils, StateUtils
 from watermelon_robot_interface.srv import RoboticArmAction, LogicControllerComm
 from typing import cast
 from rclpy.qos import qos_profile_sensor_data
@@ -70,7 +70,7 @@ class SuperLogicController(Node):
                                                                       srv_name = self.duplex_1)
         
         NodeUtils.node_initialized(self)
-        NodeUtils.transfer_node_state(self, STATE.DETECTING)
+        StateUtils.transfer_node_state(self, STATE.DETECTING)
         
     def cache_target_list(self, 
                           target_list: TargetList) -> None:
@@ -114,10 +114,10 @@ class SuperLogicController(Node):
         
         if response.is_success:
             self.get_logger().info(f"底盘启动成功！")
-            NodeUtils.transfer_node_state(self, STATE.DETECTING)
+            StateUtils.transfer_node_state(self, STATE.DETECTING)
         else:
             self.get_logger().info(f"底盘启动失败！")
-            NodeUtils.transfer_node_state(self, STATE.QUIT)
+            StateUtils.transfer_node_state(self, STATE.QUIT)
             
     def start_chassis(self) -> None:
         """发布启动底盘的请求。
@@ -125,7 +125,7 @@ class SuperLogicController(Node):
 
         future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.START_CHASSIS)
         future.add_done_callback(callback = self.start_chassis_done)
-        NodeUtils.transfer_node_state(self, STATE.PENDING)
+        StateUtils.transfer_node_state(self, STATE.PENDING)
     
     def command_robotic_arm_done(self, 
                                  future: rclpy.Future) -> None:
@@ -142,7 +142,7 @@ class SuperLogicController(Node):
             self.start_chassis()
         else:
             self.get_logger().warn(f"机械臂执行异常，异常信息：{response.message}")
-            NodeUtils.transfer_node_state(self, STATE.QUIT)
+            StateUtils.transfer_node_state(self, STATE.QUIT)
         
     def command_robotic_arm(self) -> None:
         """获取当前目标坐标（手眼相机坐标系）并尝试进行一次机械臂动作。
@@ -156,7 +156,7 @@ class SuperLogicController(Node):
         request.position_on_camera = self.current_target
         future = self.command_robotic_arm_client.call_async(request)
         future.add_done_callback(callback = self.command_robotic_arm_done)
-        NodeUtils.transfer_node_state(self, STATE.PENDING)
+        StateUtils.transfer_node_state(self, STATE.PENDING)
         
     def stop_chassis_done(self, 
                              future: rclpy.Future) -> None:
@@ -170,10 +170,10 @@ class SuperLogicController(Node):
         
         if response.is_success:
             self.get_logger().info(f"底盘停止成功！")
-            NodeUtils.transfer_node_state(self, STATE.READY_TO_OPERATE)
+            StateUtils.transfer_node_state(self, STATE.READY_TO_OPERATE)
         else: 
             self.get_logger().info(f"底盘停止失败！")
-            NodeUtils.transfer_node_state(self, STATE.QUIT)
+            StateUtils.transfer_node_state(self, STATE.QUIT)
             
     def stop_chassis(self) -> None:
         """发布停止底盘的请求。
@@ -181,7 +181,7 @@ class SuperLogicController(Node):
         
         future = self.command_sub_logic_controller(comm_code = LogicControllerCommCode.STOP_CHASSIS)
         future.add_done_callback(callback = self.stop_chassis_done)
-        NodeUtils.transfer_node_state(self, STATE.PENDING)
+        StateUtils.transfer_node_state(self, STATE.PENDING)
             
     def lock_target(self) -> None: 
         """锁定视野中最靠近前进方向反方向的目标。
@@ -194,7 +194,7 @@ class SuperLogicController(Node):
         target_list.sort(key=lambda target: target[0])
         self.history.current_target = target_list[-1]
         self.get_logger().info(f"目标已锁定！当前目标（手眼相机参考系）：{self.history.current_target}")
-        NodeUtils.transfer_node_state(self, STATE.TARGET_LOCKED)
+        StateUtils.transfer_node_state(self, STATE.TARGET_LOCKED)
         
     def wait_quit(self) -> None:
         """等待退出。
