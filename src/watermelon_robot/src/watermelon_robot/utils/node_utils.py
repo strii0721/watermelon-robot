@@ -19,7 +19,7 @@
 
 from rclpy.node import Node
 from watermelon_robot.utils import config
-
+from launch_ros.actions import Node as Node2
 
 class NodeUtils: 
 
@@ -51,3 +51,30 @@ class NodeUtils:
         
         node_name = node_entity.get_name()
         node_entity.get_logger().info(f"{node_name} 初始化完成...")
+        
+    @classmethod
+    def assemble_nodes(cls, 
+                       node_name_list: list) -> list:
+        """按名称自动根据名称装配节点。用于 ROS2 的 launch 机制。
+
+        Args:
+            node_name_list (list): 需要装配的节点名称。
+
+        Returns:
+            list: 节点对象列表。
+        """        
+        
+        node_list = []
+        
+        for name in node_name_list:
+            node_config = getattr(config._node_initializer, name)
+            executable = node_config.executable
+            node = Node2(
+                package = "watermelon_robot",
+                executable = executable, 
+                name = name, 
+                output = "screen"
+            )
+            node_list.append(node)
+            
+        return node_list

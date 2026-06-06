@@ -1,7 +1,7 @@
 #
 # Author:       strii0721
 # Email:        strii0721@outlook.com
-# Created on:   Wed May 20 2026
+# Created on:   Sat Jun 06 2026
 #
 # IMMORTAL OMNISSIAH, HEAR OUR PRAYERS.
 # WE ARE YOUR CHILDREN, PIOUS SCHOLARS OF THE PATH OF THE MACHINE. 
@@ -20,13 +20,13 @@
 from launch import LaunchDescription
 from watermelon_robot.utils import NodeUtils
 
+
 def generate_launch_description():
     
     node_list = [
-        "CELESTIAL_FULCRUM", 
-        "CAERULA_ARBOR", 
-        "PRESERVATOR", 
-        "LYNCHPIN"
+        "AMA_10",
+        "PRIESTESS_EYES",
+        # "CAERULA_ARBOR"
         ]
     
     return LaunchDescription(NodeUtils.assemble_nodes(node_list))

@@ -17,7 +17,7 @@ do
     
     echo "正在启动: $launch_file ..."
     
-    ros2 launch $PACKAGE_NAME $launch_file &
+    python $(which ros2) launch $PACKAGE_NAME $launch_file &
     
     sleep 1
 done

@@ -17,18 +17,13 @@
 #
 
 from launch import LaunchDescription
-from launch_ros.actions import Node
+from watermelon_robot.utils import NodeUtils
 
 
 def generate_launch_description():
     
-    PRIESTESS_EYES = Node(
-        package = "watermelon_robot",
-        executable = "web_app",
-        name = "PRIESTESS_EYES",
-        output = "screen"
-    )
+    node_list = [
+        "PRIESTESS_EYES"
+        ]
     
-    node_list = [PRIESTESS_EYES]
-    
-    return LaunchDescription(node_list)
+    return LaunchDescription(NodeUtils.assemble_nodes(node_list))

@@ -18,54 +18,22 @@
 
 
 from launch import LaunchDescription
-from launch_ros.actions import Node
+from watermelon_robot.utils import NodeUtils
 
-TEST = False
 
 def generate_launch_description():
-
-    ORACLE = Node(
-        package = "watermelon_robot", 
-        executable = "sub_logic_controller", 
-        name = "ORACLE", 
-        output = "screen"
-    )
-
-    DWDB_221E = Node(
-        package = "watermelon_robot",
-        executable = "chassis_controller",
-        name = "DWDB_221E",
-        output = "screen"
-    )
-
-    AMA_10 = Node(
-        package = "watermelon_robot",
-        executable = "realsense_controller",
-        name = "AMA_10",
-        output = "screen",
-    )
     
-    LONETRAIL = Node(
-        package = "watermelon_robot", 
-        executable = "lane_detector", 
-        name = "LONETRAIL", 
-        output = "screen"
-    )
+    TEST = False
     
-    YAN = Node(
-        package = "watermelon_robot",
-        executable = "sub_test",
-        name = "YAN",
-        output = "screen"
-    )
+    node_list = [
+        "ORACLE", 
+        "DWDB_221E", 
+        "LONETRAIL"
+        ]
     
-    node_list = [ORACLE, 
-                 DWDB_221E, 
-                 LONETRAIL]
+    if TEST:
+        node_list.append("YAN")
+    else:
+        node_list.append("AMA_10")
     
-    if not TEST: 
-        node_list.append(AMA_10)
-    else: 
-        node_list.append(YAN)
-    
-    return LaunchDescription(node_list)
+    return LaunchDescription(NodeUtils.assemble_nodes(node_list))

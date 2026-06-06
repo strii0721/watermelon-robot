@@ -88,6 +88,7 @@ _node_initializer:
   # 上逻辑控制器 #
   ################
   CELESTIAL_FULCRUM:
+    executable: "super_logic_controller"
 
     # 标准通信接口配置块 ###################
     ##################
@@ -101,6 +102,7 @@ _node_initializer:
   # 机械臂控制器 #
   ###############
   CAERULA_ARBOR:
+    executable: "robotic_arm_controller"
 
     # 标准通信接口配置块 ###################
     ##################
@@ -112,6 +114,7 @@ _node_initializer:
   # 机械臂手眼 RealSense 相机控制器 #
   ##################################
   PRESERVATOR:
+    executable: "realsense_controller"
 
     # 标准通信接口配置块 ###################
     ##################
@@ -129,6 +132,7 @@ _node_initializer:
   # 目标检测器 #
   ##############
   LYNCHPIN:
+    executable: "target_detector"
 
     # 标准通信接口配置块 ###################
     ##################
@@ -149,6 +153,7 @@ _node_initializer:
   # 下逻辑控制器 #
   ################
   ORACLE:
+    executable: "sub_logic_controller"
 
     # 标准通信接口配置块 ###################
     ##################
@@ -166,6 +171,7 @@ _node_initializer:
   # 底盘控制器 #
   #############
   DWDB_221E:
+    executable: "chassis_controller"
 
     # 标准通信接口配置块 ###################
     ##################
@@ -178,6 +184,7 @@ _node_initializer:
   # 底盘前视 RealSense 相机控制器 #
   ################################
   AMA_10:
+    executable: "realsense_controller"
 
     # 标准通信接口配置块 ###################
     ##################
@@ -195,6 +202,7 @@ _node_initializer:
   # 航线检测器 #
   #############
   LONETRAIL:
+    executable: "sub_test"
 
     # 标准通信接口配置块 ###################
     ##################
@@ -214,6 +222,7 @@ _node_initializer:
   # Sub 测试辅助节点 #
   ################
   YAN:
+    executable: "sub_test"
 
     # 标准通信接口配置块 ###################
     ##################
@@ -230,6 +239,7 @@ _node_initializer:
   # Web UI 节点 #
   ###############
   PRIESTESS_EYES:
+    executable: "web_app"
 
     # 标准通信接口配置块 ###################
     ##################
