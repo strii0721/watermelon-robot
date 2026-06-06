@@ -18,11 +18,11 @@
 
 
 from rclpy.node import Node
-from utils import NodeUtils
+from watermelon_robot.utils import NodeUtils
 from watermelon_robot_interface.msg import LaneError
 from rclpy.qos import qos_profile_sensor_data
 from cv_bridge import CvBridge
-from utils import config, DLUtils, ModelUtils, CommUtils
+from watermelon_robot.utils import config, DLUtils, ModelUtils, CommUtils
 import cv2
 import time
 from sensor_msgs.msg import Image

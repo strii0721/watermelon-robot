@@ -19,7 +19,7 @@
 
 from flask import Flask, Response, render_template_string, request, jsonify
 from rclpy.node import Node
-from utils import NodeUtils
+from watermelon_robot.utils import NodeUtils
 from sensor_msgs.msg import Image
 from rclpy.qos import qos_profile_sensor_data
 from cv_bridge import CvBridge
@@ -34,8 +34,8 @@ import os
 import threading
 import time
 from watermelon_robot_interface.srv import LogicControllerComm
-from protocol import LogicControllerCommCode
-from utils import CommUtils
+from watermelon_robot.protocol import LogicControllerCommCode
+from watermelon_robot.utils import CommUtils
 
 
 class VideoSlot:
@@ -65,7 +65,7 @@ class VideoSlotList:
         
     def register_video_slot(self,
                             caller: Node,
-                            video_slot_nomeric: int,
+                            video_slot_numero: int,
                             channel_name: str, 
                             subscriber_callback: callable, 
                             flask_app: Flask, 
@@ -76,7 +76,7 @@ class VideoSlotList:
 
         Args:
             caller (Node): 函数调用对象，应当是一个 ROS2 的 Node，主要为了创建 subscriber。
-            slot_nomeric (int): 视频坑位编号。
+            slot_numero (int): 视频坑位编号。
             channel_name (str): 频道编号，就是 ROS2 的 topic 名称。
             subscriber_callback (callable): 用于接收视频流的处理函数。由于是从 ROS2 中接收的视频流，然后通过 Flask发布，所以采用了 Cache 机制。
             flask_app (Flask): 注册路由用的 Flask App 对象。
@@ -90,12 +90,12 @@ class VideoSlotList:
         
         is_success = False
         
-        if video_slot_nomeric in range(len(self.video_slot_list)):
+        if video_slot_numero in range(len(self.video_slot_list)):
             
-            video_slot = self.video_slot_list[video_slot_nomeric]
+            video_slot = self.video_slot_list[video_slot_numero]
             video_slot.subscriber_callback = subscriber_callback
             self.set_video_slot_channel_name(caller = caller, 
-                                             video_slot_nomeric = video_slot_nomeric, 
+                                             video_slot_numero = video_slot_numero, 
                                              channel_name = channel_name)
             video_slot.data = None
         
@@ -104,34 +104,34 @@ class VideoSlotList:
                                    endpoint = endpoint_name,
                                    view_func = partial(response_function, 
                                                        video_slot_list = self,
-                                                       video_slot_nomeric = video_slot_nomeric))
-            self.video_slot_list[video_slot_nomeric] = video_slot
+                                                       video_slot_numero = video_slot_numero))
+            self.video_slot_list[video_slot_numero] = video_slot
             is_success = True
             
         return is_success
         
     def get_video_slot(self, 
-                       slot_nomeric: int) -> VideoSlot | None:
+                       slot_numero: int) -> VideoSlot | None:
         """获取坑位列表中的 slot 对象。
 
         Args:
-            slot_nomeric (int): slot 编号。
+            slot_numero (int): slot 编号。
 
         Returns:
             VideoSlot | None: 获得的 slot 对象。
         """        
         
-        if slot_nomeric in range(len(self.video_slot_list)):
-            return self.video_slot_list[slot_nomeric]
+        if slot_numero in range(len(self.video_slot_list)):
+            return self.video_slot_list[slot_numero]
         else:
             return None
         
     def set_video_slot_channel_name(self, 
                                     caller: Node,
-                                    video_slot_nomeric: int, 
+                                    video_slot_numero: int, 
                                     channel_name: str) -> None:
         
-        video_slot = self.video_slot_list[video_slot_nomeric]
+        video_slot = self.video_slot_list[video_slot_numero]
         video_slot.channel_name = channel_name
         if video_slot.subscriber is not None:
             caller.destroy_subscription(video_slot.subscriber)
@@ -139,7 +139,7 @@ class VideoSlotList:
                                                            topic = channel_name, 
                                                            callback = partial(video_slot.subscriber_callback, 
                                                                               video_slot_list = self,
-                                                                              video_slot_nomeric = video_slot_nomeric) ,
+                                                                              video_slot_numero = video_slot_numero) ,
                                                            qos_profile = qos_profile_sensor_data)
     
     
@@ -161,7 +161,7 @@ class WebApp(Node):
                                static_folder = static_dir,  )
         
         self.video_slot_list.register_video_slot(caller = self, 
-                                           video_slot_nomeric = 0,
+                                           video_slot_numero = 0,
                                            channel_name = self.input_0, 
                                            subscriber_callback = self.cache_frame_data, 
                                            flask_app = self.app, 
@@ -170,7 +170,7 @@ class WebApp(Node):
                                            response_function = self.response_video)
         
         self.video_slot_list.register_video_slot(caller = self, 
-                                           video_slot_nomeric = 1,
+                                           video_slot_numero = 1,
                                            channel_name = self.input_1, 
                                            subscriber_callback = self.cache_frame_data, 
                                            flask_app = self.app, 
@@ -221,23 +221,23 @@ class WebApp(Node):
     def cache_frame_data(self, 
                          frame: Image, 
                          video_slot_list: VideoSlotList,
-                         video_slot_nomeric: int) -> None:
+                         video_slot_numero: int) -> None:
         
         frame = self.cv_bridge.imgmsg_to_cv2(img_msg = frame, 
                                              desired_encoding = "passthrough")
         rtn, buffer = cv2.imencode('.jpg', frame)
         if rtn:
-            video_slot_list.get_video_slot(slot_nomeric = video_slot_nomeric).data = buffer.tobytes()
+            video_slot_list.get_video_slot(slot_numero = video_slot_numero).data = buffer.tobytes()
     
     def response_video(self, 
                        video_slot_list: VideoSlotList,
-                       video_slot_nomeric: int):
+                       video_slot_numero: int):
         
         def generate_data():
             while True:
-                if video_slot_list.get_video_slot(slot_nomeric = video_slot_nomeric).data is not None:
+                if video_slot_list.get_video_slot(slot_numero = video_slot_numero).data is not None:
                     yield (b'--frame\r\n'
-                           b'Content-Type: image/jpeg\r\n\r\n' + video_slot_list.get_video_slot(slot_nomeric = video_slot_nomeric).data +   b'\r\n')
+                           b'Content-Type: image/jpeg\r\n\r\n' + video_slot_list.get_video_slot(slot_numero = video_slot_numero).data +   b'\r\n')
                 time.sleep(1 / self.fps)
         
         return Response(generate_data(), 
@@ -286,10 +286,10 @@ class WebApp(Node):
         
         data = request.get_json()
         channel_name = data.get("channel_name")
-        video_slot_nomeric = data.get("video_slot_nomeric")
+        video_slot_numero = data.get("video_slot_numero")
         
         self.video_slot_list.set_video_slot_channel_name(caller = self, 
-                                                         video_slot_nomeric = video_slot_nomeric,
+                                                         video_slot_numero = video_slot_numero,
                                                          channel_name = channel_name)
         
         return jsonify({

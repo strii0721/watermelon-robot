@@ -27,7 +27,7 @@ from cv_bridge import CvBridge
 import cv2
 import time
 import threading
-from utils import NodeUtils
+from watermelon_robot.utils import NodeUtils
 
 class Monitor(Node):
 

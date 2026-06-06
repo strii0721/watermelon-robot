@@ -20,10 +20,10 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
-from service import RealsenseService
-from utils import NodeUtils
+from watermelon_robot.service import RealsenseService
+from watermelon_robot.utils import NodeUtils
 from cv_bridge import CvBridge
-from utils import CommUtils
+from watermelon_robot.utils import CommUtils
 from sensor_msgs.msg import Image, CameraInfo
 from typing import cast
 

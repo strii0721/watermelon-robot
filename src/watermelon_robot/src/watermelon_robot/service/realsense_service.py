@@ -17,8 +17,8 @@
 #
 
 
-from intermediates import RealsenseMapper
-from utils import RealsenseUtils
+from watermelon_robot.intermediates import RealsenseMapper
+from watermelon_robot.utils import RealsenseUtils
 
 class RealsenseService: 
 

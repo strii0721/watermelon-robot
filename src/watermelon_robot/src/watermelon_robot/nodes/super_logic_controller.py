@@ -19,13 +19,13 @@
 
 import rclpy
 from rclpy.node import Node
-from utils import NodeUtils
+from watermelon_robot.utils import NodeUtils
 from watermelon_robot_interface.srv import RoboticArmAction, LogicControllerComm
 from typing import cast
 from rclpy.qos import qos_profile_sensor_data
-from utils import CommUtils
+from watermelon_robot.utils import CommUtils
 import time
-from protocol import LogicControllerCommCode
+from watermelon_robot.protocol import LogicControllerCommCode
 from types import SimpleNamespace
 from watermelon_robot_interface.msg import TargetList
 import json

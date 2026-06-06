@@ -19,11 +19,11 @@
 
 import rclpy
 from rclpy.node import Node
-from service import RoboticArmService
+from watermelon_robot.service import RoboticArmService
 from watermelon_robot_interface.srv import RoboticArmAction
 import time
-from utils import config
-from utils import NodeUtils
+from watermelon_robot.utils import config
+from watermelon_robot.utils import NodeUtils
 import numpy as np
 
 
@@ -34,12 +34,14 @@ class RoboticArmController(Node):
         super().__init__('robotic_arm_controller')
         NodeUtils.node_initializer(self)
         
-        # robotic_arm = config.robotic_arm
-        self.robotic_arm = config.robotic_arm_s
-        self.robotic_arm_service = RoboticArmService(ip = self.robotic_arm.ip, 
-                                                     tool_standby_sextuplet = tuple(self.robotic_arm.tool_standby_sextuple), 
-                                                     camera_pose_matix = np.array(self.robotic_arm.camera_pose_matix),
-                                                     speed_rate = self.robotic_arm.speed_rate)
+        activated_robotic_arm_profile = config.robotic_arm.activate
+        self.robotic_arm_config = getattr(config.robotic_arm.profiles, activated_robotic_arm_profile)
+        standby_status = (self.robotic_arm_config.standby_status.use_cartesian, self.robotic_arm_config.standby_status.status)
+        self.robotic_arm_service = RoboticArmService(ip = self.robotic_arm_config.ip, 
+                                                     speed_rate = self.robotic_arm_config.speed_rate,
+                                                     standby_status = standby_status, 
+                                                     calibration_marix = np.array(self.robotic_arm_config.calibration_marix),
+                                                     eye_in_hand = self.robotic_arm_config.eye_in_hand)
         
         state_code = self.robotic_arm_service.stand_by()
         if state_code == 0 :
@@ -68,9 +70,9 @@ class RoboticArmController(Node):
         
         is_success = True
         position_on_camera = request.position_on_camera
-        position_on_camera[0] += self.robotic_arm.tool_error[0]  
-        position_on_camera[1] += self.robotic_arm.tool_error[1]
-        position_on_camera[2] += self.robotic_arm.tool_error[2]
+        position_on_camera[0] += self.robotic_arm_config.tool_error[0]  
+        position_on_camera[1] += self.robotic_arm_config.tool_error[1]
+        position_on_camera[2] += self.robotic_arm_config.tool_error[2]
         position = tuple(position_on_camera)
         
         state_code_robotic_arm = self.robotic_arm_service.move_to_position(position = position, 

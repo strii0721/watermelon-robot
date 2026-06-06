@@ -50,10 +50,12 @@ def generate_launch_description():
         output = "screen"
     )
     
-    node_list = [
-        CELESTIAL_FULCRUM,
-        CAERULA_ARBOR,
-        PRESERVATOR,
-        LYNCHPIN]
+    # node_list = [
+    #     CELESTIAL_FULCRUM,
+    #     CAERULA_ARBOR,
+    #     PRESERVATOR,
+    #     LYNCHPIN]
+    
+    node_list = [CAERULA_ARBOR]
     
     return LaunchDescription(node_list)

@@ -1,7 +1,7 @@
 import cv2
-from utils import CVUtils
+from watermelon_robot.utils import CVUtils
 import os
-from utils import config
+from watermelon_robot.utils import config
 
 
 if __name__ == "__main__":

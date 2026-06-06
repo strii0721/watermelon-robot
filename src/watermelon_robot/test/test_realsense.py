@@ -18,7 +18,7 @@
 
 
 import cv2
-from intermediates import RealsenseMapper
+from watermelon_robot.intermediates import RealsenseMapper
 import numpy as np
 
 def main():

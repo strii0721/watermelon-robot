@@ -18,7 +18,7 @@
 
 
 from rclpy.node import Node
-from utils import config, NodeUtils, ModelUtils, DLUtils, CommUtils
+from watermelon_robot.utils import config, NodeUtils, ModelUtils, DLUtils, CommUtils
 from rclpy.qos import qos_profile_sensor_data
 from cv_bridge import CvBridge
 import time

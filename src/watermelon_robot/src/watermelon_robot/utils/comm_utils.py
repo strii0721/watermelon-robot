@@ -22,7 +22,7 @@ from sensor_msgs.msg import Image, CameraInfo
 from watermelon_robot_interface.msg import LaneError, TargetList, ChassisControlSequence
 from watermelon_robot_interface.srv import LogicControllerComm, RoboticArmAction
 from rclpy.time import Time
-from protocol import LogicControllerCommCode
+from watermelon_robot.protocol import LogicControllerCommCode
 
 class CommUtils:
     
