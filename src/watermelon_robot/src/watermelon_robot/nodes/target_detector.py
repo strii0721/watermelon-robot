@@ -27,6 +27,8 @@ from sensor_msgs.msg import Image, CameraInfo
 import json
 import rclpy
 import message_filters
+from types import SimpleNamespace
+from watermelon_robot_interface.msg import TargetList
 
 
 class TargetDetector(Node):
@@ -35,6 +37,8 @@ class TargetDetector(Node):
         
         super().__init__("target_detector")
         NodeUtils.node_initializer(self)
+        
+        self.last_frame_time = time.time()
         
         self.model = ModelUtils.load_model(model_name = config.target_detection.model.name, 
                                            task = config.target_detection.model.task,
@@ -48,15 +52,18 @@ class TargetDetector(Node):
         
         self.realsense_frame_color_subscriber = message_filters.Subscriber(node = self,
                                                                            msg_type = Image, 
-                                                                           topic = self.input_0)
+                                                                           topic = self.input_0,
+                                                                           qos_profile = qos_profile_sensor_data)
         
         self.realsense_frame_depth_subscriber = message_filters.Subscriber(node = self,
                                                                            msg_type = Image, 
-                                                                           topic = self.input_1)
+                                                                           topic = self.input_1,
+                                                                           qos_profile = qos_profile_sensor_data)
         
         self.realsense_frame_intrinsics_subscriber = message_filters.Subscriber(node = self,
                                                                                 msg_type = CameraInfo, 
-                                                                                topic = self.input_2)
+                                                                                topic = self.input_2,
+                                                                                qos_profile = qos_profile_sensor_data)
         
         self.approxiamate_time_synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs = [self.realsense_frame_color_subscriber, 
@@ -67,7 +74,7 @@ class TargetDetector(Node):
         )
         self.approxiamate_time_synchronizer.registerCallback(self.detect_targets)
         
-        self.target_list_publisher = self.create_publisher(msg_type = Image, 
+        self.target_list_publisher = self.create_publisher(msg_type = TargetList, 
                                                        topic = self.output_0, 
                                                        qos_profile = qos_profile_sensor_data)
         
@@ -82,9 +89,6 @@ class TargetDetector(Node):
                        depth_frame: Image, 
                        intrinsics: CameraInfo) -> None:
             
-            timestamp = time.time()
-            header = CommUtils.create_header(stamp = timestamp)
-            
             color_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = color_frame, 
                                                        desired_encoding = "passthrough")
             depth_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = depth_frame, 
@@ -94,6 +98,8 @@ class TargetDetector(Node):
                                               color_image = color_frame, 
                                               depth_image = depth_frame, 
                                               intrinsics = intrinsics)
+            timestamp = self.get_clock().now().to_msg()
+            header = CommUtils.create_header(stamp = timestamp)
             target_list_json = json.dumps(targets)
             target_list = CommUtils.create_target_list(header = header, 
                                                        target_list_json = target_list_json)
@@ -101,7 +107,7 @@ class TargetDetector(Node):
             now_time = time.time()
             fps = 1.0 / (now_time - self.last_frame_time)
             self.last_frame_time = now_time
-            cv2.putText(self.latest_frame.color_image, f'FPS: {fps:.2f}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+            cv2.putText(color_frame, f'FPS: {fps:.2f}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
             image_message = self.cv_bridge.cv2_to_imgmsg(cvim = color_frame, 
                                                          encoding="bgr8", 
                                                          header = header)

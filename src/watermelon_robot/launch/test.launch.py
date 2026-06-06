@@ -24,9 +24,11 @@ from watermelon_robot.utils import NodeUtils
 def generate_launch_description():
     
     node_list = [
-        "AMA_10",
-        "PRIESTESS_EYES",
-        # "CAERULA_ARBOR"
-        ]
+        "PRESERVATOR",          # 手眼相机
+        "LYNCHPIN",             # 目标检测器
+        "PRIESTESS_EYES",       # Web UI
+        # "CAERULA_ARBOR",      # 机械臂
+    ]
+        
     
     return LaunchDescription(NodeUtils.assemble_nodes(node_list))

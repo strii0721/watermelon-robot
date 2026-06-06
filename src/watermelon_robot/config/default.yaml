@@ -2,9 +2,10 @@
 # 目标检测模型相关
 target_detection:
   model: 
-    name: "yolov26-best-fp16.engine"
+    # name: "yolov26-best-fp16.engine"
+    name: "yolov26-best.pt"
     task: "target-detection"
-    use_engine: True
+    use_engine: False
     device_no: "0"
     use_half: True
     image_size: [480, 640]
@@ -38,13 +39,13 @@ robotic_arm:
       standby_status:
         use_cartesian: False                                    # 选择是否使用笛卡尔六元组表述机械臂初始姿态，若为 False 则使用关节空间描述
         status: [90.0, -120.0, 120, -180, -90, -90]
-      stand_by_joint_space: []
+      eye_in_hand: True
       calibration_marix: [[0, -1, 0, 25],                       # 相机手眼校准矩阵。在“眼在手上”方案中应为相机参考系到末端执行器变换矩阵；在“眼在手外”方案中应为相机参考系到机械臂世界坐标系变换矩阵。
                           [1, 0, 0, 60],
                           [0, 0, 1, 10],
                           [0, 0, 0, 1]]
       tool_error: [-50, 170, -90]                               # 剪刀的位置偏差（相机参考系下）
-      eye_in_hand: True
+      
 
     fr5_0:
       ip: "192.168.58.2"
@@ -78,7 +79,6 @@ scissors:
   open_delay_sec: 2         # 剪刀张开、闭合结束等待时间
 
 # -------------------------------------------------------
-# WebUI 相关
 
 
 ######################################## 以下是节点初始化器配置 ########################################
@@ -146,7 +146,7 @@ _node_initializer:
     ###########
     ats:
       queue_size: 10
-      slop: 0.05
+      slop: 2
 
 # -------------------------------------------------------
   ################
