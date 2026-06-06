@@ -18,7 +18,7 @@
 
 
 import cv2
-from service import RealsenseService
+from watermelon_robot.service import RealsenseService
 import time
 import os
 

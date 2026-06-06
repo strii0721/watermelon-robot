@@ -12,22 +12,30 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", 
             ["resource/" + package_name]),
+        
         ("share/" + package_name, 
             ["package.xml"]),
+        
         (os.path.join("share", package_name, "launch"), 
             glob("launch/*.launch.py")),
+        
         (os.path.join("share", package_name, "config"), 
             glob("config/*.yaml")),
+        
         (os.path.join("share", package_name, "resource", "model-weights", "target-detection"), 
             glob("resource/model-weights/target-detection/*")), 
+        
         (os.path.join("share", package_name, "resource", "model-weights", "lane-detection"), 
             glob("resource/model-weights/lane-detection/*")), 
+        
         (os.path.join("share", package_name, "templates"), 
-            glob("src/templates/*.html")), 
+            glob("src/watermelon_robot/templates/*.html")), 
+        
         (os.path.join("share", package_name, "static", "css"), 
-            glob("src/static/css/*.css")), 
+            glob("src/watermelon_robot/static/css/*.css")), 
+        
         (os.path.join("share", package_name, "static", "js"), 
-            glob("src/static/js/*.js")), 
+            glob("src/watermelon_robot/static/js/*.js")), 
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -42,16 +50,16 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "super_logic_controller = nodes.super_logic_controller:main", 
-            "sub_logic_controller = nodes.sub_logic_controller:main",
-            "robotic_arm_controller = nodes.robotic_arm_controller:main", 
-            "chassis_controller = nodes.chassis_controller:main",
-            "realsense_controller = nodes.realsense_controller:main",
-            "monitor = nodes.monitor:main", 
-            "lane_detector = nodes.lane_detector:main",
-            "target_detector = nodes.target_detector:main",
-            "sub_test = nodes.sub_test:main",
-            "web_app = nodes.web_app:main"
+            "super_logic_controller = watermelon_robot.nodes.super_logic_controller:main", 
+            "sub_logic_controller = watermelon_robot.nodes.sub_logic_controller:main",
+            "robotic_arm_controller = watermelon_robot.nodes.robotic_arm_controller:main", 
+            "chassis_controller = watermelon_robot.nodes.chassis_controller:main",
+            "realsense_controller = watermelon_robot.nodes.realsense_controller:main",
+            "monitor = watermelon_robot.nodes.monitor:main", 
+            "lane_detector = watermelon_robot.nodes.lane_detector:main",
+            "target_detector = watermelon_robot.nodes.target_detector:main",
+            "sub_test = watermelon_robot.nodes.sub_test:main",
+            "web_app = watermelon_robot.nodes.web_app:main"
         ],
     },
 )

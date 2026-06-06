@@ -19,14 +19,14 @@
 
 import rclpy
 from rclpy.node import Node
-from utils import NodeUtils
+from watermelon_robot.utils import NodeUtils
 from rclpy.qos import qos_profile_sensor_data
 from watermelon_robot_interface.srv import LogicControllerComm
 from watermelon_robot_interface.msg import LaneError, ChassisControlSequence
-from utils import config
-from protocol import LogicControllerCommCode
+from watermelon_robot.utils import config
+from watermelon_robot.protocol import LogicControllerCommCode
 from types import SimpleNamespace
-from utils import StateUtils, CommUtils
+from watermelon_robot.utils import StateUtils, CommUtils
 from enum import Enum
 
 

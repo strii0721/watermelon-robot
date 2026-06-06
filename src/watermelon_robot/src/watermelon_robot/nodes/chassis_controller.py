@@ -17,15 +17,15 @@
 #
 
 
-from controller import PIDController
+from watermelon_robot.controller import PIDController
 import rclpy
 from rclpy.node import Node
-from utils import NodeUtils
+from watermelon_robot.utils import NodeUtils
 from geometry_msgs.msg import Twist
 from watermelon_robot_interface.msg import ChassisControlSequence
-from protocol import QoSFiles
-from utils import config
-from service import ChassisService
+from watermelon_robot.protocol import QoSFiles
+from watermelon_robot.utils import config
+from watermelon_robot.service import ChassisService
 import time
 from types import SimpleNamespace
 import math

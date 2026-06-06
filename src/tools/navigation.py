@@ -1,5 +1,5 @@
-mport cv2
-from utils import CVUtils
+import cv2
+from watermelon_robot.utils import CVUtils
 import time
 
 def main():

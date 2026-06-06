@@ -40,7 +40,7 @@ function changeChannelName(button, videoSlotNomeric) {
     const url = "/api/v1/channel-name";
     const payload = {
         "channel_name": channelName, 
-        "video_slot_nomeric": videoSlotNomeric
+        "video_slot_numero": videoSlotNomeric
     }
     const response = sendPost(url, payload)
 }

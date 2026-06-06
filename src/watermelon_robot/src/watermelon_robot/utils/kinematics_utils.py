@@ -24,10 +24,10 @@ from scipy.spatial.transform import Rotation as R
 class KinematicsUtils:
 
     @classmethod
-    def calculate_pose_matrix_from_tuple(cls, 
-                                         pose_tuple: tuple, 
-                                         seq = "xyz") -> np.ndarray:
-        """根据位姿六元组计算标准位姿矩阵。
+    def calculate_pose_matrix(cls, 
+                              cartesian_sextuplet: tuple, 
+                              seq = "xyz") -> np.ndarray:
+        """根据笛卡尔位姿六元组计算标准位姿矩阵。
 
         Args:
             pose_tuple (tuple): 位姿六元组。
@@ -37,8 +37,8 @@ class KinematicsUtils:
             np.ndarray: 标准位姿矩阵。
         """        
 
-        x, y, z = pose_tuple[0], pose_tuple[1], pose_tuple[2]
-        rx, ry, rz = pose_tuple[3], pose_tuple[4], pose_tuple[5]
+        x, y, z = cartesian_sextuplet[0], cartesian_sextuplet[1], cartesian_sextuplet[2]
+        rx, ry, rz = cartesian_sextuplet[3], cartesian_sextuplet[4], cartesian_sextuplet[5]
 
         rotation = R.from_euler(seq = seq, 
                                 angles = [rx, ry, rz], 

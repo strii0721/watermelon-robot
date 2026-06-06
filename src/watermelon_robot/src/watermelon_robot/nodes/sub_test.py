@@ -18,11 +18,11 @@
 
 
 from rclpy.node import Node
-from utils import NodeUtils
+from watermelon_robot.utils import NodeUtils
 import rclpy
 from cv_bridge import CvBridge
 from rclpy.qos import qos_profile_sensor_data
-from utils import CommUtils
+from watermelon_robot.utils import CommUtils
 import cv2
 from sensor_msgs.msg import Image
 

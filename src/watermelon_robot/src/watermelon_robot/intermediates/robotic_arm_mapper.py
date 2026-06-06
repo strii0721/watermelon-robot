@@ -18,7 +18,7 @@
 
 
 from fairino import Robot
-from utils.kinematics_utils import KinematicsUtils
+from watermelon_robot.utils import KinematicsUtils
 import numpy as np
 from typing import cast
 
@@ -30,36 +30,38 @@ class RoboticArmMapper:
                  tool_numero: int,
                  user_numero: int, 
                  speed_rate: int, 
-                 tool_stand_by_position: tuple, 
-                 tool_working_orientation: tuple, 
-                 camera_pose_matix: np.ndarray):
+                 standby_status: tuple, 
+                 calibration_marix: np.ndarray, 
+                 eye_in_hand: bool):
         
         self.robotic_arm = Robot.RPC(ip)
         self.tool_numero = tool_numero
         self.user_numero = user_numero
         self.robotic_arm.SetSpeed(speed_rate)
-        self._tool_stand_by_position = tool_stand_by_position
-        self._tool_working_orientation = tool_working_orientation
-
-        tool_pose = tool_stand_by_position + tool_working_orientation
-        self._w_T_tcp = KinematicsUtils.calculate_pose_matrix_from_tuple(pose_tuple = tool_pose)
-        self._tcp_T_c = camera_pose_matix
+        use_cartesian = standby_status[0]
+        if not use_cartesian:
+            _, self.standby_sextuplet = self.calculate_forward_kinematic(joint_position = standby_status[1])
+        else:
+            self.standby_sextuplet = tuple(standby_status[1])
+        self.w_T_tcp = KinematicsUtils.calculate_pose_matrix(cartesian_sextuplet = self.standby_sextuplet)
+        self.calibration_marix = calibration_marix
+        self.eye_in_hand = eye_in_hand
     
-    def get_tool_stand_by_position(self) -> tuple:
-
-        return self._tool_stand_by_position
-    
-    def get_tool_working_orientation(self) -> tuple:
-
-        return self._tool_working_orientation
+    def get_standby_sextuplet(self) -> tuple:
+        
+        return self.standby_sextuplet
     
     def get_wTtcp_matrix(self) -> np.ndarray: 
 
-        return self._w_T_tcp
+        return self.w_T_tcp
     
-    def get_tcpTc_matrix(self) -> np.ndarray:
+    def get_calibration_matrix(self) -> np.ndarray:
         
-        return self._tcp_T_c
+        return self.calibration_marix
+    
+    def get_eye_in_hand_setting(self) -> bool:
+        
+        return self.eye_in_hand
     
     def get_tcp_pose(self, 
                      block: bool = False) -> tuple:
@@ -80,6 +82,23 @@ class RoboticArmMapper:
         
         return (state_code, tcp_pose)
     
+    def move_to_joint_space(self, 
+                            joint_position: list) -> int:
+        """关节空间运动。
+
+        Args:
+            joint_space (tuple): 关节空间六元组，度为单位。
+
+        Returns:
+            int: 机械臂响应状态码。
+        """        
+        
+        state_code = self.robotic_arm.MoveJ(joint_pos = joint_position, 
+                                            tool = self.tool_numero, 
+                                            user = self.user_numero)
+        
+        return state_code
+    
     def move_to_pose(self, 
                      pose: tuple) -> int:
         """移动至给定位姿六元组。
@@ -93,8 +112,8 @@ class RoboticArmMapper:
         
         pose_list = list(pose)
         state_code = self.robotic_arm.MoveCart(desc_pos = pose_list, 
-                                                tool = self.tool_numero, 
-                                                user = self.user_numero)
+                                               tool = self.tool_numero, 
+                                               user = self.user_numero)
         state_code = cast(int, state_code)
 
         return state_code
@@ -118,3 +137,18 @@ class RoboticArmMapper:
                                              block = 1)
         
         return state_code
+    
+    def calculate_forward_kinematic(self, 
+                                    joint_position: list) -> tuple:
+        """根据关节空间进行正运动学结算。
+
+        Args:
+            joint_position (list): 关节空间位置。
+
+        Returns:
+            tuple: (状态码, 末端工具笛卡尔位姿六元组)。
+        """        
+        
+        state_code, sextuplet = self.robotic_arm.GetForwardKin(joint_pos = joint_position)
+        
+        return state_code, tuple(sextuplet)

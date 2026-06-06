@@ -18,7 +18,7 @@
 
 
 from rclpy.node import Node
-from utils import config
+from watermelon_robot.utils import config
 
 
 class NodeUtils: 

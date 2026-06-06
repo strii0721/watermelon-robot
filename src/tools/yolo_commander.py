@@ -89,7 +89,7 @@ class YOLOCommander:
         model_path = os.path.join("resource", "weights-base", f"{arguments.base_model}.pt")
         dataset_path = os.path.join("resource", "datasets", f"{arguments.project_name}", f"{arguments.dataset}", f"dataset.yaml")
         timestamp = int(time.time())
-        run_name = f"{arguments.base_model}-{arguments.batch_size}-{timestamp}"
+        run_name = f"{arguments.base_model}-b{arguments.batch_size}-{timestamp}"
         model = YOLO(model = model_path)
         results = model.train(
             project = arguments.project_name,

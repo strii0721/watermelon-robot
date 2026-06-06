@@ -17,14 +17,14 @@
 #
 
 
-from service import RoboticArmService
+from watermelon_robot.service import RoboticArmService
 import time
 
 def main():
     
     robotic_arm_service = RoboticArmService(ip = "192.168.58.2", 
                                             tool_standby_sextuplet = [102, -282.5, 418, 180, -90, -90], 
-                                            camera_pose_matix = [[0, -1, 0, 25],
+                                            calibration_marix = [[0, -1, 0, 25],
                                                                  [1, 0, 0, 60],
                                                                  [0, 0, 1, 10],
                                                                  [0, 0, 0, 1]], 
