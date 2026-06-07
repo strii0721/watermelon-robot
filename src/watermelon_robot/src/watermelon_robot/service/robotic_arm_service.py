@@ -112,7 +112,7 @@ class RoboticArmService:
         
         if not is_world_position: 
             eye_in_hand = self.robotic_arm_mapper.get_eye_in_hand_setting()
-            position = self.calculate_world_position(calibration_matrix = position, 
+            position = self.calculate_world_position(coordinate_in_camera = position, 
                                                      eye_in_hand = eye_in_hand)
 
         pose = position + self.robotic_arm_mapper.get_standby_sextuplet()[3:]

@@ -52,8 +52,7 @@ class SuperLogicController(Node):
         
         self.latest_frame = SimpleNamespace()
         self.current_target = None
-        self.history = SimpleNamespace()
-        self.history.target_list = []
+        self.target_list = []
         
         self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_period_sec, 
                                                  callback = self.heartbeat)
@@ -82,7 +81,7 @@ class SuperLogicController(Node):
         
         target_list_json = target_list.target_list_json
         targets = json.loads(target_list_json)
-        self.history.target_list = [tuple(target) for target in targets]
+        self.target_list = [tuple(target) for target in targets]
         
     def command_sub_logic_controller(self, 
                                      comm_code: LogicControllerCommCode) -> rclpy.Future:  
@@ -151,9 +150,10 @@ class SuperLogicController(Node):
         if not self.current_target:
             return
         
-        request = RoboticArmAction.Request()
-        request.timestamp = time.time()
-        request.position_on_camera = self.current_target
+        timestamp = self.get_clock().now().to_msg()
+        header = CommUtils.create_header(stamp = timestamp)
+        request = CommUtils.create_robotic_arm_action_request(header = header, 
+                                                              position_on_camera = self.current_target)
         future = self.command_robotic_arm_client.call_async(request)
         future.add_done_callback(callback = self.command_robotic_arm_done)
         StateUtils.transfer_node_state(self, STATE.PENDING)
@@ -187,13 +187,13 @@ class SuperLogicController(Node):
         """锁定视野中最靠近前进方向反方向的目标。
         """        
         
-        if not self.history.target_list:
+        if not self.target_list:
             return
         
-        target_list = self.history.target_list
+        target_list = self.target_list.copy()
         target_list.sort(key=lambda target: target[0])
-        self.history.current_target = target_list[-1]
-        self.get_logger().info(f"目标已锁定！当前目标（手眼相机参考系）：{self.history.current_target}")
+        self.current_target = target_list[-1]
+        self.get_logger().info(f"目标已锁定！当前目标（手眼相机参考系）：{self.current_target}")
         StateUtils.transfer_node_state(self, STATE.TARGET_LOCKED)
         
     def wait_quit(self) -> None:

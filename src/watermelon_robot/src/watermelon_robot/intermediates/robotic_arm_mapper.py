@@ -40,7 +40,8 @@ class RoboticArmMapper:
         self.robotic_arm.SetSpeed(speed_rate)
         use_cartesian = standby_status[0]
         if not use_cartesian:
-            _, self.standby_sextuplet = self.calculate_forward_kinematic(joint_position = standby_status[1])
+            _, standby_sextuplet = self.calculate_forward_kinematic(joint_position = standby_status[1])
+            self.standby_sextuplet = tuple(standby_sextuplet)
         else:
             self.standby_sextuplet = tuple(standby_status[1])
         self.w_T_tcp = KinematicsUtils.calculate_pose_matrix(cartesian_sextuplet = self.standby_sextuplet)
@@ -149,6 +150,11 @@ class RoboticArmMapper:
             tuple: (状态码, 末端工具笛卡尔位姿六元组)。
         """        
         
-        state_code, sextuplet = self.robotic_arm.GetForwardKin(joint_pos = joint_position)
+        rtn = self.robotic_arm.GetForwardKin(joint_pos = joint_position)
+        
+        
+        state_code, sextuplet = rtn
+        
+        
         
         return state_code, tuple(sextuplet)
