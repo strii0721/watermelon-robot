@@ -39,7 +39,8 @@ class TargetDetector(Node):
         NodeUtils.node_initializer(self)
         
         self.last_frame_time = time.time()
-        
+        activated_robotic_arm_profile = config.robotic_arm.activate
+        self.working_space = getattr(config.robotic_arm.profiles, activated_robotic_arm_profile).working_space
         self.model = ModelUtils.load_model(model_name = config.target_detection.model.name, 
                                            task = config.target_detection.model.task,
                                            use_engine = config.target_detection.model.use_engine,
@@ -97,7 +98,8 @@ class TargetDetector(Node):
             targets = DLUtils.predict_targets(model = self.model, 
                                               color_image = color_frame, 
                                               depth_image = depth_frame, 
-                                              intrinsics = intrinsics)
+                                              intrinsics = intrinsics, 
+                                              working_space = self.working_space)
             timestamp = self.get_clock().now().to_msg()
             header = CommUtils.create_header(stamp = timestamp)
             target_list_json = json.dumps(targets)
