@@ -27,7 +27,6 @@ from watermelon_robot.protocol import QoSFiles
 from watermelon_robot.utils import config
 from watermelon_robot.service import ChassisService
 import time
-from types import SimpleNamespace
 import math
 from rclpy.qos import qos_profile_sensor_data
 
@@ -40,8 +39,7 @@ class ChassisController(Node):
         NodeUtils.node_initializer(self)
 
         self.chassis_service = ChassisService()
-        self.history = SimpleNamespace()
-        self.history.last_control_time = time.time()
+        self.last_control_time = time.time()
         
         pid_triple = config.chassis.pid_controller.pid_triple
         integral_limit = config.chassis.pid_controller.integral_limit
@@ -69,11 +67,11 @@ class ChassisController(Node):
             error_rads = chassis_control_sequence.error_rads
             forward_speed = chassis_control_sequence.forward_speed
             
-            control_interval = now_time - self.history.last_control_time
+            control_interval = now_time - self.last_control_time
             control_variable = self.controller.update_control_variable(error = error_rads, 
                                                                        control_interval = control_interval)
             error_degrees = math.degrees(error_rads)
-            self.get_logger().info(f"当前弧度误差：{error_rads} | 角度误差：{error_degrees} | 产生控制变量：{control_variable}")
+            # self.get_logger().info(f"当前弧度误差：{error_rads} | 角度误差：{error_degrees} | 产生控制变量：{control_variable}")
             
         else:
             control_variable = 0
@@ -82,7 +80,7 @@ class ChassisController(Node):
         twist_msg = self.chassis_service.apply_control_variable(control_variable = control_variable,
                                                                 forward_speed = forward_speed)
         self.cmd_vel_publisher.publish(msg = twist_msg)
-        self.history.last_control_time = now_time
+        self.last_control_time = now_time
             
 
 def main():

@@ -28,7 +28,6 @@ import time
 from sensor_msgs.msg import Image
 import math
 import rclpy
-from types import SimpleNamespace
 
 class LaneDetector(Node):
     
@@ -43,9 +42,7 @@ class LaneDetector(Node):
                                            use_engine = config.lane_detection.model.use_engine,
                                            confidence = config.lane_detection.model.confidence)
 
-        self.history = SimpleNamespace()
-        self.history.reach_terminal_timer = None
-        self.history.last_frame_time = time.time()
+        self.last_frame_time = time.time()
         
         self.realsense_frame_color_subscriber = self.create_subscription(msg_type = Image, 
                                                                          topic = self.input_0, 
@@ -63,25 +60,6 @@ class LaneDetector(Node):
         
         
         NodeUtils.node_initialized(self)
-        
-    def check_terminal(self, 
-                       reach_terminal: bool) -> None:
-        """检查是否抵达终点，若是则停止底盘。当且仅当连续时长的帧检测到抵达道路边缘或检测不到道路，判断为抵达终点。
-
-        Args:
-            reach_terminal (bool): 当前帧是否符合到达终点的条件。
-        """        
-        
-        if reach_terminal:
-            if self.history.reach_terminal_timer:
-                    if time.time() - self.history.reach_terminal_timer > config.chassis.stop_delay_sec:
-                            return True
-            else: 
-                self.history.reach_terminal_timer = time.time()
-        else: 
-            self.history.reach_terminal_timer = None
-        
-        return False
     
     def detect_lane(self, 
                     color_frame_message: Image) -> None:
@@ -97,7 +75,7 @@ class LaneDetector(Node):
                                                                roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
                                                                detect_step = config.lane_detection.detect_step, 
                                                                lane_offset = config.lane_detection.lane_offset)
-        reach_terminal = self.check_terminal(reach_terminal)
+
         lane_error_degrees = math.degrees(lane_error_rads)
         lane_error = CommUtils.create_lane_error(header = header, 
                                                  error_degrees = lane_error_degrees, 
@@ -105,8 +83,8 @@ class LaneDetector(Node):
                                                  reach_terminal = reach_terminal)
         height, width = color_frame.shape[:2]
         now_time = time.time()
-        real_fps = int(1/(now_time - self.history.last_frame_time))
-        self.history.last_frame_time = now_time
+        real_fps = int(1/(now_time - self.last_frame_time))
+        self.last_frame_time = now_time
         cv2.putText(img = color_frame, 
                     text = f"FPS {real_fps} | Frame Size {width}x{height}", 
                     org = (5, 20), 

@@ -7,7 +7,8 @@ dependencies:
   - pip:
     - torch
     - torchvision
-    - ultralytics
+    - ultralytics==8.4.53
+    - ultralytics-thop==2.0.19
     - numpy==1.23.5
     - opencv-python
     - pyrealsense2

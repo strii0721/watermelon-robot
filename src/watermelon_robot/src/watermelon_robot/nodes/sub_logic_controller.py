@@ -28,6 +28,7 @@ from watermelon_robot.protocol import LogicControllerCommCode
 from types import SimpleNamespace
 from watermelon_robot.utils import StateUtils, CommUtils
 from enum import Enum
+import time
 
 
 class STATE(Enum):
@@ -43,8 +44,8 @@ class SubLogicController(Node):
         super().__init__("sub_logic_controller")
         NodeUtils.node_initializer(self)
 
-        self.history = SimpleNamespace()
-        self.history.lane_error_rads = 0.0
+        self.cached_lane_error = 0.0
+        self.reach_terminal_timer = None
 
         self.heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_period_sec, 
                                                  callback = self.heartbeat)
@@ -65,6 +66,25 @@ class SubLogicController(Node):
         NodeUtils.node_initialized(self)
         StateUtils.transfer_node_state(self, STATE.STOP)
         
+    def check_terminal(self, 
+                       reach_terminal: bool) -> None:
+        """检查是否抵达终点，若是则停止底盘。当且仅当连续时长的帧检测到抵达道路边缘或检测不到道路，判断为抵达终点。
+
+        Args:
+            reach_terminal (bool): 当前帧是否符合到达终点的条件。
+        """        
+        
+        if reach_terminal:
+            if self.reach_terminal_timer:
+                    if time.time() - self.reach_terminal_timer > config.chassis.stop_delay_sec:
+                            return True
+            else: 
+                self.reach_terminal_timer = time.time()
+        else: 
+            self.reach_terminal_timer = None
+        
+        return False
+        
     def cache_lane_error(self, 
                          lane_error: LaneError) -> None:
         """缓存航线误差。
@@ -73,11 +93,11 @@ class SubLogicController(Node):
             lane_error (LaneError): 频道接收到的航线误差。
         """        
         
-        reach_terminal = lane_error.reach_terminal
+        reach_terminal = self.check_terminal(reach_terminal = lane_error.reach_terminal)
         if reach_terminal: 
             self.stop_chassis()   
         else:
-            self.history.lane_error_rads = lane_error.error_rads 
+            self.cached_lane_error = lane_error.error_rads 
             
     def forward_lane_error(self) -> None:
         """发布缓存的航线误差。（这个函数是被 heartbeat() 调用的，调用频率可能与误差接收频率不一致，后者是航线预测话题的回调函数，故接收频率与前视相机的帧率一致。）
@@ -87,7 +107,7 @@ class SubLogicController(Node):
         header = CommUtils.create_header(stamp = timestamp)
         forward_speed = config.chassis.forward_speed
         chassis_control_sequence = CommUtils.create_chassis_control_sequence(header = header, 
-                                                                             error_rads = self.history.lane_error_rads, 
+                                                                             error_rads = self.cached_lane_error, 
                                                                              forward_speed = forward_speed)
         
         self.chassis_control_sequence_publisher.publish(msg = chassis_control_sequence)
@@ -103,6 +123,7 @@ class SubLogicController(Node):
                                                                              error_rads = 0, 
                                                                              forward_speed = forward_speed)
         self.chassis_control_sequence_publisher.publish(msg = chassis_control_sequence)
+        self.reach_terminal_timer = None
         
         StateUtils.transfer_node_state(self, STATE.START)
         

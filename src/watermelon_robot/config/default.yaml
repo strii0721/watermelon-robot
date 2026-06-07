@@ -233,7 +233,7 @@ _node_initializer:
     # 通用配置块 ###################
     ###########
     fps: 30           # 画面采集帧率
-    video_path: "/home/lynchpin/repository/watermelon-robot/resource/datasets/lane-detection/legacy/video-5.mp4"
+    video_path: "/home/wheeltec/fr_ws/watermelon-robot/resource/datasets/lane-detection/legacy/video-5.mp4"
 
 # -------------------------------------------------------
 
