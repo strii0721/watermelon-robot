@@ -19,7 +19,7 @@
 
 from std_msgs.msg import Header
 from watermelon_robot_interface.msg import LaneError, TargetList, ChassisControlSequence
-from watermelon_robot_interface.srv import LogicControllerComm
+from watermelon_robot_interface.srv import LogicControllerComm, RoboticArmAction
 from rclpy.time import Time
 from watermelon_robot.protocol import LogicControllerCommCode
 
@@ -85,5 +85,16 @@ class CommUtils:
         request = LogicControllerComm.Request()
         request.header = header
         request.comm_code = comm_code.value
+        
+        return request
+    
+    @classmethod
+    def create_robotic_arm_action_request(cls, 
+                                          header: Header, 
+                                          position_on_camera: tuple) -> RoboticArmAction.Request:
+        
+        request = RoboticArmAction.Request()
+        request.header = header
+        request.position_on_camera = position_on_camera
         
         return request
