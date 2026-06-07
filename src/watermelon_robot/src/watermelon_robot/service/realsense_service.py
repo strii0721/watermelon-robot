@@ -22,9 +22,10 @@ from watermelon_robot.utils import RealsenseUtils
 
 class RealsenseService: 
 
-    def __init__(self) -> None:
+    def __init__(self, 
+                 serial_number: str) -> None:
         
-        self.camera_mapper = RealsenseMapper()
+        self.camera_mapper = RealsenseMapper(serial_number = serial_number)
 
     def read_frames(self) -> list | None: 
         """读取 RealSense 的一帧，并转换为 OpenCV 的 Numpy 数组格式再交付上层。
