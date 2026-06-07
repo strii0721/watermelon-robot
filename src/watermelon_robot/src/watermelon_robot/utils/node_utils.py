@@ -26,7 +26,7 @@ class NodeUtils:
     @classmethod
     def node_initializer(cls, 
                          node_entity: Node) -> None:
-        """初始化节点对象，为其绑定属性，同时向终端打印初始化信息。
+        """初始化节点对象，为其绑定属性，同时向终端打印初始化信息。也会为其创建状态机。
 
         Args:
             node_entity (Node): 初始化节点对象。

@@ -123,6 +123,7 @@ _node_initializer:
   ##################################
   PRESERVATOR:
     executable: "realsense_controller"
+    n_type: "sensor"
 
     # 标准通信接口配置块 ###################
     ##################
