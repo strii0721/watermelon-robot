@@ -30,7 +30,8 @@ class DLUtils:
                         model: YOLO, 
                         color_image, 
                         depth_image, 
-                        intrinsics) -> list:
+                        intrinsics, 
+                        working_space: list) -> list:
 
         rtn = model.predict(source = color_image, 
                             verbose = False)
@@ -69,7 +70,8 @@ class DLUtils:
                     cv2.putText(color_image, label, (int(box_pixel_x1), int(box_pixel_y1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                     cv2.putText(color_image, f'Xc:{target[0]:.2f} Yc:{target[1]:.2f} Zc:{target[2]:.2f}', (int(box_pixel_x1), int(box_pixel_y1) + 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
-                    if DLUtils.check_target_validation(target_coordinate = target): 
+                    if DLUtils.check_target_validation(target_coordinate = target, 
+                                                       working_space = working_space): 
                         target_list.append(target)
 
         return target_list
@@ -186,7 +188,8 @@ class DLUtils:
 
     @classmethod
     def check_target_validation(cls, 
-                                target_coordinate: tuple) -> bool:
+                                target_coordinate: tuple, 
+                                working_space: list) -> bool:
         """判断检测到的目标坐标是否合法。
 
         Args:
@@ -196,10 +199,11 @@ class DLUtils:
             bool: 目标合法性.
         """        
         
-        if not ((-200 < target_coordinate[0] and target_coordinate[0] < 200) and (-200 < target_coordinate[1] and target_coordinate[1] < 200) and (0 < target_coordinate[2] and target_coordinate[2] < 500)):
-            return False
-        
-        if not(target_coordinate[0] > -50):
+        x_range, y_range, z_range = working_space
+        if not (target_coordinate[0] in range(*x_range) and
+                target_coordinate[1] in range(*y_range) and
+                target_coordinate[2] in range(*z_range)):
+            
             return False
         
         return True
