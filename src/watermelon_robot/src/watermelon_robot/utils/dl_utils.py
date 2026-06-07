@@ -200,11 +200,11 @@ class DLUtils:
         """        
         
         x_range, y_range, z_range = working_space
-        if not (target_coordinate[0] in range(*x_range) and
-                target_coordinate[1] in range(*y_range) and
-                target_coordinate[2] in range(*z_range)):
+        if (x_range[0] <= target_coordinate[0] and target_coordinate[0] <= x_range[1] and
+            y_range[0] <= target_coordinate[1] and target_coordinate[1] <= y_range[1] and
+            z_range[0] <= target_coordinate[2] and target_coordinate[2] <= z_range[1]):
             
+            return True
+        else:
             return False
-        
-        return True
     
