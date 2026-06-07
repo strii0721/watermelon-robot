@@ -32,10 +32,10 @@ def generate_launch_description():
         "CAERULA_ARBOR",        # 机械臂
         
         "ORACLE",               # 下逻辑控制器
-        # "AMA_10",               # 巡线相机
+        "AMA_10",               # 巡线相机
         "DWDB_221E",            # 底盘控制器
         "LONETRAIL",            # 航线检测器
-        "YAN"                   # 测试辅助节点
+        # "YAN"                   # 测试辅助节点
     ]
         
     
