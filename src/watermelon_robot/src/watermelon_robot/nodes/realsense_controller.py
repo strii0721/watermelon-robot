@@ -35,7 +35,7 @@ class RealsenseController(Node):
         super().__init__("realsense_controller")
         NodeUtils.node_initializer(self)
 
-        self.realsense_service = RealsenseService()
+        self.realsense_service = RealsenseService(self.serial_number)
         self.cv_bridge = CvBridge()
 
         self.realsense_frame_color_publisher = self.create_publisher(msg_type = Image,

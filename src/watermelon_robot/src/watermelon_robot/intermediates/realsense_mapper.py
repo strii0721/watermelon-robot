@@ -21,10 +21,12 @@ import pyrealsense2 as rs
 
 class RealsenseMapper: 
 
-    def __init__(self):
+    def __init__(self, 
+                 serial_number: str):
 
         self.pipeline = rs.pipeline()  # type: ignore
         self.pipeline_config = rs.config() # type: ignore
+        self.pipeline_config.enable_device(serial_number)
         self.pipeline_config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30) # type: ignore
         self.pipeline_config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30) # type: ignore
         self.pipeline.start(self.pipeline_config)
