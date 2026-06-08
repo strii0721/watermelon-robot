@@ -19,7 +19,6 @@
 
 from flask import Flask, Response, render_template_string, request, jsonify
 from rclpy.node import Node
-from watermelon_robot.utils import NodeUtils
 from sensor_msgs.msg import Image
 from rclpy.qos import qos_profile_sensor_data
 from cv_bridge import CvBridge
@@ -33,9 +32,9 @@ import os
 import threading
 import time
 from watermelon_robot_interface.srv import NodeStateComm
-from watermelon_robot.protocol import LogicControllerCommCode
-from watermelon_robot.utils import CommUtils
-from watermelon_robot.nodes import ChassisController
+from watermelon_robot.utils.comm_utils import CommUtils
+from watermelon_robot.nodes.chassis_controller import ChassisController
+from watermelon_robot.utils.node_utils import NodeUtils
 
 
 class VideoSlot:
@@ -251,8 +250,8 @@ class WebApp(Node):
             
         context = {
             "title": f"{self.get_name()} 监控面板",
-            "default_channel_0": f"{self.input_0}",
-            "default_channel_1": f"{self.input_1}",
+            "default_channel_0": f"{self.channels.input_0}",
+            "default_channel_1": f"{self.channels.input_1}",
             "subtitle": "SURVEILLANCE SYSTEM v1.0"
             }
         return render_template_string(source = html_string, 

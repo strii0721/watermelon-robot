@@ -18,7 +18,6 @@
 
 
 from geometry_msgs.msg import Twist
-import math
 
 class ChassisService:
 

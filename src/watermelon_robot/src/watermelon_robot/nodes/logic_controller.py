@@ -17,18 +17,22 @@
 #
 
 
-from watermelon_robot.protocol.state_machine import NodeWithStateMachine as Node
+from watermelon_robot.protocol.node_with_state_machine import NodeWithStateMachine as Node
 from watermelon_robot_interface.srv import NodeStateComm, RoboticArmAction
 from watermelon_robot_interface.msg import TargetList, LaneError, ChassisControlSequence
 from rclpy.qos import qos_profile_sensor_data
-from watermelon_robot.utils import NodeUtils, CommUtils
+from watermelon_robot.utils.node_utils import NodeUtils
+from watermelon_robot.utils.comm_utils import CommUtils
 import rclpy
-from rclpy.client import Client
-from watermelon_robot.nodes import RealsenseController, TargetDetector, LaneDetector, RoboticArmController, ChassisController
+from watermelon_robot.nodes.realsense_controller import RealsenseController
+from watermelon_robot.nodes.target_detector import TargetDetector
+from watermelon_robot.nodes.lane_detector import LaneDetector
+from watermelon_robot.nodes.robotic_arm_controller import RoboticArmController
+from watermelon_robot.nodes.chassis_controller import ChassisController
+from watermelon_robot.utils import config
 from enum import IntEnum
 import json
 from typing import cast
-from utils import config
 import time
 
 
@@ -279,7 +283,7 @@ class LogicController(Node):
             case self.STATES.PENDING:
                 pass
             
-            case self.STATES.DETECTIING:
+            case self.STATES.DETECTING:
                 self.detect_target()
                 self.forward_lane_error()
             

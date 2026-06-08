@@ -18,7 +18,7 @@
 
 
 import numpy as np
-from watermelon_robot.intermediates import RoboticArmMapper
+from watermelon_robot.intermediates.robotic_arm_mapper import RoboticArmMapper
 
 class RoboticArmService:
 

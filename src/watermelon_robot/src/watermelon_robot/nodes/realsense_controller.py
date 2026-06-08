@@ -18,12 +18,12 @@
 
 
 import rclpy
-from watermelon_robot.protocol.state_machine import NodeWithStateMachine as Node
+from watermelon_robot.protocol.node_with_state_machine import NodeWithStateMachine as Node
 from rclpy.qos import qos_profile_sensor_data
-from watermelon_robot.service import RealsenseService
-from watermelon_robot.utils import NodeUtils
+from watermelon_robot.service.realsense_service import RealsenseService
+from watermelon_robot.utils.node_utils import NodeUtils
+from watermelon_robot.utils.comm_utils import CommUtils
 from cv_bridge import CvBridge
-from watermelon_robot.utils import CommUtils
 from sensor_msgs.msg import Image, CameraInfo
 from typing import cast
 from enum import IntEnum

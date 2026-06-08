@@ -46,3 +46,5 @@ class ConfigUtils:
         config._config_dictionary = config_dictionary
 
         return config
+    
+config = ConfigUtils.get_config()

@@ -17,8 +17,12 @@
 #
 
 
-from watermelon_robot.protocol.state_machine import NodeWithStateMachine as Node
-from watermelon_robot.utils import config, NodeUtils, ModelUtils, DLUtils, CommUtils
+from watermelon_robot.protocol.node_with_state_machine import NodeWithStateMachine as Node
+from watermelon_robot.utils import config
+from watermelon_robot.utils.node_utils import NodeUtils
+from watermelon_robot.utils.model_utils import ModelUtils
+from watermelon_robot.utils.dl_utils import DLUtils
+from watermelon_robot.utils.comm_utils import CommUtils
 from rclpy.qos import qos_profile_sensor_data
 from cv_bridge import CvBridge
 import cv2

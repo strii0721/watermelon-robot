@@ -18,23 +18,26 @@
 
 
 from launch import LaunchDescription
-from watermelon_robot.utils import NodeUtils
+from watermelon_robot.utils.node_utils import NodeUtils
 
 
 def generate_launch_description():
     
     node_list = [
+        
+        "ZOOT",                 # 逻辑控制器
+        
+        # "DWDB_221E",            # 手眼相机
+        # "AMA_10",               # 巡线相机
+        
+        # "LYNCHPIN",             # 目标检测器
+        "ORACLE",               # 航线检测器
+        
+        # "CAERULA_ARBOR",        # 机械臂
+        # "PRESERVATOR",          # 底盘控制器
+        
         "PRIESTESS_EYES",       # Web UI
         
-        # "CELESTIAL_FULCRUM",    # 上逻辑控制器
-        # "PRESERVATOR",          # 手眼相机
-        # "LYNCHPIN",             # 目标检测器
-        # "CAERULA_ARBOR",        # 机械臂
-        
-        # "ORACLE",               # 下逻辑控制器
-        # "AMA_10",               # 巡线相机
-        # "DWDB_221E",            # 底盘控制器
-        "LONETRAIL",            # 航线检测器
         "YAN"                   # 测试辅助节点
     ]
         

@@ -20,8 +20,7 @@
 from enum import IntEnum
 from rclpy.node import Node
 from watermelon_robot_interface.srv import NodeStateComm
-from typing import cast
-from watermelon_robot.utils import NodeUtils
+from watermelon_robot.utils.node_utils import NodeUtils
 import time
 
     

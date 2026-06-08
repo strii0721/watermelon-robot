@@ -18,7 +18,7 @@
 
 
 from fairino import Robot
-from watermelon_robot.utils import KinematicsUtils
+from watermelon_robot.utils.kinematics_utils import KinematicsUtils
 import numpy as np
 from typing import cast
 

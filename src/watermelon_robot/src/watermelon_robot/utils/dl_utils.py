@@ -18,7 +18,7 @@
 
 
 import cv2
-from watermelon_robot.utils import CVUtils
+from watermelon_robot.utils.cv_utils import CVUtils
 from ultralytics import YOLO
 import numpy as np
 

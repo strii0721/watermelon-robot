@@ -20,10 +20,10 @@
 from rclpy.node import Node
 import rclpy
 from watermelon_robot.utils import config
+from watermelon_robot.utils.comm_utils import CommUtils
 from launch_ros.actions import Node as Node2
 from rclpy.client import Client
 from enum import IntEnum
-from utils import CommUtils
 
 
 class NodeUtils: 

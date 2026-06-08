@@ -18,12 +18,12 @@
 
 
 import rclpy
-from watermelon_robot.protocol.state_machine import NodeWithStateMachine as Node
-from watermelon_robot.service import RoboticArmService
+from watermelon_robot.protocol.node_with_state_machine import NodeWithStateMachine as Node
+from watermelon_robot.service.robotic_arm_service import RoboticArmService
 from watermelon_robot_interface.srv import RoboticArmAction
 import time
 from watermelon_robot.utils import config
-from watermelon_robot.utils import NodeUtils
+from watermelon_robot.utils.node_utils import NodeUtils
 import numpy as np
 from enum import IntEnum
 

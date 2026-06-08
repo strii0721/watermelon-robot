@@ -19,9 +19,8 @@
 
 from std_msgs.msg import Header
 from watermelon_robot_interface.msg import LaneError, TargetList, ChassisControlSequence
-from watermelon_robot_interface.srv import LogicControllerComm, RoboticArmAction, NodeStateComm
+from watermelon_robot_interface.srv import RoboticArmAction, NodeStateComm
 from rclpy.time import Time
-from watermelon_robot.protocol import LogicControllerCommCode
 from enum import IntEnum
 
 class CommUtils:
@@ -73,17 +72,6 @@ class CommUtils:
         chassis_control_sequence.error_rads = float(error_rads)
         
         return chassis_control_sequence
-    
-    @classmethod
-    def create_logic_controller_comm_request(cls, 
-                                             header: Header, 
-                                             comm_code: LogicControllerCommCode) -> LogicControllerComm.Request:
-        
-        request = LogicControllerComm.Request()
-        request.header = header
-        request.comm_code = comm_code.value
-        
-        return request
     
     @classmethod
     def create_robotic_arm_action_request(cls, 
