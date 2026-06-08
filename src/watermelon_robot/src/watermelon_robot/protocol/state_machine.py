@@ -22,6 +22,7 @@ from rclpy.node import Node
 from watermelon_robot_interface.srv import NodeStateComm
 from typing import cast
 from watermelon_robot.utils import NodeUtils
+import time
 
     
 class NodeWithStateMachine(Node):
@@ -48,12 +49,21 @@ class NodeWithStateMachine(Node):
         
         self._heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_period_sec, 
                                                   callback = self.heartbeat)
+        self._last_heartbeat = time.time()
+        self._real_heartbeat_period_sec = 0
         
     def heartbeat(self) -> None:
         """这是状态机的主循环函数，在这里使用 match-case 处理状态。
         """        
         
-        pass
+        now = time.time()
+        self._real_heartbeat_period_sec = now - self._last_heartbeat
+        self._last_heartbeat = now
+        
+    
+    def get_real_heartbeat_period_sec(self) -> float:
+        
+        return self._real_heartbeat_period_sec
     
     def create_state_machine(self) -> None:
 
