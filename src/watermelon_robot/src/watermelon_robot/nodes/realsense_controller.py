@@ -55,8 +55,6 @@ class RealsenseController(Node):
                                                                           topic = self.output_2, 
                                                                           qos_profile = qos_profile_sensor_data)
         
-        
-        
         NodeUtils.node_initialized(self)
 
     def read_frame(self):

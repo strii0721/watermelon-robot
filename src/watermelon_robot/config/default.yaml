@@ -124,6 +124,7 @@ _node_initializer:
   PRESERVATOR:
     executable: "realsense_controller"
     node_type: "sensor"
+    heartbeat_period_sec: 0.033            # 画面采集帧率
 
     # 标准通信接口配置块 ###################
     ##################
@@ -134,7 +135,6 @@ _node_initializer:
     # 通用配置块 ###################
     ###########
     serial_number: "034422074118"
-    heartbeat_period_sec: 0.033                                               # 画面采集帧率
 
 # -------------------------------------------------------
 
@@ -196,6 +196,7 @@ _node_initializer:
   AMA_10:
     executable: "realsense_controller"
     node_type: "sensor"
+    heartbeat_period_sec: 0.033            # 画面采集帧率
 
     # 标准通信接口配置块 ###################
     ##################
@@ -206,7 +207,6 @@ _node_initializer:
     # 通用配置块 ###################
     ###########
     serial_number: "231122072487"
-    heartbeat_period_sec: 0.033            # 画面采集帧率
 
 # -------------------------------------------------------
   
@@ -215,6 +215,8 @@ _node_initializer:
   #############
   LONETRAIL:
     executable: "lane_detector"
+    node_type: "processor"
+    heartbeat_period_sec: 0.033
 
     # 标准通信接口配置块 ###################
     ##################
@@ -243,7 +245,7 @@ _node_initializer:
     # 通用配置块 ###################
     ###########
     fps: 30           # 画面采集帧率
-    video_path: "/home/wheeltec/fr_ws/watermelon-robot/resource/datasets/lane-detection/legacy/video-5.mp4"
+    video_path: "/home/lynchpin/repository/watermelon-robot/resource/datasets/lane-detection/legacy/video-5.mp4"
 
 # -------------------------------------------------------
 

@@ -17,7 +17,7 @@
 #
 
 
-from rclpy.node import Node
+from watermelon_robot.protocol.state_machine import NodeWithStateMachine as Node
 from watermelon_robot.utils import NodeUtils
 from watermelon_robot_interface.msg import LaneError
 from rclpy.qos import qos_profile_sensor_data
@@ -28,8 +28,15 @@ import time
 from sensor_msgs.msg import Image
 import math
 import rclpy
+from enum import IntEnum
+
 
 class LaneDetector(Node):
+    
+    class STATES(IntEnum):
+        
+        DISABLED = 0
+        ENABLED = 100
     
     def __init__(self):
         
@@ -42,10 +49,11 @@ class LaneDetector(Node):
                                            confidence = config.lane_detection.model.confidence)
 
         self.last_frame_time = time.time()
+        self.last_frame = None
         
         self.realsense_frame_color_subscriber = self.create_subscription(msg_type = Image, 
                                                                          topic = self.input_0, 
-                                                                         callback = self.detect_lane, 
+                                                                         callback = self.cache_frame, 
                                                                          qos_profile = qos_profile_sensor_data)
         
         self.lane_error_publisher = self.create_publisher(msg_type = LaneError, 
@@ -59,12 +67,16 @@ class LaneDetector(Node):
         
         
         NodeUtils.node_initialized(self)
-    
-    def detect_lane(self, 
+        
+    def cache_frame(self, 
                     color_frame_message: Image) -> None:
         
-        color_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = color_frame_message, 
-                                                   desired_encoding = "passthrough")
+        self.last_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = color_frame_message, 
+                                                       desired_encoding = "passthrough")
+    
+    def detect_lane(self) -> None:
+        
+        color_frame = self.last_frame.copy()
         timestamp = self.get_clock().now().to_msg()
         header = CommUtils.create_header(stamp = timestamp)
         
@@ -97,6 +109,18 @@ class LaneDetector(Node):
         
         self.lane_error_publisher.publish(msg = lane_error)
         self.navigation_color_monitor_publisher.publish(msg = color_frame_message)
+        
+    def heartbeat(self):
+        
+        state = self.retrieve_node_state()
+        
+        match state:
+            
+            case self.STATES.DISABLED:
+                pass
+            
+            case self.STATES.ENABLED:
+                self.detect_lane()
         
         
 def main():
