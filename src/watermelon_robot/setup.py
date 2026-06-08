@@ -50,16 +50,14 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "super_logic_controller = watermelon_robot.nodes.super_logic_controller:main", 
-            "sub_logic_controller = watermelon_robot.nodes.sub_logic_controller:main",
+            "web_app = watermelon_robot.nodes.web_app:main",
+            "realsense_controller = watermelon_robot.nodes.realsense_controller:main",
+            "target_detector = watermelon_robot.nodes.target_detector:main",
+            "lane_detector = watermelon_robot.nodes.lane_detector:main",
+            "logic_controller = watermelon_robot.nodes.logic_controller:main",
             "robotic_arm_controller = watermelon_robot.nodes.robotic_arm_controller:main", 
             "chassis_controller = watermelon_robot.nodes.chassis_controller:main",
-            "realsense_controller = watermelon_robot.nodes.realsense_controller:main",
-            "monitor = watermelon_robot.nodes.monitor:main", 
-            "lane_detector = watermelon_robot.nodes.lane_detector:main",
-            "target_detector = watermelon_robot.nodes.target_detector:main",
             "sub_test = watermelon_robot.nodes.sub_test:main",
-            "web_app = watermelon_robot.nodes.web_app:main",
         ],
     },
 )

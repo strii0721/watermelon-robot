@@ -89,6 +89,149 @@ scissors:
 ######################################## 以下是节点初始化器配置 ########################################
 _node_initializer:
 
+  ###############
+  # Web UI 节点 #
+  ###############
+  PRIESTESS_EYES:
+    executable: "web_app"
+
+    channels:
+      input_0: "t/target_detector/visualization/overlay"
+      input_1: "t/lane_detector/visualization/overlay"
+      duplex_0: "s/logic_controller/command"
+
+    # 通用配置块 ###################
+    ###########
+    fps: 30           # 画面渲染帧率
+    port: 8080
+
+# -------------------------------------------------------
+
+  ################
+  # 逻辑控制器节点 #
+  ################
+  ZOOT:
+    executable: "logic_controller"
+    node_type: "scheduler"
+    heartbeat_period_sec: 0.1
+    channels:
+      DWDB_221E: "ns/sensor/DWDB_221E"
+      AMA_10: "ns/sensor/AMA_10"
+      LYNCHPIN: "ns/processor/LYNCHPIN"
+      ORACLE: "ns/processor/ORACLE"
+      CAERULA_ARBOR: "ns/executor/CAERULA_ARBOR"
+      PRESERVATOR: "ns/executor/PRESERVATOR"
+
+      input_0: "t/target_detector/prediction/target_list"
+      input_1: "t/lane_detector/prediction/lane_error"        # 输入：航线偏离
+      output_0: "t/chassis/control_sequence"                  # 输出：底盘控制序列
+      duplex_0: "s/robotic_arm/command"                       # 双工：机械臂控制
+
+# -------------------------------------------------------
+
+  ##################################
+  # 机械臂手眼 RealSense 相机控制器 #
+  ##################################
+  DWDB_221E:
+    executable: "realsense_controller"
+    node_type: "sensor"
+    heartbeat_period_sec: 0.033            # 画面采集帧率
+    channels:
+      output_0: "t/realsense/robotic_arm/in_hand/color"      
+      output_1: "t/realsense/robotic_arm/in_hand/depth"      
+      output_2: "t/realsense/robotic_arm/in_hand/intrinsics" 
+
+    # 通用配置块 ###################
+    ###########
+    serial_number: "034422074118"
+
+# -------------------------------------------------------
+  
+  ################################
+  # 底盘前视 RealSense 相机控制器 #
+  ################################
+  AMA_10:
+    executable: "realsense_controller"
+    node_type: "sensor"
+    heartbeat_period_sec: 0.033            # 画面采集帧率
+    channels:
+      output_0: "t/realsense/chassis/front_facing/color"            # 输出：    
+      output_1: "t/realsense/chassis/front_facing/depth"            # 输出： 
+      output_2: "t/realsense/chassis/front_facing/intrinsics"       # 输出： 
+
+    # 通用配置块 ###################
+    ###########
+    serial_number: "231122072487"
+
+# -------------------------------------------------------
+
+  ##############
+  # 目标检测器 #
+  ##############
+  LYNCHPIN:
+    executable: "target_detector"
+    node_type: "processor"
+    heartbeat_period_sec: 0.033
+    channels:
+      input_0: "t/realsense/robotic_arm/in_hand/color"          # 输入：
+      input_1: "t/realsense/robotic_arm/in_hand/depth"          # 输入：
+      input_2: "t/realsense/robotic_arm/in_hand/intrinsics"     # 输入：
+      output_0: "t/target_detector/prediction/target_list"      # 输出：目标队列
+      output_1: "t/target_detector/visualization/overlay"       # 输出：手眼相机目标框叠加层
+
+    # 通用配置块 ###################
+    ###########
+    ats:
+      queue_size: 10
+      slop: 0.05
+
+# -------------------------------------------------------
+  
+  #############
+  # 航线检测器 #
+  #############
+  ORACLE:
+    executable: "lane_detector"
+    node_type: "processor"
+    heartbeat_period_sec: 0.033
+    channels:
+      input_0: "t/realsense/chassis/front_facing/color"     
+      output_0: "t/lane_detector/prediction/lane_error"         # 输出：航线偏离
+      output_1: "t/lane_detector/visualization/overlay"         # 输出：底盘相机预测轨迹叠加层
+
+    # 通用配置块 ###################
+    ###########
+    ats:
+      queue_size: 10
+      slop: 0.05
+
+# -------------------------------------------------------
+  
+  ###############
+  # 机械臂控制器 #
+  ###############
+  CAERULA_ARBOR:
+    executable: "robotic_arm_controller"
+    node_type: "executor"
+    heartbeat_period_sec: 0.1
+    channels:
+      duplex_0: "s/robotic_arm/command"                   # 双工：机械臂控制
+
+# -------------------------------------------------------
+  
+  #############
+  # 底盘控制器 #
+  #############
+  PRESERVATOR:
+    executable: "chassis_controller"
+    node_type: "executor"
+    heartbeat_period_sec: 0.1
+    channels:
+      input_0: "t/chassis/control_sequence"                   # 底盘方向控制
+      output_0: "cmd_vel"                                     # 轮趣 SDK：底盘控制信号
+
+# -------------------------------------------------------
+
   ################
   # 上逻辑控制器 #
   ################
@@ -104,63 +247,6 @@ _node_initializer:
     # 通用配置块 ###################
     ###########
     heartbeat_period_sec: 0.01                              # Heartbeat 循环周期
-# -------------------------------------------------------
-  
-  ###############
-  # 机械臂控制器 #
-  ###############
-  CAERULA_ARBOR:
-    executable: "robotic_arm_controller"
-    node_type: "executor"
-    heartbeat_period_sec: 0.1
-
-    # 标准通信接口配置块 ###################
-    ##################
-    duplex_0: "s/robotic_arm/command"                   # 双工：机械臂控制
-
-# -------------------------------------------------------
-
-  ##################################
-  # 机械臂手眼 RealSense 相机控制器 #
-  ##################################
-  PRESERVATOR:
-    executable: "realsense_controller"
-    node_type: "sensor"
-    heartbeat_period_sec: 0.033            # 画面采集帧率
-
-    # 标准通信接口配置块 ###################
-    ##################
-    output_0: "t/realsense/robotic_arm/in_hand/color"      
-    output_1: "t/realsense/robotic_arm/in_hand/depth"      
-    output_2: "t/realsense/robotic_arm/in_hand/intrinsics" 
-
-    # 通用配置块 ###################
-    ###########
-    serial_number: "034422074118"
-
-# -------------------------------------------------------
-
-  ##############
-  # 目标检测器 #
-  ##############
-  LYNCHPIN:
-    executable: "target_detector"
-    node_type: "processor"
-    heartbeat_period_sec: 0.033
-
-    # 标准通信接口配置块 ###################
-    ##################
-    input_0: "t/realsense/robotic_arm/in_hand/color"          # 输入：
-    input_1: "t/realsense/robotic_arm/in_hand/depth"          # 输入：
-    input_2: "t/realsense/robotic_arm/in_hand/intrinsics"     # 输入：
-    output_0: "t/target_detector/prediction/target_list"      # 输出：目标队列
-    output_1: "t/target_detector/visualization/overlay"       # 输出：手眼相机目标框叠加层
-
-    # 通用配置块 ###################
-    ###########
-    ats:
-      queue_size: 10
-      slop: 0.05
 
 # -------------------------------------------------------
   ################
@@ -180,63 +266,6 @@ _node_initializer:
     heartbeat_period_sec: 0.01                              # Heartbeat 循环周期
 
 # -------------------------------------------------------
-  
-  #############
-  # 底盘控制器 #
-  #############
-  DWDB_221E:
-    executable: "chassis_controller"
-    node_type: "executor"
-    heartbeat_period_sec: 0.1
-
-    # 标准通信接口配置块 ###################
-    ##################
-    input_0: "t/chassis/control_sequence"                   # 底盘方向控制
-    output_0: "cmd_vel"                                     # 轮趣 SDK：底盘控制信号
-
-# -------------------------------------------------------
-  
-  ################################
-  # 底盘前视 RealSense 相机控制器 #
-  ################################
-  AMA_10:
-    executable: "realsense_controller"
-    node_type: "sensor"
-    heartbeat_period_sec: 0.033            # 画面采集帧率
-
-    # 标准通信接口配置块 ###################
-    ##################
-    output_0: "t/realsense/chassis/front_facing/color"            # 输出：    
-    output_1: "t/realsense/chassis/front_facing/depth"            # 输出： 
-    output_2: "t/realsense/chassis/front_facing/intrinsics"       # 输出： 
-
-    # 通用配置块 ###################
-    ###########
-    serial_number: "231122072487"
-
-# -------------------------------------------------------
-  
-  #############
-  # 航线检测器 #
-  #############
-  LONETRAIL:
-    executable: "lane_detector"
-    node_type: "processor"
-    heartbeat_period_sec: 0.033
-
-    # 标准通信接口配置块 ###################
-    ##################
-    input_0: "t/realsense/chassis/front_facing/color"     
-    output_0: "t/lane_detector/prediction/lane_error"         # 输出：航线偏离
-    output_1: "t/lane_detector/visualization/overlay"         # 输出：底盘相机预测轨迹叠加层
-
-    # 通用配置块 ###################
-    ###########
-    ats:
-      queue_size: 10
-      slop: 0.05
-
-# -------------------------------------------------------
 
   ################
   # Sub 测试辅助节点 #
@@ -254,20 +283,3 @@ _node_initializer:
     video_path: "/home/lynchpin/repository/watermelon-robot/resource/datasets/lane-detection/legacy/video-5.mp4"
 
 # -------------------------------------------------------
-
-  ###############
-  # Web UI 节点 #
-  ###############
-  PRIESTESS_EYES:
-    executable: "web_app"
-
-    # 标准通信接口配置块 ###################
-    ##################
-    input_0: "t/target_detector/visualization/overlay"
-    input_1: "t/lane_detector/visualization/overlay"
-    duplex_0: "s/logic_controller/command"
-
-    # 通用配置块 ###################
-    ###########
-    fps: 30           # 画面渲染帧率
-    port: 8080

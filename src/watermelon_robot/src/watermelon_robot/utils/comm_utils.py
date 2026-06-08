@@ -97,9 +97,9 @@ class CommUtils:
         return request
     
     @classmethod
-    def create_state_comm_request(cls, 
-                                  header: Header, 
-                                  state: IntEnum) -> NodeStateComm.Request:
+    def create_node_state_comm_request(cls, 
+                                       header: Header, 
+                                       state: IntEnum) -> NodeStateComm.Request:
         
         request = NodeStateComm.Request()
         request.header = header

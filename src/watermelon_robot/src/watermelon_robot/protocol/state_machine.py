@@ -42,7 +42,7 @@ class NodeWithStateMachine(Node):
         super().__init__(node_name = node_name)
         NodeUtils.node_initializer(node_entity = self)
         self.create_state_machine()
-        service_channel = f"node_state/{self.node_type}/{self.get_name()}"
+        service_channel = f"ns/{self.node_type}/{self.get_name()}"
         self._state_comm_service = self.create_service(srv_type = NodeStateComm, 
                                                        srv_name = service_channel, 
                                                        callback = self._update_node_state)
