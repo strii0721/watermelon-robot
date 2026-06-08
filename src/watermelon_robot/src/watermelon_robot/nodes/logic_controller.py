@@ -90,6 +90,13 @@ class LogicController(Node):
         self.command_robotic_arm_client = self.create_client(srv_type = RoboticArmAction, 
                                                              srv_name = self.channels.duplex_0)
         
+        for t in range(3):
+            self.get_logger().info(f"系统启动倒计时 {3 - t} 秒")
+            time.sleep(1)
+        self.get_logger().info(f"系统启动中...")
+        
+        self.update_node_state(state = self.STATES.DETECTING)
+        
         NodeUtils.comm_node_state(caller = self, 
                                   handler = self.node_handler_CAERULA_ARBOR, 
                                   state = RealsenseController.STATES.ENABLED)
@@ -118,12 +125,13 @@ class LogicController(Node):
         timestamp = self.get_clock().now().to_msg()
         header = CommUtils.create_header(stamp = timestamp)
         forward_speed = config.chassis.forward_speed
-        error_rads = self.last_lane_error.error_rads
-        chassis_control_sequence = CommUtils.create_chassis_control_sequence(header = header, 
-                                                                             forward_speed = forward_speed,
-                                                                             error_rads = self.error_rads)
+        if self.last_lane_error is not None:
+            error_rads = self.last_lane_error.error_rads
+            chassis_control_sequence = CommUtils.create_chassis_control_sequence(header = header, 
+                                                                                 forward_speed = forward_speed,
+                                                                                 error_rads = error_rads)
         
-        self.chassis_control_sequence_publisher.publish(msg = chassis_control_sequence)
+            self.chassis_control_sequence_publisher.publish(msg = chassis_control_sequence)
         
     def check_terminal(self, 
                        reach_terminal: bool) -> None:

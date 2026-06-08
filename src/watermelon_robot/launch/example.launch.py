@@ -34,7 +34,7 @@ def generate_launch_description():
         "ORACLE",               # 航线检测器
         
         # "CAERULA_ARBOR",        # 机械臂
-        # "PRESERVATOR",          # 底盘控制器
+        "PRESERVATOR",          # 底盘控制器
         
         "PRIESTESS_EYES",       # Web UI
         

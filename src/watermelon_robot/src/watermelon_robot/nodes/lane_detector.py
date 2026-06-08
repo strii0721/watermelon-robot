@@ -77,35 +77,37 @@ class LaneDetector(Node):
     
     def detect_lane(self) -> None:
         
-        color_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = self.last_color_frame, 
-                                                   desired_encoding = "passthrough")
+        if self.last_color_frame:
         
-        reach_terminal, lane_error_rads = DLUtils.predict_lane(model = self.model, 
-                                                               source_image = color_frame, 
-                                                               roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
-                                                               roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
-                                                               detect_step = config.lane_detection.detect_step, 
-                                                               lane_offset = config.lane_detection.lane_offset)
-        timestamp = self.get_clock().now().to_msg()
-        header = CommUtils.create_header(stamp = timestamp)
-        lane_error = CommUtils.create_lane_error(header = header, 
-                                                 error_rads = lane_error_rads, 
-                                                 reach_terminal = reach_terminal)
-        height, width = color_frame.shape[:2]
-        fps = int(1 / self.get_real_heartbeat_period_sec())
-        cv2.putText(img = color_frame, 
-                    text = f"FPS {fps} | Frame Size {width}x{height}", 
-                    org = (5, 20), 
-                    fontFace = cv2.FONT_HERSHEY_SIMPLEX, 
-                    fontScale = 0.5, 
-                    color = (0, 0, 255), 
-                    thickness = 2)
-        color_frame_message = self.cv_bridge.cv2_to_imgmsg(cvim = color_frame, 
-                                                           encoding="bgr8", 
-                                                           header = header)
-        
-        self.lane_error_publisher.publish(msg = lane_error)
-        self.navigation_color_monitor_publisher.publish(msg = color_frame_message)
+            color_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = self.last_color_frame, 
+                                                       desired_encoding = "passthrough")
+            
+            reach_terminal, lane_error_rads = DLUtils.predict_lane(model = self.model, 
+                                                                   source_image = color_frame, 
+                                                                   roi_y_min_portion = config.lane_detection.roi.y_min_portion, 
+                                                                   roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
+                                                                   detect_step = config.lane_detection.detect_step, 
+                                                                   lane_offset = config.lane_detection.lane_offset)
+            timestamp = self.get_clock().now().to_msg()
+            header = CommUtils.create_header(stamp = timestamp)
+            lane_error = CommUtils.create_lane_error(header = header, 
+                                                     error_rads = lane_error_rads, 
+                                                     reach_terminal = reach_terminal)
+            height, width = color_frame.shape[:2]
+            fps = int(1 / self.get_real_heartbeat_period_sec())
+            cv2.putText(img = color_frame, 
+                        text = f"FPS {fps} | Frame Size {width}x{height}", 
+                        org = (5, 20), 
+                        fontFace = cv2.FONT_HERSHEY_SIMPLEX, 
+                        fontScale = 0.5, 
+                        color = (0, 0, 255), 
+                        thickness = 2)
+            color_frame_message = self.cv_bridge.cv2_to_imgmsg(cvim = color_frame, 
+                                                               encoding="bgr8", 
+                                                               header = header)
+            
+            self.lane_error_publisher.publish(msg = lane_error)
+            self.navigation_color_monitor_publisher.publish(msg = color_frame_message)
         
     def heartbeat(self):
         
