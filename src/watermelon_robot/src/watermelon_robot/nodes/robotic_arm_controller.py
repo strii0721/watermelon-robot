@@ -18,7 +18,7 @@
 
 
 import rclpy
-from rclpy.node import Node
+from watermelon_robot.protocol.state_machine import NodeWithStateMachine as Node
 from watermelon_robot.service import RoboticArmService
 from watermelon_robot_interface.srv import RoboticArmAction
 import time
@@ -28,11 +28,14 @@ import numpy as np
 
 
 class RoboticArmController(Node):
+    
+    class STATES:
+        DISABLED = 0
+        SIMPLE = 100        # 最简单的运动方式，即获得坐标后直接运动到目标
 
     def __init__(self):
         
         super().__init__('robotic_arm_controller')
-        NodeUtils.node_initializer(self)
         
         activated_robotic_arm_profile = config.robotic_arm.activate
         self.robotic_arm_config = getattr(config.robotic_arm.profiles, activated_robotic_arm_profile)
@@ -48,16 +51,12 @@ class RoboticArmController(Node):
             self.get_logger().info("机械臂已复位...")
         else:
             self.get_logger().warn(f"机械臂复位失败，状态码{state_code}")
-
-        self.srv_robotic_arm_action_once = self.create_service(srv_type = RoboticArmAction, 
-                                                               srv_name = self.duplex_0, 
-                                                               callback = self.robotic_arm_act_once)
         
         NodeUtils.node_initialized(self)
         
-    def robotic_arm_act_once(self, 
-                             request: RoboticArmAction.Request, 
-                             response: RoboticArmAction.Response) -> RoboticArmAction.Response:
+    def act_simple(self, 
+                   request: RoboticArmAction.Request, 
+                   response: RoboticArmAction.Response) -> RoboticArmAction.Response:
         """机械臂的一次完整动作，包括移动至目标位置、剪切、复位等。若无法移动至目标位置则会尝试复位。当剪刀控制失效/复位失败时返回 is_success = False。
 
         Args:
@@ -130,6 +129,35 @@ class RoboticArmController(Node):
             self.get_logger().warn(f"剪刀张开失败！")
         
         return state_code
+    
+    def start_listen(self):
+        """开启目标监听
+        """  
+        
+        if self.robotic_arm_action_service is None:
+            self.robotic_arm_action_service = self.create_service(srv_type = RoboticArmAction, 
+                                                                  srv_name = self.duplex_0, 
+                                                                  callback = self.act_simple)
+    
+    def stop_listen(self):
+        """关闭目标监听
+        """        
+        
+        if self.robotic_arm_action_service is not None:
+            self.destroy_service(self.robotic_arm_action_service)
+            self.robotic_arm_action_service = None
+            
+    def heartbeat(self):
+        
+        super().heartbeat()
+        
+        match self.retrieve_node_state():
+            
+            case self.STATES.DISABLED:
+                self.stop_listen()
+            
+            case self.STATES.SIMPLE:
+                self.start_listen()
     
 def main():
 
