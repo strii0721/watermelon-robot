@@ -60,7 +60,6 @@ class NodeWithStateMachine(Node):
         self._real_heartbeat_period_sec = now - self._last_heartbeat
         self._last_heartbeat = now
         
-    
     def get_real_heartbeat_period_sec(self) -> float:
         
         return self._real_heartbeat_period_sec

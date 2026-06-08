@@ -42,7 +42,6 @@ class TargetDetector(Node):
         
         super().__init__("target_detector")
         
-        self.last_frame_time = time.time()
         activated_robotic_arm_profile = config.robotic_arm.activate
         self.working_space = getattr(config.robotic_arm.profiles, activated_robotic_arm_profile).working_space
         self.model = ModelUtils.load_model(model_name = config.target_detection.model.name, 
@@ -70,14 +69,14 @@ class TargetDetector(Node):
                                                                                 topic = self.input_2,
                                                                                 qos_profile = qos_profile_sensor_data)
         
-        self.approxiamate_time_synchronizer = message_filters.ApproximateTimeSynchronizer(
+        self.realsense_frame_subscriber = message_filters.ApproximateTimeSynchronizer(
             fs = [self.realsense_frame_color_subscriber, 
                   self.realsense_frame_depth_subscriber, 
                   self.realsense_frame_intrinsics_subscriber],
             queue_size = self.ats.queue_size,
             slop = self.ats.slop
         )
-        self.approxiamate_time_synchronizer.registerCallback(self.cache_frames)
+        self.realsense_frame_subscriber.registerCallback(self.realsense_frame)
         
         self.target_list_publisher = self.create_publisher(msg_type = TargetList, 
                                                        topic = self.output_0, 
@@ -89,22 +88,22 @@ class TargetDetector(Node):
         
         NodeUtils.node_initialized(self)
         
-    def cache_frames(self, 
-                     color_frame: Image, 
-                     depth_frame: Image, 
-                     intrinsics: CameraInfo) -> None:
+    def realsense_frame(self, 
+                        color_frame: Image, 
+                        depth_frame: Image, 
+                        intrinsics: CameraInfo) -> None:
         
-        self.last_color_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = color_frame, 
-                                                             desired_encoding = "passthrough")
-        self.last_depth_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = depth_frame, 
-                                                             desired_encoding = "passthrough")
-        self.intrinsics = intrinsics
+        self.last_color_frame = color_frame
+        self.last_depth_frame = depth_frame
+        self.last_intrinsics = intrinsics
         
     def detect_targets(self) -> None:
             
-            color_frame = self.last_color_frame
-            depth_frame = self.last_depth_frame
-            intrinsics = self.intrinsics
+            color_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = self.last_color_frame, 
+                                                       desired_encoding = "passthrough")
+            depth_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = self.last_depth_frame, 
+                                                       desired_encoding = "passthrough")
+            intrinsics = self.last_intrinsics
         
             targets = DLUtils.predict_targets(model = self.model, 
                                               color_image = color_frame, 
@@ -117,9 +116,7 @@ class TargetDetector(Node):
             target_list = CommUtils.create_target_list(header = header, 
                                                        target_list_json = target_list_json)
             
-            now_time = time.time()
-            fps = 1.0 / (now_time - self.last_frame_time)
-            self.last_frame_time = now_time
+            fps = int(1 / self.get_real_heartbeat_period_sec())
             cv2.putText(color_frame, f'FPS: {fps:.2f}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
             image_message = self.cv_bridge.cv2_to_imgmsg(cvim = color_frame, 
                                                          encoding="bgr8", 
@@ -128,17 +125,19 @@ class TargetDetector(Node):
             self.target_list_publisher.publish(msg = target_list)
             self.overlay_publisher.publish(msg = image_message)
             
-    def heartbeat(self) -> None:
+    def heartbeat(self):
         
-        state = self.retrieve_node_state()
+        super().heartbeat()
         
-        match state:
+        match self.retrieve_node_state():
             
             case self.STATES.DISABLED:
                 pass
             
             case self.STATES.ENABLED:
                 self.detect_targets()
+            
+    
 
 
 def main():

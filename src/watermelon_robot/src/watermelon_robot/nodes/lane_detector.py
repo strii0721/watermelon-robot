@@ -26,7 +26,6 @@ from watermelon_robot.utils import config, DLUtils, ModelUtils, CommUtils
 import cv2
 import time
 from sensor_msgs.msg import Image
-import math
 import rclpy
 from enum import IntEnum
 
@@ -53,7 +52,7 @@ class LaneDetector(Node):
         
         self.realsense_frame_color_subscriber = self.create_subscription(msg_type = Image, 
                                                                          topic = self.input_0, 
-                                                                         callback = self.cache_frames, 
+                                                                         callback = self.cache_realsense_frame_color, 
                                                                          qos_profile = qos_profile_sensor_data)
         
         self.lane_error_publisher = self.create_publisher(msg_type = LaneError, 
@@ -68,17 +67,15 @@ class LaneDetector(Node):
         
         NodeUtils.node_initialized(self)
         
-    def cache_frames(self, 
-                     color_frame_message: Image) -> None:
+    def cache_realsense_frame_color(self, 
+                                    color_frame: Image) -> None:
         
-        self.last_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = color_frame_message, 
-                                                       desired_encoding = "passthrough")
+        self.last_color_frame = color_frame
     
     def detect_lane(self) -> None:
         
-        color_frame = self.last_frame.copy()
-        timestamp = self.get_clock().now().to_msg()
-        header = CommUtils.create_header(stamp = timestamp)
+        color_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = self.last_color_frame, 
+                                                   desired_encoding = "passthrough")
         
         reach_terminal, lane_error_rads = DLUtils.predict_lane(model = self.model, 
                                                                source_image = color_frame, 
@@ -86,18 +83,15 @@ class LaneDetector(Node):
                                                                roi_y_max_portion = config.lane_detection.roi.y_max_portion, 
                                                                detect_step = config.lane_detection.detect_step, 
                                                                lane_offset = config.lane_detection.lane_offset)
-
-        lane_error_degrees = math.degrees(lane_error_rads)
+        timestamp = self.get_clock().now().to_msg()
+        header = CommUtils.create_header(stamp = timestamp)
         lane_error = CommUtils.create_lane_error(header = header, 
-                                                 error_degrees = lane_error_degrees, 
                                                  error_rads = lane_error_rads, 
                                                  reach_terminal = reach_terminal)
         height, width = color_frame.shape[:2]
-        now_time = time.time()
-        real_fps = int(1/(now_time - self.last_frame_time))
-        self.last_frame_time = now_time
+        fps = int(1 / self.get_real_heartbeat_period_sec())
         cv2.putText(img = color_frame, 
-                    text = f"FPS {real_fps} | Frame Size {width}x{height}", 
+                    text = f"FPS {fps} | Frame Size {width}x{height}", 
                     org = (5, 20), 
                     fontFace = cv2.FONT_HERSHEY_SIMPLEX, 
                     fontScale = 0.5, 
@@ -112,9 +106,9 @@ class LaneDetector(Node):
         
     def heartbeat(self):
         
-        state = self.retrieve_node_state()
+        super().heartbeat()
         
-        match state:
+        match self.retrieve_node_state():
             
             case self.STATES.DISABLED:
                 pass

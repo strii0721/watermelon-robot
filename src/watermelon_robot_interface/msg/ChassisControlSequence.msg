@@ -1,3 +1,3 @@
 std_msgs/Header header
+float64 forward_speed
 float64 error_rads
-bool is_enabled

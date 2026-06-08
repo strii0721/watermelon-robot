@@ -1,4 +1,3 @@
 std_msgs/Header header
-float64 error_degrees
 float64 error_rads
 bool reach_terminal

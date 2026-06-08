@@ -40,13 +40,11 @@ class CommUtils:
     @classmethod
     def create_lane_error(cls, 
                           header: Header, 
-                          error_degrees: float, 
                           error_rads: float, 
                           reach_terminal: bool) -> LaneError:
         
         lane_error = LaneError()
         lane_error.header = header
-        lane_error.error_degrees = error_degrees
         lane_error.error_rads = error_rads
         lane_error.reach_terminal = reach_terminal
         

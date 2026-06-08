@@ -26,8 +26,6 @@ from watermelon_robot_interface.msg import ChassisControlSequence
 from watermelon_robot.protocol import QoSFiles
 from watermelon_robot.utils import config
 from watermelon_robot.service import ChassisService
-import time
-import math
 from rclpy.qos import qos_profile_sensor_data
 from enum import IntEnum
 
@@ -45,7 +43,6 @@ class ChassisController(Node):
         super().__init__("chassis_controller")
 
         self.chassis_service = ChassisService()
-        self.last_control_time = time.time()
         
         pid_triple = config.chassis.pid_controller.pid_triple
         integral_limit = config.chassis.pid_controller.integral_limit
@@ -72,35 +69,31 @@ class ChassisController(Node):
         
     def forward(self) -> None:   
           
-        now_time = time.time()
 
-        error_rads = self.last_chassis_control_sequence.error_rads
         forward_speed = self.last_chassis_control_sequence.forward_speed
-            
-        control_interval = now_time - self.last_control_time
+        error_rads = self.last_chassis_control_sequence.error_rads
+        
         control_variable = self.controller.update_control_variable(error = error_rads, 
-                                                                   control_interval = control_interval)
+                                                                   control_interval = self.get_real_heartbeat_period_sec())
         twist_msg = self.chassis_service.apply_control_variable(control_variable = control_variable,
                                                                 forward_speed = forward_speed)
         self.cmd_vel_publisher.publish(msg = twist_msg)
-        self.last_control_time = now_time
         
         # error_degrees = math.degrees(error_rads)
         # self.get_logger().info(f"当前弧度误差：{error_rads} | 角度误差：{error_degrees} | 产生控制变量：{control_variable}")
         
     def hold(self) -> None:
         
-        now_time = time.time()
         twist_msg = self.chassis_service.apply_control_variable(control_variable = 0.0,
                                                                 forward_speed = 0.0)
         self.cmd_vel_publisher.publish(msg = twist_msg)
-        self.last_control_time = now_time
+        
         
     def heartbeat(self) -> None:
         
-        state = self.retrieve_node_state()
+        super().heartbeat()
         
-        match state:
+        match self.retrieve_node_state():
             
             case self.STATES.DISABLED:
                 pass

@@ -83,9 +83,10 @@ class RealsenseController(Node):
             
     def heartbeat(self):
         
-        state = self.retrieve_node_state()
+        super().heartbeat()
         
-        match state:
+        match self.retrieve_node_state():
+            
             case self.STATES.DISABLED:
                 pass
             
