@@ -35,7 +35,7 @@ class SubTest(Node):
         
         self.cv_bridge = CvBridge()
         self.realsense_color_frame_publisher = self.create_publisher(msg_type = Image,
-                                                                     topic = self.output_0, 
+                                                                     topic = self.channels.output_0, 
                                                                      qos_profile = qos_profile_sensor_data)
         self.read_frame_timer = self.create_timer(timer_period_sec = 1/self.fps, 
                                                   callback = self.read_frame)

@@ -51,16 +51,16 @@ class LaneDetector(Node):
         self.last_frame = None
         
         self.realsense_frame_color_subscriber = self.create_subscription(msg_type = Image, 
-                                                                         topic = self.input_0, 
+                                                                         topic = self.channels.input_0, 
                                                                          callback = self.cache_realsense_frame_color, 
                                                                          qos_profile = qos_profile_sensor_data)
         
         self.lane_error_publisher = self.create_publisher(msg_type = LaneError, 
-                                                          topic = self.output_0, 
+                                                          topic = self.channels.output_0, 
                                                           qos_profile = qos_profile_sensor_data)
         
         self.navigation_color_monitor_publisher = self.create_publisher(msg_type = Image, 
-                                                                        topic = self.output_1, 
+                                                                        topic = self.channels.output_1, 
                                                                         qos_profile = qos_profile_sensor_data)
         
         

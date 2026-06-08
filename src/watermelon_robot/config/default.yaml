@@ -94,7 +94,6 @@ _node_initializer:
   ###############
   PRIESTESS_EYES:
     executable: "web_app"
-
     channels:
       input_0: "t/target_detector/visualization/overlay"
       input_1: "t/lane_detector/visualization/overlay"
@@ -199,12 +198,6 @@ _node_initializer:
       output_0: "t/lane_detector/prediction/lane_error"         # 输出：航线偏离
       output_1: "t/lane_detector/visualization/overlay"         # 输出：底盘相机预测轨迹叠加层
 
-    # 通用配置块 ###################
-    ###########
-    ats:
-      queue_size: 10
-      slop: 0.05
-
 # -------------------------------------------------------
   
   ###############
@@ -233,49 +226,12 @@ _node_initializer:
 # -------------------------------------------------------
 
   ################
-  # 上逻辑控制器 #
-  ################
-  CELESTIAL_FULCRUM:
-    executable: "super_logic_controller"
-
-    # 标准通信接口配置块 ###################
-    ##################
-    input_0: "t/target_detector/prediction/target_list"
-    duplex_0: "s/robotic_arm/command"                       # 双工：机械臂控制
-    duplex_1: "s/logic_controller/command"                  # 双工：上/下逻辑控制器
-
-    # 通用配置块 ###################
-    ###########
-    heartbeat_period_sec: 0.01                              # Heartbeat 循环周期
-
-# -------------------------------------------------------
-  ################
-  # 下逻辑控制器 #
-  ################
-  ORACLE:
-    executable: "sub_logic_controller"
-
-    # 标准通信接口配置块 ###################
-    ##################
-    input_0: "t/lane_detector/prediction/lane_error"        # 输入：航线偏离
-    output_0: "t/chassis/control_sequence"                  # 输入：航线偏离
-    duplex_0: "s/logic_controller/command"                  # 双工：上/下逻辑控制器
-
-    # 通用配置块 ###################
-    ###########
-    heartbeat_period_sec: 0.01                              # Heartbeat 循环周期
-
-# -------------------------------------------------------
-
-  ################
   # Sub 测试辅助节点 #
   ################
   YAN:
     executable: "sub_test"
-
-    # 标准通信接口配置块 ###################
-    ##################
-    output_0: "t/realsense/chassis/front_facing/color" 
+    channels:
+      output_0: "t/realsense/chassis/front_facing/color" 
 
     # 通用配置块 ###################
     ###########

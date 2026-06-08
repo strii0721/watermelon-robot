@@ -56,17 +56,17 @@ class TargetDetector(Node):
         
         self.realsense_frame_color_subscriber = message_filters.Subscriber(node = self,
                                                                            msg_type = Image, 
-                                                                           topic = self.input_0,
+                                                                           topic = self.channels.input_0,
                                                                            qos_profile = qos_profile_sensor_data)
         
         self.realsense_frame_depth_subscriber = message_filters.Subscriber(node = self,
                                                                            msg_type = Image, 
-                                                                           topic = self.input_1,
+                                                                           topic = self.channels.input_1,
                                                                            qos_profile = qos_profile_sensor_data)
         
         self.realsense_frame_intrinsics_subscriber = message_filters.Subscriber(node = self,
                                                                                 msg_type = CameraInfo, 
-                                                                                topic = self.input_2,
+                                                                                topic = self.channels.input_2,
                                                                                 qos_profile = qos_profile_sensor_data)
         
         self.realsense_frame_subscriber = message_filters.ApproximateTimeSynchronizer(
@@ -79,11 +79,11 @@ class TargetDetector(Node):
         self.realsense_frame_subscriber.registerCallback(self.realsense_frame)
         
         self.target_list_publisher = self.create_publisher(msg_type = TargetList, 
-                                                       topic = self.output_0, 
+                                                       topic = self.channels.output_0, 
                                                        qos_profile = qos_profile_sensor_data)
         
         self.overlay_publisher = self.create_publisher(msg_type = Image, 
-                                                       topic = self.output_1, 
+                                                       topic = self.channels.output_1, 
                                                        qos_profile = qos_profile_sensor_data)
         
         NodeUtils.node_initialized(self)
@@ -137,9 +137,7 @@ class TargetDetector(Node):
             case self.STATES.ENABLED:
                 self.detect_targets()
             
-    
-
-
+            
 def main():
 
     rclpy.init()

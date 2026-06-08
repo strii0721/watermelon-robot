@@ -33,7 +33,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/TargetList.msg"
   "msg/ChassisControlSequence.msg"
   "srv/RoboticArmAction.srv"
-  "srv/LogicControllerComm.srv"
   "srv/NodeStateComm.srv"
   DEPENDENCIES std_msgs sensor_msgs
 )

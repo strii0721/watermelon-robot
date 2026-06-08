@@ -25,13 +25,14 @@ import time
 from watermelon_robot.utils import config
 from watermelon_robot.utils import NodeUtils
 import numpy as np
+from enum import IntEnum
 
 
 class RoboticArmController(Node):
     
-    class STATES:
+    class STATES(IntEnum):
         DISABLED = 0
-        SIMPLE = 100        # 最简单的运动方式，即获得坐标后直接运动到目标
+        MODE_SIMPLE = 100        # 最简单的运动方式，即获得坐标后直接运动到目标
 
     def __init__(self):
         
@@ -136,7 +137,7 @@ class RoboticArmController(Node):
         
         if self.robotic_arm_action_service is None:
             self.robotic_arm_action_service = self.create_service(srv_type = RoboticArmAction, 
-                                                                  srv_name = self.duplex_0, 
+                                                                  srv_name = self.channels.duplex_0, 
                                                                   callback = self.act_simple)
     
     def stop_listen(self):
@@ -156,7 +157,7 @@ class RoboticArmController(Node):
             case self.STATES.DISABLED:
                 self.stop_listen()
             
-            case self.STATES.SIMPLE:
+            case self.STATES.MODE_SIMPLE:
                 self.start_listen()
     
 def main():

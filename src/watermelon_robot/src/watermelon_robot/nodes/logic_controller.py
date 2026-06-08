@@ -75,12 +75,12 @@ class LogicController(Node):
                                                                callback = self.cache_target_list)
         
         self.lane_error_subscriber = self.create_subscription(msg_type = LaneError, 
-                                                              topic = self.input_1, 
+                                                              topic = self.channels.input_1, 
                                                               qos_profile = qos_profile_sensor_data, 
                                                               callback = self.cache_lane_error)
         
         self.chassis_control_sequence_publisher = self.create_publisher(msg_type = ChassisControlSequence, 
-                                                                        topic = self.output_0, 
+                                                                        topic = self.channels.output_0, 
                                                                         qos_profile = qos_profile_sensor_data)
         
         self.command_robotic_arm_client = self.create_client(srv_type = RoboticArmAction, 
@@ -95,7 +95,7 @@ class LogicController(Node):
         self.comm_node_state(handler = self.node_handler_ORACLE, 
                              state = LaneDetector.STATES.ENABLED)
         self.comm_node_state(handler = self.node_handler_CAERULA_ARBOR, 
-                             state = RoboticArmController.STATES.SIMPLE)
+                             state = RoboticArmController.STATES.MODE_SIMPLE)
         self.comm_node_state(handler = self.node_handler_PRESERVATOR, 
                              state = ChassisController.STATES.STOP)
         

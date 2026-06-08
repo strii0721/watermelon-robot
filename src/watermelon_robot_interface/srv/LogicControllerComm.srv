@@ -1,8 +1,0 @@
-# Request
-std_msgs/Header header
-int64 comm_code
----
-# Response
-std_msgs/Header header
-bool is_success
-string message

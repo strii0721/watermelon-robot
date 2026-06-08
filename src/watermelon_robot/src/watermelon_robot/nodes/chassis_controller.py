@@ -52,12 +52,12 @@ class ChassisController(Node):
                                         output_limit = output_limit)
 
         self.chassis_control_sequence_subscriber = self.create_subscription(msg_type = ChassisControlSequence, 
-                                                                            topic = self.input_0,
+                                                                            topic = self.channels.input_0,
                                                                             qos_profile = qos_profile_sensor_data, 
                                                                             callback = self.cache_chassis_control_sequence)
 
         self.cmd_vel_publisher = self.create_publisher(msg_type = Twist, 
-                                                       topic = self.output_0,
+                                                       topic = self.channels.output_0,
                                                        qos_profile = QoSFiles.chassis_control)
 
         NodeUtils.node_initialized(self)

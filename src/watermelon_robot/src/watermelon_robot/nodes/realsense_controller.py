@@ -44,15 +44,15 @@ class RealsenseController(Node):
         self.cv_bridge = CvBridge()
 
         self.realsense_frame_color_publisher = self.create_publisher(msg_type = Image,
-                                                                     topic = self.output_0, 
+                                                                     topic = self.channels.output_0, 
                                                                      qos_profile = qos_profile_sensor_data)
         
         self.realsense_frame_depth_publisher = self.create_publisher(msg_type = Image,
-                                                                     topic = self.output_1, 
+                                                                     topic = self.channels.output_1, 
                                                                      qos_profile = qos_profile_sensor_data)
         
         self.realsense_frame_intrinsics_publisher = self.create_publisher(msg_type = CameraInfo,
-                                                                          topic = self.output_2, 
+                                                                          topic = self.channels.output_2, 
                                                                           qos_profile = qos_profile_sensor_data)
         
         NodeUtils.node_initialized(self)
