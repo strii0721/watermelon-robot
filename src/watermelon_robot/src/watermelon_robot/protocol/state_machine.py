@@ -19,20 +19,19 @@
 
 from enum import IntEnum
 from rclpy.node import Node
-from watermelon_robot_interface.srv import StateComm
+from watermelon_robot_interface.srv import NodeStateComm
 from typing import cast
 from watermelon_robot.utils import NodeUtils
 
-
-class BaseStates(IntEnum):
-    
-    DISABLED = 0
     
 class NodeWithStateMachine(Node):
     
+    class STATES(IntEnum):
+        
+        DISABLED = 0
+    
     def __init__(self, 
-                 node_name: str, 
-                 state_comm_channel: str):
+                 node_name: str):
         """意味着这是一个带状态机机制的 ROS2 节点。构造函数会为这个节点创建状态机，之后将状态机初始化为 DISABLED。
 
         Args:
@@ -42,20 +41,28 @@ class NodeWithStateMachine(Node):
         super().__init__(node_name = node_name)
         NodeUtils.node_initializer(node_entity = self)
         self.create_state_machine()
-        self._state_comm_service = self.create_service(srv_type = StateComm, 
-                                                       srv_name = state_comm_channel, 
+        service_channel = f"node_state/{self.node_type}/{self.get_name()}"
+        self._state_comm_service = self.create_service(srv_type = NodeStateComm, 
+                                                       srv_name = service_channel, 
                                                        callback = self._update_node_state)
         
-    class STATES(BaseStates):
-        DISABLED = 0
     
     def create_state_machine(self) -> None:
 
-        self._state = BaseStates.DISABLED
+        self._state = self.STATES.DISABLED
         
     def _update_node_state(self, 
-                           request: StateComm.Request, 
-                           response: StateComm.Response) -> StateComm.Response:
+                           request: NodeStateComm.Request, 
+                           response: NodeStateComm.Response) -> NodeStateComm.Response:
+        """供节点间通信 service 回调的形式函数，自动监听频道并且修改节点状态。会自动调用真正的 update_node_state()。
+
+        Args:
+            request (StateComm.Request): 节点间状态更改请求。
+            response (StateComm.Response): 节点间状态更改响应。
+
+        Returns:
+            StateComm.Response: 节点间状态更改响应。
+        """        
         
         state = self.STATES(request.state)
         self.update_node_state(state = state)
@@ -77,9 +84,17 @@ class NodeWithStateMachine(Node):
         else:
             if self.retrieve_node_state() != state:
                 self._state = state 
-                self.get_logger().info(f"状态切换，当前状态：{self._state}")
+                self.get_logger().info(f"状态切换，当前状态：{self.retrieve_node_state()}")
 
     def retrieve_node_state(node_entity: Node) -> STATES | None:
+        """拉取当前节点状态机状态。
+
+        Args:
+            node_entity (Node): 节点实例对象。
+
+        Returns:
+            STATES | None: 节点状态机状态。若节点未创建状态机则输出警告到终端。
+        """        
 
         if not hasattr(node_entity, "_state"):
             node_entity.get_logger().warn(f"节点 {node_entity.get_name()} 未创建状态机！")

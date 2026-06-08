@@ -18,7 +18,7 @@
 
 
 import rclpy
-from rclpy.node import Node
+from watermelon_robot.protocol.state_machine import NodeWithStateMachine as Node
 from rclpy.qos import qos_profile_sensor_data
 from watermelon_robot.service import RealsenseService
 from watermelon_robot.utils import NodeUtils
@@ -26,14 +26,24 @@ from cv_bridge import CvBridge
 from watermelon_robot.utils import CommUtils
 from sensor_msgs.msg import Image, CameraInfo
 from typing import cast
+from enum import IntEnum
 
 
 class RealsenseController(Node):
-
+    
+    class STATES(IntEnum):
+        
+        DISABLED = 0
+        ENABLED = 100
+        
     def __init__(self):
 
         super().__init__("realsense_controller")
-        NodeUtils.node_initializer(self)
+        
+        main_frequency = 1 / self.fps
+        
+        self.heartbeat_timer = self.create_timer(timer_period_sec = main_frequency, 
+                                                  callback = self.heartbeat)
 
         self.realsense_service = RealsenseService(self.serial_number)
         self.cv_bridge = CvBridge()
@@ -50,8 +60,7 @@ class RealsenseController(Node):
                                                                           topic = self.output_2, 
                                                                           qos_profile = qos_profile_sensor_data)
         
-        self.read_frame_timer = self.create_timer(timer_period_sec = 1/self.fps, 
-                                                  callback = self.read_frame)
+        
         
         NodeUtils.node_initialized(self)
 
@@ -78,6 +87,17 @@ class RealsenseController(Node):
             self.realsense_frame_color_publisher.publish(msg = color_frame)
             self.realsense_frame_depth_publisher.publish(msg = depth_frame)
             self.realsense_frame_intrinsics_publisher.publish(msg = intrinsics)
+            
+    def heartbeat(self):
+        
+        state = self.retrieve_node_state()
+        
+        match state:
+            case self.STATES.DISABLED:
+                pass
+            
+            case self.STATES.ENABLED:
+                self.read_frame()
         
         
 def main():

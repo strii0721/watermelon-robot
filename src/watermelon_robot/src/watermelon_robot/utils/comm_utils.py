@@ -22,7 +22,7 @@ from watermelon_robot_interface.msg import LaneError, TargetList, ChassisControl
 from watermelon_robot_interface.srv import LogicControllerComm, RoboticArmAction, StateComm
 from rclpy.time import Time
 from watermelon_robot.protocol import LogicControllerCommCode
-from watermelon_robot.protocol.state_machine import BaseStates
+from enum import IntEnum
 
 class CommUtils:
     
@@ -103,7 +103,7 @@ class CommUtils:
     @classmethod
     def create_state_comm_request(cls, 
                                   header: Header, 
-                                  state: BaseStates) -> StateComm.Request:
+                                  state: IntEnum) -> StateComm.Request:
         
         request = StateComm.Request()
         request.header = header

@@ -26,15 +26,15 @@ def generate_launch_description():
     node_list = [
         "PRIESTESS_EYES",       # Web UI
         
-        "CELESTIAL_FULCRUM",    # 上逻辑控制器
+        # "CELESTIAL_FULCRUM",    # 上逻辑控制器
         "PRESERVATOR",          # 手眼相机
-        "LYNCHPIN",             # 目标检测器
-        "CAERULA_ARBOR",        # 机械臂
+        # "LYNCHPIN",             # 目标检测器
+        # "CAERULA_ARBOR",        # 机械臂
         
-        "ORACLE",               # 下逻辑控制器
-        "AMA_10",               # 巡线相机
-        "DWDB_221E",            # 底盘控制器
-        "LONETRAIL",            # 航线检测器
+        # "ORACLE",               # 下逻辑控制器
+        # "AMA_10",               # 巡线相机
+        # "DWDB_221E",            # 底盘控制器
+        # "LONETRAIL",            # 航线检测器
         # "YAN"                   # 测试辅助节点
     ]
         
