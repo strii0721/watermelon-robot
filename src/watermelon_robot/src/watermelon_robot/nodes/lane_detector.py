@@ -34,7 +34,6 @@ class LaneDetector(Node):
     def __init__(self):
         
         super().__init__("lane_detector")
-        NodeUtils.node_initializer(self)
         
         self.cv_bridge = CvBridge()
         self.model = ModelUtils.load_model(model_name = config.lane_detection.model.name, 

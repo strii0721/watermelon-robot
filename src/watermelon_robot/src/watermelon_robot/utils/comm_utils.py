@@ -19,7 +19,7 @@
 
 from std_msgs.msg import Header
 from watermelon_robot_interface.msg import LaneError, TargetList, ChassisControlSequence
-from watermelon_robot_interface.srv import LogicControllerComm, RoboticArmAction, StateComm
+from watermelon_robot_interface.srv import LogicControllerComm, RoboticArmAction, NodeStateComm
 from rclpy.time import Time
 from watermelon_robot.protocol import LogicControllerCommCode
 from enum import IntEnum
@@ -103,9 +103,9 @@ class CommUtils:
     @classmethod
     def create_state_comm_request(cls, 
                                   header: Header, 
-                                  state: IntEnum) -> StateComm.Request:
+                                  state: IntEnum) -> NodeStateComm.Request:
         
-        request = StateComm.Request()
+        request = NodeStateComm.Request()
         request.header = header
         request.state = state
         

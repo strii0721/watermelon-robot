@@ -46,6 +46,14 @@ class NodeWithStateMachine(Node):
                                                        srv_name = service_channel, 
                                                        callback = self._update_node_state)
         
+        self._heartbeat_timer = self.create_timer(timer_period_sec = self.heartbeat_period_sec, 
+                                                  callback = self.heartbeat)
+        
+    def heartbeat(self) -> None:
+        """这是状态机的主循环函数，在这里使用 match-case 处理状态。
+        """        
+        
+        pass
     
     def create_state_machine(self) -> None:
 

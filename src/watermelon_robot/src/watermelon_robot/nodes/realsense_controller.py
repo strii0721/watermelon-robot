@@ -39,11 +39,6 @@ class RealsenseController(Node):
     def __init__(self):
 
         super().__init__("realsense_controller")
-        
-        main_frequency = 1 / self.fps
-        
-        self.heartbeat_timer = self.create_timer(timer_period_sec = main_frequency, 
-                                                  callback = self.heartbeat)
 
         self.realsense_service = RealsenseService(self.serial_number)
         self.cv_bridge = CvBridge()
