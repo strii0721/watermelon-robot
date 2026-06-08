@@ -53,7 +53,7 @@ class LaneDetector(Node):
         
         self.realsense_frame_color_subscriber = self.create_subscription(msg_type = Image, 
                                                                          topic = self.input_0, 
-                                                                         callback = self.cache_frame, 
+                                                                         callback = self.cache_frames, 
                                                                          qos_profile = qos_profile_sensor_data)
         
         self.lane_error_publisher = self.create_publisher(msg_type = LaneError, 
@@ -68,8 +68,8 @@ class LaneDetector(Node):
         
         NodeUtils.node_initialized(self)
         
-    def cache_frame(self, 
-                    color_frame_message: Image) -> None:
+    def cache_frames(self, 
+                     color_frame_message: Image) -> None:
         
         self.last_frame = self.cv_bridge.imgmsg_to_cv2(img_msg = color_frame_message, 
                                                        desired_encoding = "passthrough")

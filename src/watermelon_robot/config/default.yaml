@@ -143,6 +143,8 @@ _node_initializer:
   ##############
   LYNCHPIN:
     executable: "target_detector"
+    node_type: "processor"
+    heartbeat_period_sec: 0.033
 
     # 标准通信接口配置块 ###################
     ##################
