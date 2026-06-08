@@ -25,7 +25,6 @@ from rclpy.qos import qos_profile_sensor_data
 from cv_bridge import CvBridge
 import cv2
 from functools import partial
-from types import SimpleNamespace
 import rclpy
 from rclpy.subscription import Subscription
 from ament_index_python.packages import get_package_share_directory
@@ -33,9 +32,10 @@ package_share_dir = get_package_share_directory('watermelon_robot')
 import os
 import threading
 import time
-from watermelon_robot_interface.srv import LogicControllerComm
+from watermelon_robot_interface.srv import NodeStateComm
 from watermelon_robot.protocol import LogicControllerCommCode
 from watermelon_robot.utils import CommUtils
+from watermelon_robot.nodes import ChassisController
 
 
 class VideoSlot:
@@ -161,25 +161,25 @@ class WebApp(Node):
                                static_folder = static_dir,  )
         
         self.video_slot_list.register_video_slot(caller = self, 
-                                           video_slot_numero = 0,
-                                           channel_name = self.input_0, 
-                                           subscriber_callback = self.cache_frame_data, 
-                                           flask_app = self.app, 
-                                           url = self.generate_url(type = "api", url = "/streaming/0"), 
-                                           endpoint_name = "video_slot_0",
-                                           response_function = self.response_video)
+                                                 video_slot_numero = 0,
+                                                 channel_name = self.channels.input_0, 
+                                                 subscriber_callback = self.cache_frame_data, 
+                                                 flask_app = self.app, 
+                                                 url = self.generate_url(type = "api", url = "/streaming/0"), 
+                                                 endpoint_name = "video_slot_0",
+                                                 response_function = self.response_video)
         
         self.video_slot_list.register_video_slot(caller = self, 
-                                           video_slot_numero = 1,
-                                           channel_name = self.input_1, 
-                                           subscriber_callback = self.cache_frame_data, 
-                                           flask_app = self.app, 
-                                           url = self.generate_url(type = "api", url = "/streaming/1"), 
-                                           endpoint_name = "video_slot_1",
-                                           response_function = self.response_video)
+                                                 video_slot_numero = 1,
+                                                 channel_name = self.channels.input_1, 
+                                                 subscriber_callback = self.cache_frame_data, 
+                                                 flask_app = self.app, 
+                                                 url = self.generate_url(type = "api", url = "/streaming/1"), 
+                                                 endpoint_name = "video_slot_1",
+                                                 response_function = self.response_video)
         
-        self.command_sub_logic_controller_client = self.create_client(srv_type = LogicControllerComm, 
-                                                                      srv_name = self.duplex_0)
+        self.node_handler_chassis = self.create_client(srv_type = NodeStateComm, 
+                                                       srv_name = self.channels.PRESERVATOR)
         
         self.app.add_url_rule(rule = "/", 
                               endpoint = "index", 
@@ -269,13 +269,13 @@ class WebApp(Node):
         match action:
             
             case "start":
-                comm_request = CommUtils.create_logic_controller_comm_request(header = header, 
-                                                                              comm_code = LogicControllerCommCode.START_CHASSIS)
-                future = self.command_sub_logic_controller_client.call_async(comm_request)
+                NodeUtils.comm_node_state(caller = self, 
+                                          handler = self.node_handler_chassis, 
+                                          state = ChassisController.STATES.START)
             case "stop":
-                comm_request = CommUtils.create_logic_controller_comm_request(header = header, 
-                                                                              comm_code = LogicControllerCommCode.STOP_CHASSIS)
-                future = self.command_sub_logic_controller_client.call_async(comm_request)
+                NodeUtils.comm_node_state(caller = self, 
+                                          handler = self.node_handler_chassis, 
+                                          state = ChassisController.STATES.STOP)
                 
         return jsonify({
             "status": "success", 

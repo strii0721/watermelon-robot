@@ -89,23 +89,6 @@ scissors:
 ######################################## 以下是节点初始化器配置 ########################################
 _node_initializer:
 
-  ###############
-  # Web UI 节点 #
-  ###############
-  PRIESTESS_EYES:
-    executable: "web_app"
-    channels:
-      input_0: "t/target_detector/visualization/overlay"
-      input_1: "t/lane_detector/visualization/overlay"
-      duplex_0: "s/logic_controller/command"
-
-    # 通用配置块 ###################
-    ###########
-    fps: 30           # 画面渲染帧率
-    port: 8080
-
-# -------------------------------------------------------
-
   ################
   # 逻辑控制器节点 #
   ################
@@ -222,6 +205,23 @@ _node_initializer:
     channels:
       input_0: "t/chassis/control_sequence"                   # 底盘方向控制
       output_0: "cmd_vel"                                     # 轮趣 SDK：底盘控制信号
+
+# -------------------------------------------------------
+
+  ###############
+  # Web UI 节点 #
+  ###############
+  PRIESTESS_EYES:
+    executable: "web_app"
+    channels:
+      PRESERVATOR: "ns/executor/PRESERVATOR"
+      input_0: "t/target_detector/visualization/overlay"
+      input_1: "t/lane_detector/visualization/overlay"
+
+    # 通用配置块 ###################
+    ###########
+    fps: 30           # 画面渲染帧率
+    port: 8080
 
 # -------------------------------------------------------
 

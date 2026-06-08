@@ -21,7 +21,6 @@ from watermelon_robot.protocol.state_machine import NodeWithStateMachine as Node
 from watermelon_robot.utils import config, NodeUtils, ModelUtils, DLUtils, CommUtils
 from rclpy.qos import qos_profile_sensor_data
 from cv_bridge import CvBridge
-import time
 import cv2
 from sensor_msgs.msg import Image, CameraInfo
 import json

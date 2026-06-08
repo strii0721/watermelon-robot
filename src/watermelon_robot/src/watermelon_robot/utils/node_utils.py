@@ -18,8 +18,13 @@
 
 
 from rclpy.node import Node
+import rclpy
 from watermelon_robot.utils import config
 from launch_ros.actions import Node as Node2
+from rclpy.client import Client
+from enum import IntEnum
+from utils import CommUtils
+
 
 class NodeUtils: 
 
@@ -78,3 +83,17 @@ class NodeUtils:
             node_list.append(node)
             
         return node_list
+    
+    @classmethod
+    def comm_node_state(cls, 
+                        caller: Node, 
+                        handler: Client, 
+                        state: IntEnum) -> rclpy.Future:
+        
+        timestamp = caller.get_clock().now().to_msg()
+        header = CommUtils.create_header(stamp = timestamp)
+        request = CommUtils.create_node_state_comm_request(header = header, 
+                                                           state = state)
+        future = handler.call_async(request = request)
+        
+        return future

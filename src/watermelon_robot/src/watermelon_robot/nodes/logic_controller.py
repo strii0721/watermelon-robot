@@ -86,18 +86,24 @@ class LogicController(Node):
         self.command_robotic_arm_client = self.create_client(srv_type = RoboticArmAction, 
                                                              srv_name = self.channels.duplex_0)
         
-        self.comm_node_state(handler = self.node_handler_CAERULA_ARBOR, 
-                             state = RealsenseController.STATES.ENABLED)
-        self.comm_node_state(handler = self.node_handler_AMA_10, 
-                             state = RealsenseController.STATES.ENABLED)
-        self.comm_node_state(handler = self.node_handler_LYNCHPIN, 
-                             state = TargetDetector.STATES.ENABLED)
-        self.comm_node_state(handler = self.node_handler_ORACLE, 
-                             state = LaneDetector.STATES.ENABLED)
-        self.comm_node_state(handler = self.node_handler_CAERULA_ARBOR, 
-                             state = RoboticArmController.STATES.MODE_SIMPLE)
-        self.comm_node_state(handler = self.node_handler_PRESERVATOR, 
-                             state = ChassisController.STATES.STOP)
+        NodeUtils.comm_node_state(caller = self, 
+                                  handler = self.node_handler_CAERULA_ARBOR, 
+                                  state = RealsenseController.STATES.ENABLED)
+        NodeUtils.comm_node_state(caller = self,
+                                  handler = self.node_handler_AMA_10, 
+                                  state = RealsenseController.STATES.ENABLED)
+        NodeUtils.comm_node_state(caller = self,
+                                  handler = self.node_handler_LYNCHPIN, 
+                                  state = TargetDetector.STATES.ENABLED)
+        NodeUtils.comm_node_state(caller = self,
+                                  handler = self.node_handler_ORACLE, 
+                                  state = LaneDetector.STATES.ENABLED)
+        NodeUtils.comm_node_state(caller = self,
+                                  handler = self.node_handler_CAERULA_ARBOR, 
+                                  state = RoboticArmController.STATES.MODE_SIMPLE)
+        NodeUtils.comm_node_state(caller = self,
+                                  handler = self.node_handler_PRESERVATOR, 
+                                  state = ChassisController.STATES.STOP)
         
         NodeUtils.node_initialized(self)
         
@@ -189,8 +195,9 @@ class LogicController(Node):
         
     def start_chassis(self):
         
-        future = self.comm_node_state(handler = self.node_handler_PRESERVATOR, 
-                                      state = ChassisController.STATES.START)
+        future = NodeUtils.comm_node_state(caller = self,
+                                           handler = self.node_handler_PRESERVATOR, 
+                                           state = ChassisController.STATES.START)
         future.add_done_callback(callback = self.start_chassis_done)
     
     def command_robotic_arm_done(self, 
@@ -245,8 +252,9 @@ class LogicController(Node):
         
     def stop_chassis(self):
         
-        future = self.comm_node_state(handler = self.node_handler_PRESERVATOR, 
-                                      state = ChassisController.STATES.STOP)
+        future = NodeUtils.comm_node_state(caller = self,
+                                           handler = self.node_handler_PRESERVATOR, 
+                                           state = ChassisController.STATES.STOP)
         future.add_done_callback(callback = self.stop_chassis_done)
         
     def error_quit(self) -> None:
@@ -286,21 +294,6 @@ class LogicController(Node):
             
             case self.STATES.ERROR:
                 self.error_quit()
-        
-    def comm_node_state(self, 
-                        handler: Client, 
-                        state: IntEnum) -> rclpy.Future:
-        
-        timestamp = self.get_clock().now().to_msg()
-        header = CommUtils.create_header(stamp = timestamp)
-        request = CommUtils.create_node_state_comm_request(header = header, 
-                                                           state = state)
-        future = handler.call_async(request = request)
-        
-        return future
-        
-    def node_state_comm_done(self):
-        pass
         
 def main():
 
