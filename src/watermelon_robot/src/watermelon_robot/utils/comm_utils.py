@@ -67,14 +67,12 @@ class CommUtils:
     def create_chassis_control_sequence(cls, 
                                         header: Header,
                                         forward_speed: float,
-                                        error_rads: float, 
-                                        is_enabled: bool = True) -> ChassisControlSequence:
+                                        error_rads: float) -> ChassisControlSequence:
         
         chassis_control_sequence = ChassisControlSequence()
         chassis_control_sequence.header = header
         chassis_control_sequence.forward_speed = float(forward_speed)
         chassis_control_sequence.error_rads = float(error_rads)
-        chassis_control_sequence.is_enabled = is_enabled
         
         return chassis_control_sequence
     
@@ -107,6 +105,6 @@ class CommUtils:
         
         request = NodeStateComm.Request()
         request.header = header
-        request.state = state
+        request.state = state.value
         
         return request

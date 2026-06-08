@@ -184,6 +184,8 @@ _node_initializer:
   #############
   DWDB_221E:
     executable: "chassis_controller"
+    node_type: "executor"
+    heartbeat_period_sec: 0.01
 
     # 标准通信接口配置块 ###################
     ##################

@@ -19,7 +19,7 @@
 
 from watermelon_robot.controller import PIDController
 import rclpy
-from rclpy.node import Node
+from watermelon_robot.protocol.state_machine import NodeWithStateMachine as Node
 from watermelon_robot.utils import NodeUtils
 from geometry_msgs.msg import Twist
 from watermelon_robot_interface.msg import ChassisControlSequence
@@ -29,14 +29,20 @@ from watermelon_robot.service import ChassisService
 import time
 import math
 from rclpy.qos import qos_profile_sensor_data
+from enum import IntEnum
 
 
 class ChassisController(Node):
+    
+    class STATES(IntEnum):
+        
+        DISABLED = 0
+        START = 101
+        STOP = 102
 
     def __init__(self):
 
         super().__init__("chassis_controller")
-        NodeUtils.node_initializer(self)
 
         self.chassis_service = ChassisService()
         self.last_control_time = time.time()
@@ -51,7 +57,7 @@ class ChassisController(Node):
         self.chassis_control_sequence_subscriber = self.create_subscription(msg_type = ChassisControlSequence, 
                                                                             topic = self.input_0,
                                                                             qos_profile = qos_profile_sensor_data, 
-                                                                            callback = self.correct_error)
+                                                                            callback = self.cache_chassis_control_sequence)
 
         self.cmd_vel_publisher = self.create_publisher(msg_type = Twist, 
                                                        topic = self.output_0,
@@ -59,28 +65,51 @@ class ChassisController(Node):
 
         NodeUtils.node_initialized(self)
         
-    def correct_error(self, 
-                      chassis_control_sequence: ChassisControlSequence):   
+    def cache_chassis_control_sequence(self, 
+                                       chassis_control_sequence: ChassisControlSequence) -> None:
+        
+        self.last_chassis_control_sequence = chassis_control_sequence
+        
+    def forward(self) -> None:   
           
         now_time = time.time()
-        if chassis_control_sequence.is_enabled:
-            error_rads = chassis_control_sequence.error_rads
-            forward_speed = chassis_control_sequence.forward_speed
+
+        error_rads = self.last_chassis_control_sequence.error_rads
+        forward_speed = self.last_chassis_control_sequence.forward_speed
             
-            control_interval = now_time - self.last_control_time
-            control_variable = self.controller.update_control_variable(error = error_rads, 
-                                                                       control_interval = control_interval)
-            error_degrees = math.degrees(error_rads)
-            # self.get_logger().info(f"当前弧度误差：{error_rads} | 角度误差：{error_degrees} | 产生控制变量：{control_variable}")
-            
-        else:
-            control_variable = 0
-            forward_speed = 0
-            
+        control_interval = now_time - self.last_control_time
+        control_variable = self.controller.update_control_variable(error = error_rads, 
+                                                                   control_interval = control_interval)
         twist_msg = self.chassis_service.apply_control_variable(control_variable = control_variable,
                                                                 forward_speed = forward_speed)
         self.cmd_vel_publisher.publish(msg = twist_msg)
         self.last_control_time = now_time
+        
+        # error_degrees = math.degrees(error_rads)
+        # self.get_logger().info(f"当前弧度误差：{error_rads} | 角度误差：{error_degrees} | 产生控制变量：{control_variable}")
+        
+    def hold(self) -> None:
+        
+        now_time = time.time()
+        twist_msg = self.chassis_service.apply_control_variable(control_variable = 0.0,
+                                                                forward_speed = 0.0)
+        self.cmd_vel_publisher.publish(msg = twist_msg)
+        self.last_control_time = now_time
+        
+    def heartbeat(self) -> None:
+        
+        state = self.retrieve_node_state()
+        
+        match state:
+            
+            case self.STATES.DISABLED:
+                pass
+            
+            case self.STATES.START:
+                self.forward()
+            
+            case self.STATES.STOP:
+                self.hold()
             
 
 def main():
